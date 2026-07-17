@@ -1,24 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * CHAT — storyboard (panel with tabs, reasoning replies,
- * and a composer; layout from the AI Project design system)
- *
- *     0ms   idle panel, placeholder in composer
- *   700ms   prompt types in (~40ms/char)
- *   then    send arms, presses — message lifts into the
- *           right-aligned bubble
- *  +400ms   reply section 1 streams in (header, then body)
- *  +1600ms  section 2 appears small + gray, then resolves
- *   hold    3s, reset
+ * CHAT — interactive panel with tabs, replies, and composer.
+ * The reply sequence begins only after the user sends.
  * ───────────────────────────────────────────────────────── */
 
-const PROMPT = "Compare mint chip to last summer";
-const CHAR_MS = 40;
-
-type Phase = "idle" | "typing" | "armed" | "sent" | "reply1" | "reply2" | "done";
+type Phase = "idle" | "sent" | "reply1" | "reply2" | "done";
 
 function Section({
   label,
@@ -57,41 +46,46 @@ function Section({
 
 export default function ChatComposer() {
   const [phase, setPhase] = useState<Phase>("idle");
-  const [chars, setChars] = useState(0);
+  const [draft, setDraft] = useState("");
+  const [submitted, setSubmitted] = useState("");
+  const [tab, setTab] = useState("Flavors");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
-    if (phase === "idle") t = setTimeout(() => setPhase("typing"), 700);
-    else if (phase === "typing") {
-      if (chars < PROMPT.length)
-        t = setTimeout(() => setChars((c) => c + 1), CHAR_MS);
-      else t = setTimeout(() => setPhase("armed"), 300);
-    } else if (phase === "armed") t = setTimeout(() => setPhase("sent"), 500);
-    else if (phase === "sent") t = setTimeout(() => setPhase("reply1"), 500);
+    if (phase === "sent") t = setTimeout(() => setPhase("reply1"), 500);
     else if (phase === "reply1") t = setTimeout(() => setPhase("reply2"), 1400);
     else if (phase === "reply2") t = setTimeout(() => setPhase("done"), 1200);
-    else
-      t = setTimeout(() => {
-        setPhase("idle");
-        setChars(0);
-      }, 3000);
+    else return;
     return () => clearTimeout(t);
-  }, [phase, chars]);
+  }, [phase]);
 
-  const sent = phase !== "idle" && phase !== "typing" && phase !== "armed";
-  const typed = PROMPT.slice(0, chars);
+  const sent = phase !== "idle";
+  const canSend = draft.trim().length > 0;
+
+  const send = () => {
+    if (!canSend) return;
+    setSubmitted(draft.trim());
+    setDraft("");
+    setPhase("sent");
+  };
 
   return (
-    <div className="flex min-h-[248px] w-full max-w-95 flex-col self-start overflow-hidden rounded-card bg-surface shadow-raised">
+    <div className="flex min-h-[248px] w-full max-w-95 flex-col self-start overflow-hidden rounded-card bg-surface shadow-card">
       {/* header — tabs + actions */}
       <div className="flex items-center justify-between border-b border-line p-1.5">
         <div className="flex items-center">
-          <span className="rounded-[6px] bg-field px-2 py-[3px] text-[13px] text-ink">
-            Flavors
-          </span>
-          <span className="cursor-pointer rounded-[6px] px-2 py-[3px] text-[13px] text-ink opacity-50 transition-opacity duration-100 hover:opacity-75">
-            Suppliers
-          </span>
+          {["Flavors", "Suppliers"].map((item) => (
+            <button
+              key={item}
+              type="button"
+              aria-pressed={tab === item}
+              onClick={() => setTab(item)}
+              className={`rounded-[6px] px-2 py-[3px] text-[13px] text-ink transition-[background-color,opacity] duration-100 ${tab === item ? "bg-field" : "opacity-50 hover:opacity-75"}`}
+            >
+              {item}
+            </button>
+          ))}
         </div>
         <div className="flex items-center gap-1">
           {[
@@ -101,11 +95,12 @@ export default function ChatComposer() {
           ].map((icon, i) => (
             <button
               key={i}
+              type="button"
               aria-label="Action"
               className="flex size-6 items-center justify-center rounded-[6px] text-ink-3
                 transition-colors duration-100 hover:bg-hover hover:text-ink-2"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 {icon}
               </svg>
             </button>
@@ -126,7 +121,7 @@ export default function ChatComposer() {
               transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
             }}
           >
-            {PROMPT}
+            {submitted}
           </div>
         </div>
 
@@ -151,30 +146,36 @@ export default function ChatComposer() {
 
       {/* composer */}
       <div className="mt-auto p-1.5">
-        <div className="flex flex-col gap-2 rounded-control border border-line bg-field p-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
-          <div className="min-h-4.5 text-[13px] leading-[1.4]">
-            {!sent && typed.length > 0 ? (
-              <span className="text-ink">
-                {typed}
-                <span className="ml-px inline-block h-3 w-0.5 translate-y-0.5 rounded-full bg-ink" />
-              </span>
-            ) : (
-              <span className="text-ink-3">Prompt or tag a flavor with @</span>
-            )}
-          </div>
+        <div
+          role="presentation"
+          onClick={() => inputRef.current?.focus()}
+          className="flex cursor-text flex-col gap-2 rounded-control border border-line bg-field p-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.035)] transition-[border-color,box-shadow] duration-150 focus-within:border-line-strong focus-within:shadow-[0_1px_2px_rgba(0,0,0,0.025)]"
+        >
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") send();
+            }}
+            placeholder="Prompt or tag a flavor with @"
+            aria-label="Chat prompt"
+            className="min-h-4.5 bg-transparent text-[13px] leading-[1.4] text-ink outline-none placeholder:text-ink-3"
+          />
           <div className="flex items-center justify-end">
             <button
+              type="button"
               aria-label="Send"
+              disabled={!canSend}
+              onClick={send}
               className="flex size-6 items-center justify-center rounded-full
-                transition-[background-color,color,transform] duration-200"
+                transition-[background-color,color,transform] duration-200 enabled:active:scale-[0.96]"
               style={{
-                background:
-                  phase === "armed" ? "var(--ink)" : "var(--line-strong)",
-                color: phase === "armed" ? "var(--surface)" : "var(--ink-2)",
-                transform: phase === "sent" ? "scale(0.92)" : "scale(1)",
+                background: canSend ? "var(--ink)" : "var(--line-strong)",
+                color: canSend ? "var(--surface)" : "var(--ink-2)",
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 19V5M5 12l7-7 7 7" />
               </svg>
             </button>

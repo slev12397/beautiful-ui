@@ -1,15 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * FILTER TABLE — storyboard
- * Status chips act as live filters over the task table.
- *
- *     0ms   "All" active, full table
- *  2200ms   "To do" selects — other rows collapse away
- *  4400ms   "In Progress" selects
- *  6600ms   back to "All", hold, repeat
+ * FILTER TABLE
+ * Status chips directly filter the task table.
  * ───────────────────────────────────────────────────────── */
 
 type Status = "todo" | "progress" | "done";
@@ -35,16 +30,8 @@ const PILLS: Record<Status, { label: string; cls: string }> = {
   done: { label: "Completed", cls: "bg-green-tint text-green" },
 };
 
-const SEQUENCE: ("all" | Status)[] = ["all", "todo", "progress"];
-
 export default function FilterTable() {
-  const [step, setStep] = useState(0);
-  const filter = SEQUENCE[step];
-
-  useEffect(() => {
-    const t = setTimeout(() => setStep((s) => (s + 1) % SEQUENCE.length), 2200);
-    return () => clearTimeout(t);
-  }, [step]);
+  const [filter, setFilter] = useState<"all" | Status>("all");
 
   return (
     <div className="w-full max-w-105">
@@ -55,6 +42,9 @@ export default function FilterTable() {
           return (
             <button
               key={f.key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setFilter(f.key)}
               className={`flex h-6.5 items-center gap-1.5 rounded-full px-2.5 text-[12px]
                 font-medium transition-[background-color,box-shadow,color] duration-200
                 ${active ? "bg-surface text-ink shadow-btn" : "text-ink-2 hover:bg-hover"}`}

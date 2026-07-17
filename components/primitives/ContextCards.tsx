@@ -3,47 +3,39 @@
 import { useEffect, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * CONTEXT CARDS — storyboard
- *
- *     0ms   header row fades in ("All chunks · 32")
- *   250ms   chunk cards enter, staggered 120ms
- *   900ms   source chips pop
- *  4800ms   reset
+ * CONTEXT CARDS
+ * Retrieved chunks enter once, then remain available.
  * ───────────────────────────────────────────────────────── */
 
 const CHUNKS = [
   {
-    id: "Chunk-01",
+    title: "Vendor onboarding rule",
     chars: "290 characters",
-    body: "To onboard a new dairy, verify cold-chain certification and schedule a first tasting.",
-    source: "Supplier Handbook.pdf",
+    body: "Cold-chain certification must be verified before a new dairy can be added to the reorder workflow.",
+    source: "Dairy Onboarding SOP.pdf",
+    badge: "PDF",
+    tone: "bg-red",
   },
   {
-    id: "Chunk-02",
+    title: "Seasonal demand row",
     chars: "1,250 characters",
-    body: "Seasonal flavors rotate every six weeks; retire anything under 40 scoops a week.",
-    source: "Supplier Handbook.pdf",
+    body: "Q4 velocity table: pistachio +18%, vanilla +6%, rocky road -11%; retire flavors below 40 scoops weekly.",
+    source: "Sales Velocity Export.csv",
+    badge: "CSV",
+    tone: "bg-green",
   },
 ];
 
 export default function ContextCards() {
-  const [cycle, setCycle] = useState(0);
   const [chipsShown, setChipsShown] = useState(false);
 
   useEffect(() => {
     const chips = setTimeout(() => setChipsShown(true), 700);
-    const reset = setTimeout(() => {
-      setChipsShown(false);
-      setCycle((c) => c + 1);
-    }, 6000);
-    return () => {
-      clearTimeout(chips);
-      clearTimeout(reset);
-    };
-  }, [cycle]);
+    return () => clearTimeout(chips);
+  }, []);
 
   return (
-    <div key={cycle} className="flex w-full max-w-95 flex-col gap-2">
+    <div className="flex w-full max-w-95 flex-col gap-2">
       <div
         className="flex items-center gap-2 px-0.5"
         style={{ animation: "fade-in 400ms ease-out both" }}
@@ -56,23 +48,23 @@ export default function ContextCards() {
 
       {CHUNKS.map((chunk, i) => (
         <div
-          key={chunk.id}
-          className="overflow-hidden rounded-card bg-surface shadow-card transition-shadow duration-150 hover:shadow-raised"
+          key={chunk.title}
+          className="overflow-hidden rounded-card bg-surface shadow-card"
           style={{
             animation: `fade-up 400ms cubic-bezier(0.23,1,0.32,1) ${i * 100}ms both`,
           }}
         >
-          <div className="flex items-center gap-2.5 border-b border-line px-3 py-1.5">
-            <span className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
+          <div className="primitive-card-bar flex items-center gap-2.5 border-b border-line">
+            <span className="flex min-w-0 items-center gap-1.5 text-[13px] font-medium text-ink">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h10" /></svg>
-              {chunk.id}
+              <span className="truncate">{chunk.title}</span>
             </span>
-            <span className="text-[12px] text-ink-3 tabular-nums">{chunk.chars}</span>
+            <span className="ml-auto shrink-0 text-[12px] text-ink-3 tabular-nums">{chunk.chars}</span>
           </div>
-          <p className="line-clamp-2 px-3 py-1.5 text-[12.5px] leading-relaxed text-ink-2">
+          <p className="px-3 pt-2 pb-1 text-[12.5px] leading-relaxed text-ink-2">
             {chunk.body}
           </p>
-          <div className="px-3 pb-2.5">
+          <div className="px-3 pb-3">
             <span
               className="inline-flex h-6 items-center gap-1.5 rounded-full bg-inset px-2
                 text-[12px] font-medium text-ink-2 shadow-btn
@@ -84,8 +76,8 @@ export default function ContextCards() {
                 transitionDelay: `${i * 80}ms`,
               }}
             >
-              <span className="flex size-3.5 items-center justify-center rounded-[4px] bg-red text-[7px] font-bold text-white">
-                PDF
+              <span className={`flex size-3.5 items-center justify-center rounded-[4px] ${chunk.tone} text-[7px] font-bold text-white`}>
+                {chunk.badge}
               </span>
               {chunk.source}
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M7 7h10v10" /></svg>

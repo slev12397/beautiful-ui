@@ -34,6 +34,12 @@ export const META: Meta[] = [
     file: "ApprovalCard.tsx",
   },
   {
+    id: "tool-chips",
+    title: "Tool Chips",
+    caption: "Code edits and tool calls as compact chips.",
+    file: "ToolChips.tsx",
+  },
+  {
     id: "task-rows",
     title: "Task Rows",
     caption: "Live agent task status — running, failed, completed.",
@@ -83,22 +89,10 @@ export const META: Meta[] = [
     file: "SearchList.tsx",
   },
   {
-    id: "welcome-modal",
-    title: "Welcome Modal",
-    caption: "Trial onboarding with agent-prepared setup.",
-    file: "WelcomeModal.tsx",
-  },
-  {
     id: "insight-cards",
     title: "Insight Cards",
-    caption: "Paged agent insights with embedded mini-charts.",
+    caption: "Paged agent insights with scrub-ready live charts.",
     file: "InsightCards.tsx",
-  },
-  {
-    id: "tool-chips",
-    title: "Tool Chips",
-    caption: "Code edits and tool calls as compact chips.",
-    file: "ToolChips.tsx",
   },
   {
     id: "code-block",

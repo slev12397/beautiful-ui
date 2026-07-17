@@ -14,10 +14,10 @@ function Tile({
 }) {
   return (
     <div className="flex flex-col overflow-hidden rounded-card bg-surface shadow-card">
-      <div className="border-b border-line px-4 py-2.5">
+      <div className="primitive-card-bar border-b border-line">
         <h3 className="text-[13px] font-semibold text-ink">{title}</h3>
       </div>
-      <div className="flex flex-1 flex-col justify-center px-4 py-4">{children}</div>
+      <div className="primitive-card-pad flex flex-1 flex-col justify-center">{children}</div>
     </div>
   );
 }

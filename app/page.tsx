@@ -21,10 +21,10 @@ export default function Home() {
   const sources = readSources();
 
   return (
-    <main className="mx-auto max-w-[1200px] border-x border-dashed border-line px-0">
-      <div className="lg:grid lg:grid-cols-[300px_minmax(0,1fr)]">
+    <main className="relative mx-auto max-w-[960px] bg-page shadow-[0_0_0_1px_var(--line)]">
+      <div className="lg:grid lg:grid-cols-[288px_minmax(0,1fr)]">
         {/* left rail — the system, then the component nav */}
-        <aside className="border-b border-dashed border-line px-7 pt-10 pb-8 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-r lg:border-b-0">
+        <aside className="flex flex-col border-b border-dashed border-line px-7 pt-16 pb-7 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-r lg:border-b-0 lg:pt-20">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <span className="flex size-5.5 items-center justify-center rounded-[6px] bg-ink text-canvas">
@@ -39,7 +39,7 @@ export default function Home() {
             <ThemeToggle />
           </div>
 
-          <h1 className="mt-10 text-[22px] leading-snug font-semibold tracking-[-0.02em] text-ink text-balance">
+          <h1 className="mt-12 text-[21px] leading-snug font-semibold tracking-[-0.02em] text-ink text-balance">
             Crafted primitives for AI-native interfaces.
           </h1>
           <p className="mt-3 text-[13px] leading-relaxed text-ink-2 text-pretty">
@@ -48,36 +48,47 @@ export default function Home() {
             copy, paste, ship.
           </p>
 
-          <dl className="mt-6 flex flex-col gap-2.5 border-t border-dashed border-line pt-5">
-            {[
-              ["Every state, storyboarded", "demos loop through real behavior"],
-              ["One token set", "light and dark from the same variables"],
-              ["Interactable, not screenshots", "hover, click, switch variants"],
-            ].map(([t, d]) => (
-              <div key={t} className="text-[12.5px] leading-snug">
-                <dt className="font-medium text-ink">{t}.</dt>
-                <dd className="text-ink-3">{d}.</dd>
-              </div>
-            ))}
-          </dl>
-
-          <div className="mt-6 border-t border-dashed border-line pt-5">
+          <div className="mt-7 border-t border-dashed border-line pt-6">
             <Nav />
+          </div>
+
+          <div className="mt-8 lg:mt-auto">
+            <a
+              href="https://turbodesign.co/"
+              target="_blank"
+              rel="noreferrer"
+              className="-mx-1.5 block rounded-control px-1.5 py-1"
+            >
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className="block truncate text-[12.5px] font-medium leading-tight text-ink">
+                  Built by Turbo
+                </span>
+                <span className="block truncate text-[12px] leading-tight text-ink-2">
+                  Product design studio
+                </span>
+              </span>
+              <span className="mt-1.5 block text-[12px] leading-relaxed text-ink-2 text-pretty">
+                Get expert product design for your business.
+              </span>
+            </a>
+            <a
+              href="https://cal.com/shane-levine-7bnfdw/30min?overlayCalendar=true"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2.5 inline-flex h-7 items-center gap-1.5 rounded-full bg-field px-2.5 text-[11.5px] font-medium text-ink
+                shadow-btn transition-[background-color,transform] duration-150 hover:bg-hover active:scale-[0.96]"
+            >
+              Book a call
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </a>
           </div>
         </aside>
 
         {/* right — the components, one per row */}
         <Grid sources={sources} />
       </div>
-
-      <footer className="flex items-center justify-between border-t border-dashed border-line px-7 py-6">
-        <span className="text-[12.5px] text-ink-3">
-          Beautiful UI — simple is beautiful.
-        </span>
-        <span className="text-[12.5px] text-ink-3">
-          Built from primitives. Copy anything.
-        </span>
-      </footer>
     </main>
   );
 }

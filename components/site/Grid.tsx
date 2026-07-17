@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { REGISTRY, type Entry } from "@/lib/registry";
 
 /* ─────────────────────────────────────────────────────────
@@ -11,7 +11,7 @@ import { REGISTRY, type Entry } from "@/lib/registry";
 
 function CopyIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="9" y="9" width="12" height="12" rx="2.5" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </svg>
@@ -20,7 +20,7 @@ function CopyIcon() {
 
 function CheckIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 6L9 17l-5-5" />
     </svg>
   );
@@ -28,7 +28,7 @@ function CheckIcon() {
 
 function CodeIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
     </svg>
   );
@@ -59,11 +59,32 @@ function Card({
   const { Demo } = entry;
   const { copied, copy } = useCopy(code);
   const [variant, setVariant] = useState(entry.variants?.[0]);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [previewHeight, setPreviewHeight] = useState(272);
+
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+
+    const rememberLargestHeight = (height: number) => {
+      const heightWithPadding = Math.ceil(height) + 24;
+      setPreviewHeight((current) => Math.max(current, heightWithPadding));
+    };
+
+    rememberLargestHeight(content.getBoundingClientRect().height);
+
+    const observer = new ResizeObserver(([observed]) => {
+      if (observed) rememberLargestHeight(observed.contentRect.height);
+    });
+    observer.observe(content);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section
       id={entry.id}
-      className="group flex w-full scroll-mt-6 flex-col border-b border-dashed border-line px-7 py-8"
+      className="group flex w-full scroll-mt-8 flex-col border-b border-dashed border-line px-8 py-10"
       style={{
         animation: `fade-up 600ms cubic-bezier(0.23,1,0.32,1) ${Math.min(index, 4) * 60}ms both`,
       }}
@@ -75,8 +96,11 @@ function Card({
         <h3 className="text-[13px] font-semibold text-ink">{entry.title}</h3>
         <p className="truncate text-[12.5px] text-ink-3">{entry.caption}</p>
       </div>
-      <div className="relative flex h-72 items-center justify-center overflow-hidden rounded-window bg-canvas p-5 shadow-hairline">
-        <div className="w-full max-w-120 [&>*]:mx-auto">
+      <div
+        className="relative flex items-center justify-center overflow-hidden rounded-window bg-canvas p-3 shadow-hairline"
+        style={{ minHeight: previewHeight }}
+      >
+        <div ref={contentRef} className="w-full max-w-120 [&>*]:mx-auto">
           <Demo variant={variant} />
         </div>
         {entry.variants && (
@@ -94,7 +118,7 @@ function Card({
           </div>
         )}
         <div
-          className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 transition-opacity
+          className="absolute top-3 right-3 flex gap-1 opacity-0 transition-opacity
             duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
         >
           <button
@@ -159,7 +183,7 @@ function Overlay({
           rounded-window bg-surface shadow-overlay"
         style={{ animation: "pop-in 250ms cubic-bezier(0.23,1,0.32,1) both" }}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+        <div className="primitive-card-bar flex items-center justify-between gap-3 border-b border-line">
           <div className="min-w-0">
             <h3 className="text-[13px] font-semibold text-ink">{entry.title}</h3>
             <p className="truncate font-mono text-[11.5px] text-ink-3">
@@ -178,10 +202,10 @@ function Overlay({
             <button
               aria-label="Close"
               onClick={onClose}
-              className="flex size-7 items-center justify-center rounded-control text-ink-3
+              className="primitive-icon-button text-ink-3
                 transition-colors duration-150 hover:bg-hover hover:text-ink"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
             </button>
@@ -201,7 +225,7 @@ export function Grid({ sources }: { sources: Record<string, string> }) {
 
   return (
     <>
-      <div className="flex w-full flex-col">
+      <div className="flex w-full flex-col pt-8 pb-12 lg:pt-10 lg:pb-16">
         {REGISTRY.map((entry, i) => (
           <Card
             key={entry.id}

@@ -27,6 +27,8 @@
   --line: #ecedef;
   --line-strong: #e0e2e5;
   --field: #f2f2f3;
+  --stripe: rgba(73, 73, 73, 0.075);
+  --stripe-bg: #f5f5f5;
 
   /* accent */
   --accent: #0285ff;
@@ -48,9 +50,9 @@
     0 0 0 1px var(--line), 0 1px 2px rgba(16, 24, 40, 0.04),
     0 2px 6px rgba(16, 24, 40, 0.03);
   --shadow-raised:
-    0 0 0 1px var(--line), 0 4px 16px rgba(0, 0, 0, 0.06);
+    0 0 0 1px var(--line), 0 2px 10px rgba(0, 0, 0, 0.045);
   --shadow-overlay:
-    0 0 0 1px var(--line), 0 10px 32px rgba(0, 0, 0, 0.08);
+    0 0 0 1px var(--line), 0 8px 28px rgba(0, 0, 0, 0.065);
   --shadow-inset-field: inset 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
@@ -69,6 +71,8 @@
   --line: #2e3033;
   --line-strong: #3a3c40;
   --field: #2b2c2f;
+  --stripe: rgba(255, 255, 255, 0.055);
+  --stripe-bg: #1b1c1e;
 
   --accent: #3d9aff;
   --accent-ink: #7ec0ff;
@@ -87,9 +91,9 @@
     0 0 0 1px var(--line), 0 1px 2px rgba(0, 0, 0, 0.2),
     0 2px 6px rgba(0, 0, 0, 0.2);
   --shadow-raised:
-    0 0 0 1px var(--line), 0 4px 16px rgba(0, 0, 0, 0.3);
+    0 0 0 1px var(--line), 0 2px 10px rgba(0, 0, 0, 0.22);
   --shadow-overlay:
-    0 0 0 1px var(--line-strong), 0 10px 32px rgba(0, 0, 0, 0.45);
+    0 0 0 1px var(--line-strong), 0 8px 28px rgba(0, 0, 0, 0.34);
   --shadow-inset-field: inset 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
@@ -138,6 +142,7 @@
   /* easing — strong curves; built-ins are too weak */
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-link: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ── base ─────────────────────────────────────────────── */
@@ -149,7 +154,14 @@ html {
 }
 
 body {
-  background: var(--page);
+  background-color: var(--stripe-bg);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0,
+    transparent 7px,
+    var(--stripe) 7px,
+    var(--stripe) 8px
+  );
   color: var(--ink);
   font-feature-settings: "cv11", "ss01";
   font-size: 14px;
@@ -175,6 +187,74 @@ a {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable]:focus-visible {
+  outline: none;
+}
+
+.animated-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.animated-underline::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  content: "";
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 280ms var(--ease-link);
+}
+
+a:hover .animated-underline::after,
+a:focus-visible .animated-underline::after {
+  transform: scaleX(1);
+}
+
+.source-avatar {
+  box-shadow: 0 0 0 1px rgba(16, 24, 40, 0.1);
+}
+
+.dark .source-avatar {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* ── primitive spacing system ─────────────────────────────
+ * Shared optical offsets for small demo cards. Use these
+ * instead of hand-tuning 10/12/14px per component.
+ */
+
+.primitive-card-pad {
+  padding: 12px;
+}
+
+.primitive-card-bar {
+  padding: 10px 12px;
+}
+
+.primitive-card-footer {
+  padding: 10px 12px;
+}
+
+.primitive-table-cell {
+  padding: 10px 12px;
+}
+
+.primitive-icon-button {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
 }
 
 /* ── shared keyframes ─────────────────────────────────── */

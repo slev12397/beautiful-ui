@@ -1,68 +1,90 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * FINE-TUNE CARD — Layo-style storyboard
- * The agent adjusts design properties in an inspector panel.
- *
- *     0ms   idle panel, "Auto-tune" badge shimmers
- *   800ms   segmented layout control slides to column
- *  1600ms   radius field flashes accent, 28 → 12
- *  2400ms   opacity field flashes, 100% → 92%
- *  3200ms   Type dropdown opens
- *  4000ms   "Overlay" hovers, selects, menu closes
- *  4800ms   header settles to green "Tuned" check
- *  7400ms   reset
+ * FINE-TUNE CARD — compact interactive inspector.
+ * Number fields scrub: hover the label for an ↔ cursor and
+ * drag to adjust, use ↑/↓ (⇧ for ×10), or type directly.
  * ───────────────────────────────────────────────────────── */
 
-const STAGES = [800, 800, 800, 800, 800, 800, 2600];
-
-function useLoop(steps: number[]) {
-  const [stage, setStage] = useState(0);
-  useEffect(() => {
-    const t = setTimeout(
-      () => setStage((s) => (s + 1) % steps.length),
-      steps[stage],
-    );
-    return () => clearTimeout(t);
-  }, [stage, steps]);
-  return stage;
-}
-
-/* Layo filled field — label + value inline on a quiet gray fill */
-function Field({
+function ScrubField({
   label,
   value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  suffix = "",
   active,
 }: {
   label: string;
-  value: string;
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  suffix?: string;
   active?: boolean;
 }) {
+  const drag = useRef<{ x: number; v: number } | null>(null);
+  const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v)));
+
   return (
-    <div
-      className="flex h-6.5 flex-1 items-center gap-2 rounded-chip py-1 pr-1.5 pl-2
+    <label
+      className="flex h-6.5 min-w-0 items-center gap-1.5 rounded-chip py-1 pr-1.5 pl-1
         transition-[background-color,box-shadow] duration-200"
       style={{
         background: active ? "var(--accent-tint)" : "var(--field)",
         boxShadow: active ? "0 0 0 1px var(--accent)" : "none",
       }}
     >
-      <span className="text-[12px] text-ink-3">{label}</span>
+      {/* scrub handle */}
       <span
-        key={value}
-        className="text-[12px] text-ink tabular-nums"
-        style={{ animation: "stream-in 300ms ease-out both" }}
+        role="slider"
+        aria-label={label}
+        aria-valuenow={value}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        tabIndex={0}
+        onPointerDown={(e) => {
+          (e.target as HTMLElement).setPointerCapture(e.pointerId);
+          drag.current = { x: e.clientX, v: value };
+        }}
+        onPointerMove={(e) => {
+          if (!drag.current) return;
+          onChange(clamp(drag.current.v + ((e.clientX - drag.current.x) / 2) * step));
+        }}
+        onPointerUp={() => (drag.current = null)}
+        onKeyDown={(e) => {
+          const mult = e.shiftKey ? 10 : 1;
+          if (e.key === "ArrowUp" || e.key === "ArrowRight") {
+            e.preventDefault();
+            onChange(clamp(value + step * mult));
+          } else if (e.key === "ArrowDown" || e.key === "ArrowLeft") {
+            e.preventDefault();
+            onChange(clamp(value - step * mult));
+          }
+        }}
+        className="flex h-full shrink-0 cursor-ew-resize touch-none items-center rounded-[4px]
+          px-1 text-[12px] text-ink-3 select-none hover:text-ink-2 focus-visible:text-accent-ink
+          focus-visible:outline-none"
       >
-        {value}
+        {label}
       </span>
-    </div>
+      <input
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => {
+          const n = Number(e.target.value.replace(/[^\d-]/g, ""));
+          if (!Number.isNaN(n)) onChange(clamp(n));
+        }}
+        aria-label={`${label} value`}
+        className="min-w-0 flex-1 bg-transparent text-[12px] text-ink tabular-nums outline-none"
+      />
+      {suffix && <span className="shrink-0 text-[12px] text-ink-3">{suffix}</span>}
+    </label>
   );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[12.5px] font-medium text-ink">{children}</p>;
 }
 
 const SEGMENTS = ["row", "col", "grid"] as const;
@@ -81,19 +103,20 @@ function SegmentIcon({ kind }: { kind: string }) {
 }
 
 export default function FineTuneCard() {
-  const stage = useLoop(STAGES);
-  const seg = stage >= 1 ? 1 : 0;
-  const radiusTouched = stage === 2;
-  const opacityTouched = stage === 3;
-  const menuOpen = stage === 4 || stage === 5;
-  const optionPicked = stage === 5;
-  const done = stage >= 6;
-  const typeValue = done ? "Limited" : "Select type";
+  const [seg, setSeg] = useState(0);
+  const [width, setWidth] = useState(324);
+  const [height, setHeight] = useState(96);
+  const [radius, setRadius] = useState(28);
+  const [opacity, setOpacity] = useState(100);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [typeValue, setTypeValue] = useState("Select type");
+  const done =
+    seg !== 0 || width !== 324 || height !== 96 || radius !== 28 || opacity !== 100 || typeValue !== "Select type";
 
   return (
-    <div className="relative w-60 rounded-card bg-surface shadow-raised">
+    <div className="relative w-full max-w-60 rounded-card bg-surface shadow-raised">
       {/* header */}
-      <div className="flex items-center justify-between border-b border-line px-3 py-2.5">
+      <div className="primitive-card-bar flex items-center justify-between border-b border-line">
         <span className="text-[13px] font-medium text-ink">Flavor card</span>
         {done ? (
           <span
@@ -103,7 +126,7 @@ export default function FineTuneCard() {
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 6L9 17l-5-5" />
             </svg>
-            Tuned
+            Edited
           </span>
         ) : (
           <span className="flex items-center gap-1.5">
@@ -121,15 +144,15 @@ export default function FineTuneCard() {
                 animation: "shimmer-text 1.4s linear infinite",
               }}
             >
-              Auto-tune
+              Adjust
             </span>
           </span>
         )}
       </div>
 
       {/* layout section */}
-      <div className="flex flex-col gap-2 border-b border-line px-3 py-3">
-        <SectionLabel>Layout</SectionLabel>
+      <div className="primitive-card-pad flex flex-col gap-2 border-b border-line">
+        <p className="text-[12.5px] font-medium text-ink">Layout</p>
         {/* Layo segmented: gray track, raised white thumb */}
         <div className="relative grid grid-cols-3 rounded-control bg-field p-0.5">
           <span
@@ -143,40 +166,42 @@ export default function FineTuneCard() {
             }}
           />
           {SEGMENTS.map((s, i) => (
-            <span
+            <button
               key={s}
+              type="button"
+              aria-label={`${s} layout`}
+              aria-pressed={i === seg}
+              onClick={() => setSeg(i)}
               className={`relative z-10 flex h-6 items-center justify-center transition-colors duration-200
                 ${i === seg ? "text-accent" : "text-ink-3"}`}
             >
               <SegmentIcon kind={s} />
-            </span>
+            </button>
           ))}
         </div>
-        <div className="flex gap-2">
-          <Field label="W" value="324" />
-          <Field label="H" value="96" />
+        <div className="grid min-w-0 grid-cols-2 gap-2">
+          <ScrubField label="W" value={width} onChange={setWidth} min={40} max={999} active={width !== 324} />
+          <ScrubField label="H" value={height} onChange={setHeight} min={24} max={999} active={height !== 96} />
         </div>
-        <div className="flex gap-2">
-          <Field label="Radius" value={stage >= 2 ? "12" : "28"} active={radiusTouched} />
-          <Field label="Opacity" value={stage >= 3 ? "92%" : "100%"} active={opacityTouched} />
+        <div className="grid min-w-0 grid-cols-2 gap-2">
+          <ScrubField label="Radius" value={radius} onChange={setRadius} min={0} max={64} active={radius !== 28} />
+          <ScrubField label="Opacity" value={opacity} onChange={setOpacity} min={0} max={100} suffix="%" active={opacity !== 100} />
         </div>
       </div>
 
       {/* interaction section */}
-      <div className="flex items-center justify-between px-3 py-3">
+      <div className="primitive-card-footer flex items-center justify-between">
         <span className="text-[12px] text-ink-3">Type</span>
         <div className="relative w-30">
-          {/* Layo select — filled, inset shadow */}
-          <div
-            className="flex h-6.5 items-center justify-between rounded-chip bg-field py-1 pr-1 pl-2
-              shadow-inset-field transition-shadow duration-200"
+          <button
+            type="button"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((current) => !current)}
+            className="flex h-6.5 w-full items-center justify-between rounded-chip bg-field py-1 pr-1 pl-2
+              shadow-inset-field transition-shadow duration-200 focus-visible:outline-none"
             style={{ boxShadow: menuOpen ? "inset 0 1px 2px rgba(0,0,0,0.12), 0 0 0 1px var(--accent)" : undefined }}
           >
-            <span
-              key={typeValue}
-              className={`text-[12px] ${done ? "text-ink" : "text-ink-3"}`}
-              style={{ animation: "fade-in 200ms ease-out both" }}
-            >
+            <span className={`text-[12px] ${typeValue !== "Select type" ? "text-ink" : "text-ink-3"}`}>
               {typeValue}
             </span>
             <svg
@@ -186,9 +211,8 @@ export default function FineTuneCard() {
             >
               <path d="M6 9l6 6 6-6" />
             </svg>
-          </div>
+          </button>
 
-          {/* dropdown — drops up to stay in frame */}
           {menuOpen && (
             <div
               className="absolute right-0 bottom-8 z-10 w-30 rounded-control bg-surface p-1 shadow-raised"
@@ -198,17 +222,19 @@ export default function FineTuneCard() {
               }}
             >
               {["Seasonal", "Classic", "Limited"].map((item) => (
-                <div
+                <button
                   key={item}
-                  className="flex h-6.5 items-center rounded-[6px] px-2 text-[12.5px] text-ink
-                    transition-colors duration-150 hover:bg-field"
-                  style={{
-                    background:
-                      item === "Limited" && optionPicked ? "var(--field)" : "transparent",
+                  type="button"
+                  onClick={() => {
+                    setTypeValue(item);
+                    setMenuOpen(false);
                   }}
+                  className="flex h-6.5 w-full items-center rounded-[6px] px-2 text-left text-[12.5px] text-ink
+                    transition-colors duration-150 hover:bg-field"
+                  style={{ background: item === typeValue ? "var(--field)" : "transparent" }}
                 >
                   {item}
-                </div>
+                </button>
               ))}
             </div>
           )}

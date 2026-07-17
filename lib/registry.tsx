@@ -14,7 +14,6 @@ import DiffTable from "@/components/primitives/DiffTable";
 import FineTuneCard from "@/components/primitives/FineTuneCard";
 import FilterTable from "@/components/primitives/FilterTable";
 import SidebarNav from "@/components/primitives/SidebarNav";
-import WelcomeModal from "@/components/primitives/WelcomeModal";
 import InsightCards from "@/components/primitives/InsightCards";
 import CodeBlock from "@/components/primitives/CodeBlock";
 import ToolChips from "@/components/primitives/ToolChips";
@@ -35,7 +34,6 @@ const DEMOS: Record<string, ComponentType<{ variant?: string }>> = {
   "fine-tune-card": FineTuneCard,
   "filter-table": FilterTable,
   "sidebar-nav": SidebarNav,
-  "welcome-modal": WelcomeModal,
   "insight-cards": InsightCards,
   "code-block": CodeBlock,
   "tool-chips": ToolChips,

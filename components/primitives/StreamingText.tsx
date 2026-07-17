@@ -3,13 +3,9 @@
 import { useEffect, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * STREAMING TEXT — storyboard
- *
- *     0ms   words stream in (blur-resolve), inline source
- *           chips pop after the claims they support
- *   done    action icons + "10 sources" fade in underneath,
- *           then follow-up suggestions stagger in
- *   hold    3.4s, reset
+ * STREAMING TEXT
+ * Words resolve out of blur, inline citations appear in
+ * context, then actions and follow-up prompts become usable.
  * ───────────────────────────────────────────────────────── */
 
 const WORD_MS = 80;
@@ -32,19 +28,40 @@ const FOLLOW_UPS = [
   "Compare gelato and soft serve margins",
 ];
 
+const SOURCE_IMAGES = {
+  scoop:
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231f7a5f'/%3E%3Cpath d='M20 36c0 7 5.4 12 12 12s12-5 12-12H20Z' fill='%23fff'/%3E%3Ccircle cx='32' cy='25' r='11' fill='%23bff3dd'/%3E%3Cpath d='M24 24c4-7 13-7 17 0' fill='none' stroke='%231f7a5f' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E",
+  trends:
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%232f6fec'/%3E%3Cpath d='M15 43 27 31l8 7 14-18' fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='49' cy='20' r='5' fill='%23bfe0ff'/%3E%3C/svg%3E",
+  market:
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23e56d24'/%3E%3Cpath d='M17 45V25h8v20h-8Zm11 0V16h8v29h-8Zm11 0V30h8v15h-8Z' fill='%23fff'/%3E%3Cpath d='M16 49h32' stroke='%23ffd6b8' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E",
+};
+
+const SOURCES = [
+  { name: "Scoop Data", domain: "scoopdata.io", href: "https://scoopdata.io/", image: SOURCE_IMAGES.scoop },
+  { name: "Trends Index", domain: "trends.google.com", href: "https://trends.google.com/trends/", image: SOURCE_IMAGES.trends },
+  { name: "Market Basket", domain: "marketbasket.io", href: "https://marketbasket.io/", image: SOURCE_IMAGES.market },
+];
+
+function sourceImage(source: (typeof SOURCES)[number]) {
+  return source.image;
+}
+
 function SourceChip() {
+  const source = SOURCES[0];
   return (
-    <span
-      className="mx-1 inline-flex h-4.5 translate-y-[-1px] items-center gap-1 rounded-[5px]
-        bg-inset px-1.5 align-middle font-mono text-[10.5px] text-ink-2 shadow-hairline"
+    <a
+      href={source.href}
+      target="_blank"
+      rel="noreferrer"
+      className="ml-0 mr-1 inline-flex h-4.5 translate-y-[-1px] items-center gap-1 rounded-[5px]
+        bg-inset px-1.5 align-middle font-mono text-[10.5px] text-ink-2 shadow-hairline
+        transition-colors duration-150 hover:bg-hover hover:text-ink"
       style={{ animation: "pop-in 250ms cubic-bezier(0.23,1,0.32,1) both" }}
     >
-      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" />
-        <path d="M9 12l2 2 4-4" />
-      </svg>
-      scoopdata.io
-    </span>
+      <img src={sourceImage(source)} alt="" className="source-avatar size-3 rounded-[3px]" />
+      <span>{source.domain}</span>
+    </a>
   );
 }
 
@@ -55,10 +72,9 @@ const ACTION_ICONS: React.ReactNode[] = [
   <path key="down" d="M17 14V2M9 18.12L10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88z" />,
 ];
 
-const FAVICONS = ["bg-accent", "bg-orange", "bg-green"];
-
 export default function StreamingText() {
   const [count, setCount] = useState(0);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
   const done = count >= TOKENS.length;
 
   useEffect(() => {
@@ -101,23 +117,61 @@ export default function StreamingText() {
         {ACTION_ICONS.map((icon, i) => (
           <button
             key={i}
+            type="button"
             aria-label="Action"
             className="flex size-6 items-center justify-center rounded-[6px] text-ink-3
               transition-colors duration-100 hover:bg-hover-2 hover:text-ink-2"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               {icon}
             </svg>
           </button>
         ))}
-        <span className="ml-1.5 flex items-center gap-1.5">
+        <button
+          type="button"
+          aria-expanded={sourcesOpen}
+          onClick={() => setSourcesOpen((current) => !current)}
+          className="ml-1.5 flex items-center gap-1.5 rounded-[6px] px-1 py-0.5 text-left transition-colors duration-150 hover:bg-hover"
+        >
           <span className="flex -space-x-1">
-            {FAVICONS.map((c) => (
-              <span key={c} className={`size-3.5 rounded-full ${c} shadow-[0_0_0_1.5px_var(--canvas)]`} />
+            {SOURCES.map((source) => (
+              <img
+                key={source.domain}
+                src={sourceImage(source)}
+                alt=""
+                className="source-avatar size-3.5 rounded-full bg-surface shadow-[0_0_0_1.5px_var(--canvas)]"
+              />
             ))}
           </span>
           <span className="text-[12px] text-ink-2">10 sources</span>
-        </span>
+        </button>
+      </div>
+
+      <div
+        className="grid transition-[grid-template-rows,opacity] duration-300"
+        style={{
+          gridTemplateRows: done && sourcesOpen ? "1fr" : "0fr",
+          opacity: done && sourcesOpen ? 1 : 0,
+          transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+      >
+        <div className="overflow-hidden">
+          <div className="mt-1.5 flex flex-col rounded-control bg-inset p-1 shadow-hairline">
+            {SOURCES.map((source) => (
+              <a
+                key={source.domain}
+                href={source.href}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 rounded-[6px] px-1.5 py-1 text-[12px] text-ink-2 transition-colors duration-150 hover:bg-hover hover:text-ink"
+              >
+                <img src={sourceImage(source)} alt="" className="source-avatar size-4 rounded-[4px]" />
+                <span className="animated-underline">{source.name}</span>
+                <span className="ml-auto font-mono text-[10.5px] text-ink-3">{source.domain}</span>
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* follow-ups */}

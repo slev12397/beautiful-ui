@@ -1,16 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * SEARCH — command search with live filtering
- *
- *     0ms   default list under the input
- *   900ms   "Dra" types in — list filters live, × appears
- *  2400ms   clears, "Quantum" types — empty state
- *  5200ms   clears, resets
- * Rows hover inside 4px gutters; the input row tints on
- * hover; the × really clears in a live implementation.
+ * SEARCH — command search with live filtering.
+ * The field, clear action, and results are directly usable.
  * ───────────────────────────────────────────────────────── */
 
 const ITEMS = [
@@ -23,33 +17,8 @@ const ITEMS = [
   "Retire low sellers",
 ];
 
-const SCRIPT: { text: string; hold: number }[] = [
-  { text: "", hold: 1100 },
-  { text: "For", hold: 1500 },
-  { text: "Quantum", hold: 2200 },
-];
-
-const CHAR_MS = 90;
-
 export default function SearchList() {
-  const [phase, setPhase] = useState(0);
-  const [chars, setChars] = useState(0);
-  const target = SCRIPT[phase].text;
-
-  useEffect(() => {
-    let t: ReturnType<typeof setTimeout>;
-    if (chars < target.length) {
-      t = setTimeout(() => setChars((c) => c + 1), CHAR_MS);
-    } else {
-      t = setTimeout(() => {
-        setPhase((p) => (p + 1) % SCRIPT.length);
-        setChars(0);
-      }, SCRIPT[phase].hold);
-    }
-    return () => clearTimeout(t);
-  }, [chars, phase, target]);
-
-  const query = target.slice(0, chars);
+  const [query, setQuery] = useState("");
   const results = query
     ? ITEMS.filter((i) => i.toLowerCase().includes(query.toLowerCase()))
     : ITEMS.slice(0, 5);
@@ -64,19 +33,18 @@ export default function SearchList() {
             <circle cx="11" cy="11" r="7" />
             <path d="M21 21l-4.3-4.3" />
           </svg>
-          <span className="min-w-0 flex-1 text-[13px]">
-            {query ? (
-              <span className="text-ink">
-                {query}
-                <span className="ml-px inline-block h-3 w-0.5 translate-y-0.5 rounded-full bg-ink" />
-              </span>
-            ) : (
-              <span className="text-ink-3">Search flavors…</span>
-            )}
-          </span>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search flavors…"
+            aria-label="Search flavors"
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+          />
           {query && (
             <button
               aria-label="Clear search"
+              type="button"
+              onClick={() => setQuery("")}
               className="flex size-5.5 items-center justify-center rounded-full text-ink-3
                 transition-colors duration-100 hover:bg-line/70 hover:text-ink"
               style={{ animation: "fade-in 150ms ease-out both" }}
@@ -105,6 +73,8 @@ export default function SearchList() {
             {results.map((item) => (
               <button
                 key={item}
+                type="button"
+                onClick={() => setQuery(item)}
                 className="flex h-8 w-full items-center rounded-[6px] px-2 text-left text-[13px]
                   text-ink transition-colors duration-100 hover:bg-hover"
                 style={{ animation: "fade-in 200ms ease-out both" }}

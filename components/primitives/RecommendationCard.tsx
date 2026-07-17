@@ -1,18 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * RECOMMENDATION CARD — storyboard
- *
- * Cycles three confidence states every 3s with a blurred
- * crossfade: High confidence → Needs review → No signal
+ * RECOMMENDATION CARD
+ * The card holds its shape. Pressing "Alternatives" opens a
+ * new drawer listing the other options; picking one promotes
+ * it to the recommendation. The primary action confirms.
  * ───────────────────────────────────────────────────────── */
 
-const STATE_MS = 3000;
-const SWAP_MS = 250;
+type Option = {
+  key: string;
+  body: React.ReactNode;
+  short: string;
+  signal: number;
+  tone: string;
+  label: string;
+  cta: string;
+  ctaStyle: string;
+};
 
-const STATES = [
+const OPTIONS: Option[] = [
   {
     key: "high",
     body: (
@@ -23,6 +31,7 @@ const STATES = [
         <code className="rounded-md bg-accent-tint px-1.5 py-0.5 font-mono text-[12px] text-accent-ink">7_days</code>.
       </>
     ),
+    short: "Reorder from cone_king · 7-day lead",
     signal: 3,
     tone: "var(--green)",
     label: "High confidence",
@@ -38,6 +47,7 @@ const STATES = [
         for peak season.
       </>
     ),
+    short: "Switch to vanilla_madagascar",
     signal: 2,
     tone: "var(--orange)",
     label: "Needs review",
@@ -48,10 +58,10 @@ const STATES = [
     key: "none",
     body: (
       <>
-        No supplier signal detected. Falling back to{" "}
-        <span className="font-medium text-ink">full restock</span>.
+        Fall back to a <span className="font-medium text-ink">full restock</span> across every SKU.
       </>
     ),
+    short: "Full restock across every SKU",
     signal: 0,
     tone: "var(--ink-3)",
     label: "No signal",
@@ -60,77 +70,104 @@ const STATES = [
   },
 ];
 
+function Meter({ signal, tone }: { signal: number; tone: string }) {
+  return (
+    <span className="flex items-end gap-0.5">
+      {[0, 1, 2].map((bar) => (
+        <span
+          key={bar}
+          className="w-1 rounded-full transition-colors duration-300"
+          style={{ height: 10, background: bar < signal ? tone : "var(--line-strong)" }}
+        />
+      ))}
+    </span>
+  );
+}
+
 export default function RecommendationCard() {
-  const [index, setIndex] = useState(0);
-  const [swapping, setSwapping] = useState(false);
+  const [selected, setSelected] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [accepted, setAccepted] = useState(false);
 
-  useEffect(() => {
-    const advance = setTimeout(() => setSwapping(true), STATE_MS - SWAP_MS);
-    const swap = setTimeout(() => {
-      setIndex((i) => (i + 1) % STATES.length);
-      setSwapping(false);
-    }, STATE_MS);
-    return () => {
-      clearTimeout(advance);
-      clearTimeout(swap);
-    };
-  }, [index]);
-
-  const state = STATES[index];
+  const active = OPTIONS[selected];
+  const others = OPTIONS.map((o, i) => ({ o, i })).filter(({ i }) => i !== selected);
 
   return (
     <div className="w-full max-w-95 overflow-hidden rounded-card bg-surface shadow-card">
-      <div className="p-3.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[13px] font-semibold text-ink">
-            Smart restock recommendation
-          </span>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </div>
+      <div className="primitive-card-pad">
+        <span className="text-[13px] font-semibold text-ink">
+          Smart restock recommendation
+        </span>
         <p
-          className="mt-1.5 min-h-9 text-[13px] leading-relaxed text-ink-2 transition-[opacity,filter] duration-250"
-          style={{
-            opacity: swapping ? 0 : 1,
-            filter: swapping ? "blur(3px)" : "blur(0)",
-          }}
+          key={active.key}
+          className="mt-1.5 min-h-12 text-[13px] leading-relaxed text-ink-2"
+          style={{ animation: "fade-in 180ms ease-out both" }}
         >
-          {state.body}
+          {active.body}
         </p>
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-line bg-inset px-3.5 py-2">
-        {/* confidence meter */}
-        <span
-          className="flex items-center gap-2 transition-[opacity,filter] duration-250"
-          style={{ opacity: swapping ? 0 : 1, filter: swapping ? "blur(2px)" : "blur(0)" }}
-        >
-          <span className="flex items-end gap-0.5">
-            {[0, 1, 2].map((bar) => (
-              <span
-                key={bar}
-                className="w-1 rounded-full transition-colors duration-300"
-                style={{
-                  height: 10,
-                  background: bar < state.signal ? state.tone : "var(--line-strong)",
+      {/* alternatives drawer — a distinctly new section of the card */}
+      <div
+        className="grid transition-[grid-template-rows,opacity] duration-300"
+        style={{
+          gridTemplateRows: open ? "1fr" : "0fr",
+          opacity: open ? 1 : 0,
+          transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-line bg-inset px-2 py-2">
+            <p className="px-1.5 pb-1 text-[11px] font-medium text-ink-3">
+              Other options
+            </p>
+            {others.map(({ o, i }) => (
+              <button
+                key={o.key}
+                type="button"
+                onClick={() => {
+                  setSelected(i);
+                  setAccepted(false);
+                  setOpen(false);
                 }}
-              />
+                className="flex w-full items-center gap-2.5 rounded-control px-1.5 py-1.5
+                  text-left transition-colors duration-100 hover:bg-hover"
+              >
+                <Meter signal={o.signal} tone={o.tone} />
+                <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink">{o.short}</span>
+                <span className="shrink-0 text-[11px] text-ink-3">{o.label}</span>
+              </button>
             ))}
-          </span>
-          <span className="text-[12.5px] font-medium text-ink-2">{state.label}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="primitive-card-footer flex items-center justify-between gap-3 border-t border-line bg-inset">
+        <span className="flex items-center gap-2">
+          <Meter signal={active.signal} tone={active.tone} />
+          <span className="text-[12.5px] font-medium text-ink-2">{active.label}</span>
         </span>
 
         <span className="flex items-center gap-2">
-          <button className="h-7 rounded-control bg-surface px-2.5 text-[12.5px] font-medium text-ink shadow-btn transition-colors duration-100 hover:bg-hover">
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={() => setOpen((current) => !current)}
+            className={`h-7 rounded-control px-2.5 text-[12.5px] font-medium shadow-btn
+              transition-[background-color,transform] duration-100 active:scale-[0.96]
+              ${open ? "bg-hover text-ink" : "bg-surface text-ink hover:bg-hover"}`}
+          >
             Alternatives
           </button>
           <button
-            className={`h-7 rounded-control px-3 text-[12.5px] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_0_0_1px_rgba(16,24,40,0.12),0_1px_2px_rgba(16,24,40,0.1)]
-              transition-[opacity,filter] duration-250 ${state.ctaStyle}`}
-            style={{ opacity: swapping ? 0.5 : 1, filter: swapping ? "blur(1px)" : "blur(0)" }}
+            type="button"
+            onClick={() => setAccepted(true)}
+            className={`h-7 rounded-control px-3 text-[12.5px] font-medium
+              shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_0_0_1px_rgba(16,24,40,0.12),0_1px_2px_rgba(16,24,40,0.1)]
+              transition-[background-color,transform] duration-150 active:scale-[0.96]
+              ${accepted ? "bg-green text-white" : active.ctaStyle}`}
           >
-            {state.cta}
+            {accepted ? "Accepted" : active.cta}
           </button>
         </span>
       </div>

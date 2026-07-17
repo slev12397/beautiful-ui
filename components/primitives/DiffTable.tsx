@@ -3,22 +3,15 @@
 import { useEffect, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * DIFF TABLE — storyboard
- *
- *     0ms   plain table
- *   800ms   AI SUGGESTION badge + outline on pending row
- *  1800ms   two rows tint red (to deactivate)
- *  2800ms   new row slides in green (to add)
- *  5600ms   settle back to plain, reset
+ * DIFF TABLE
+ * The proposed edit plays once and rests on the completed diff.
  * ───────────────────────────────────────────────────────── */
 
 function useStage(steps: number[]) {
   const [stage, setStage] = useState(0);
   useEffect(() => {
-    const t = setTimeout(
-      () => setStage((s) => (s + 1) % steps.length),
-      steps[stage],
-    );
+    if (stage >= steps.length) return;
+    const t = setTimeout(() => setStage((s) => s + 1), steps[stage]);
     return () => clearTimeout(t);
   }, [stage, steps]);
   return stage;
@@ -37,34 +30,40 @@ const DOT: Record<string, string> = {
 };
 
 export default function DiffTable() {
-  const stage = useStage([800, 1000, 1000, 2800, 600]);
-  // 0 plain · 1 badge · 2 red tint · 3 green row in · 4 settle
-  const badge = stage >= 1 && stage < 4;
-  const tinted = stage >= 2 && stage < 4;
-  const added = stage >= 3 && stage < 4;
+  const stage = useStage([800, 1000, 1000]);
+  // 0 plain · 1 badge · 2 red tint · 3 completed diff
+  const badge = stage >= 1;
+  const tinted = stage >= 2;
+  const added = stage >= 3;
 
   return (
     <div className="w-full max-w-95">
       <div className="relative overflow-hidden rounded-card bg-surface shadow-card">
-        {/* AI suggestion badge */}
-        <span
-          className="absolute top-1.5 right-3 z-10 inline-flex h-5 items-center rounded-md
-            bg-accent px-1.5 text-[10px] font-semibold tracking-wide text-white
-            transition-[opacity,transform] duration-300"
-          style={{
-            opacity: badge ? 1 : 0,
-            transform: badge ? "translateY(0)" : "translateY(-4px)",
-            transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
-          }}
-        >
-          AI SUGGESTION
-        </span>
+        <div className="primitive-card-bar flex items-center justify-between border-b border-line">
+          <span className="text-[12.5px] font-medium text-ink">Proposed menu cleanup</span>
+          <span
+            className="inline-flex h-5 items-center rounded-md bg-accent px-1.5 text-[10px] font-semibold tracking-wide text-white
+              transition-[opacity,transform] duration-300"
+            style={{
+              opacity: badge ? 1 : 0,
+              transform: badge ? "translateY(0)" : "translateY(-4px)",
+              transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
+            }}
+          >
+            AI SUGGESTION
+          </span>
+        </div>
 
-        <table className="w-full border-collapse text-left">
+        <table className="w-full table-fixed border-collapse text-left">
+          <colgroup>
+            <col className="w-[34%]" />
+            <col className="w-[30%]" />
+            <col className="w-[36%]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-line">
               {["Flavor", "Category", "Supplier"].map((h) => (
-                <th key={h} className="px-3 py-2.5 text-[12px] font-medium text-ink-3">
+                <th key={h} className="primitive-table-cell text-[12px] font-medium text-ink-3">
                   {h}
                 </th>
               ))}
@@ -80,12 +79,12 @@ export default function DiffTable() {
                   style={{ background: out ? "var(--red-tint)" : undefined }}
                 >
                   <td
-                    className="px-3 py-2.5 text-[13px] font-medium tabular-nums transition-colors duration-400"
+                    className="primitive-table-cell text-[13px] font-medium tabular-nums transition-colors duration-400"
                     style={{ color: out ? "var(--red)" : "var(--ink)" }}
                   >
                     {row.id}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className="primitive-table-cell">
                     <span
                       className="inline-flex h-5.5 items-center gap-1.5 rounded-full bg-inset px-2 text-[11.5px] font-medium shadow-hairline transition-opacity duration-400"
                       style={{ opacity: out ? 0.55 : 1 }}
@@ -95,7 +94,7 @@ export default function DiffTable() {
                     </span>
                   </td>
                   <td
-                    className="px-3 py-2.5 text-[12.5px] whitespace-nowrap transition-colors duration-400"
+                    className="primitive-table-cell text-[12.5px] whitespace-nowrap transition-colors duration-400"
                     style={{
                       color: out ? "var(--red)" : "var(--ink-2)",
                       textDecorationLine: out ? "line-through" : "none",
@@ -119,17 +118,17 @@ export default function DiffTable() {
                   }}
                 >
                   <div className="overflow-hidden" style={{ background: "var(--green-tint)" }}>
-                    <div className="flex items-center border-t border-line">
-                      <span className="px-3 py-2.5 text-[13px] font-medium text-green tabular-nums">
+                    <div className="grid grid-cols-[34%_30%_36%] items-center border-t border-line">
+                      <span className="primitive-table-cell text-[13px] font-medium text-green tabular-nums">
                         Pistachio
                       </span>
-                      <span className="px-3 py-2.5">
+                      <span className="primitive-table-cell">
                         <span className="inline-flex h-5.5 items-center gap-1.5 rounded-full bg-surface px-2 text-[11.5px] font-medium shadow-hairline">
                           <span className="size-1.5 rounded-full bg-green" />
                           <span className="text-ink-2">Seasonal</span>
                         </span>
                       </span>
-                      <span className="px-3 py-2.5 text-[13px] text-green">
+                      <span className="primitive-table-cell text-[13px] text-green">
                         verde-farms
                       </span>
                     </div>

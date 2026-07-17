@@ -1,18 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Liveline, type HoverPoint, type LivelinePoint, type LivelineSeries } from "liveline";
+import { useEffect, useMemo, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * INSIGHT CARDS — storyboard
- * Agent answers with embedded mini-visualizations, paged
- * through an "Insights N ‹ ›" carousel.
- *
- * Auto-advances comparison → anomaly → allocation every
- * 3.4s with a blurred crossfade; arrows show hover states.
+ * INSIGHT CARDS
+ * Embedded mini-visualizations in an "Insights N ‹ ›"
+ * carousel. Autoplay yields as soon as a person uses it.
  * ───────────────────────────────────────────────────────── */
 
 const PAGE_MS = 3400;
 const SWAP_MS = 250;
+const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
+const WINDOWS = [
+  { label: "15s", secs: 15 },
+  { label: "30s", secs: 30 },
+  { label: "1m", secs: 60 },
+];
+
+const formatPercent = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
+const formatMoney = (v: number) => `$${Math.round(v).toLocaleString("en-US")}`;
+const nowSeconds = () => Math.floor(Date.now() / 1000);
+
+function makePoints(values: number[], gap = 2): LivelinePoint[] {
+  const now = nowSeconds();
+  return values.map((value, index) => ({
+    time: now - (values.length - 1 - index) * gap,
+    value,
+  }));
+}
+
+function nextPoint(points: LivelinePoint[], value: number) {
+  const last = points.at(-1);
+  return {
+    time: Math.max(nowSeconds(), (last?.time ?? nowSeconds()) + 1),
+    value: Math.round(value * 100) / 100,
+  };
+}
 
 /* inline @entity mention */
 function Entity({ name, tone }: { name: string; tone: string }) {
@@ -34,14 +58,81 @@ function Mono({ children, tone }: { children: React.ReactNode; tone: "red" | "gr
 
 /* 1 — return comparison: 2 series, legend + big deltas + line chart */
 function CompareCard() {
-  const a = "12,20 32,28 52,22 72,34 92,30 112,40 132,36 152,30 172,33 192,26 212,28 232,18";
-  const b = "12,34 32,40 52,46 72,38 92,44 112,48 132,42 152,44 172,36 192,30 212,22 232,12";
+  const [paused, setPaused] = useState(false);
+  const [windowSecs, setWindowSecs] = useState(30);
+  const [hover, setHover] = useState<HoverPoint | null>(null);
+  const [data, setData] = useState(() => ({
+    mint: makePoints([-2.9, -3.4, -3.05, -3.86, -3.52, -4.1, -3.82, -4.41]),
+    pistachio: makePoints([0.22, 0.58, 0.42, 0.91, 0.76, 1.08, 0.96, 1.15]),
+  }));
+
+  useEffect(() => {
+    if (paused) return;
+    const timer = setInterval(() => {
+      setData((current) => {
+        const index = current.mint.length;
+        const mintLast = current.mint.at(-1)?.value ?? -4.41;
+        const pistachioLast = current.pistachio.at(-1)?.value ?? 1.15;
+        return {
+          mint: [
+            ...current.mint.slice(-52),
+            nextPoint(current.mint, mintLast + Math.sin(index * 0.74) * 0.18 - 0.03),
+          ],
+          pistachio: [
+            ...current.pistachio.slice(-52),
+            nextPoint(current.pistachio, pistachioLast + Math.cos(index * 0.62) * 0.08 + 0.02),
+          ],
+        };
+      });
+    }, 950);
+    return () => clearInterval(timer);
+  }, [paused]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPaused(true), 1600);
+    return () => clearTimeout(t);
+  }, []);
+
+  const latestMint = data.mint.at(-1)?.value ?? -4.41;
+  const latestPistachio = data.pistachio.at(-1)?.value ?? 1.15;
+  const series: LivelineSeries[] = useMemo(
+    () => [
+      {
+        id: "mint",
+        label: "Mint Chip",
+        data: data.mint,
+        value: latestMint,
+        color: "#f68f3c",
+      },
+      {
+        id: "pistachio",
+        label: "Pistachio",
+        data: data.pistachio,
+        value: latestPistachio,
+        color: "#3d9aff",
+      },
+    ],
+    [data.mint, data.pistachio, latestMint, latestPistachio],
+  );
+
   return (
     <div className="rounded-card bg-surface p-3 shadow-hairline">
       <div className="flex items-center gap-4">
         {[
-          { name: "Mint Chip", delta: "-4.41%", sub: "-$2,377.66", tone: "red", dot: "bg-orange" },
-          { name: "Pistachio", delta: "+1.15%", sub: "+$617.22", tone: "green", dot: "bg-accent" },
+          {
+            name: "Mint Chip",
+            delta: formatPercent(latestMint),
+            sub: "-$2,377.66",
+            tone: "red",
+            dot: "bg-orange",
+          },
+          {
+            name: "Pistachio",
+            delta: formatPercent(latestPistachio),
+            sub: "+$617.22",
+            tone: "green",
+            dot: "bg-accent",
+          },
         ].map((s) => (
           <div key={s.name} className="flex-1">
             <span className="flex items-center gap-1.5 text-[11.5px] text-ink-2">
@@ -55,54 +146,169 @@ function CompareCard() {
           </div>
         ))}
       </div>
-      <svg viewBox="0 0 244 56" className="mt-2 h-14 w-full">
-        <line x1="192" y1="4" x2="192" y2="52" stroke="var(--line-strong)" strokeWidth="1" strokeDasharray="2 3" />
-        <polyline points={a} fill="none" stroke="var(--orange)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <polyline points={b} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="192" cy="26" r="3.5" fill="var(--orange)" stroke="var(--surface)" strokeWidth="2" />
-        <circle cx="192" cy="30" r="3.5" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" />
-      </svg>
+      <div className="mt-2 overflow-hidden rounded-control bg-inset shadow-hairline">
+        <div className="flex items-center justify-between border-b border-line px-2.5 py-1.5">
+          <span className="text-[11px] text-ink-3 tabular-nums">
+            {hover ? formatPercent(hover.value) : "Scrub chart"}
+          </span>
+          <button
+            type="button"
+            aria-pressed={paused}
+            onClick={() => setPaused((value) => !value)}
+            className="rounded-full px-2 py-0.5 text-[10.5px] font-medium text-ink-2
+              transition-[background-color,color,transform] duration-150 hover:bg-hover hover:text-ink active:scale-[0.96]"
+          >
+            {paused ? "Resume" : "Pause"}
+          </button>
+        </div>
+        <div className="h-[104px]">
+          <Liveline
+            data={[]}
+            value={0}
+            series={series}
+            theme="dark"
+            grid
+            scrub
+            pulse
+            exaggerate
+            window={windowSecs}
+            windows={WINDOWS}
+            onWindowChange={setWindowSecs}
+            windowStyle="rounded"
+            seriesToggleCompact
+            paused={paused}
+            cursor="crosshair"
+            lineWidth={2.25}
+            padding={{ top: 12, right: 12, bottom: 24, left: 10 }}
+            formatValue={formatPercent}
+            formatTime={(time) => new Date(time * 1000).toLocaleTimeString([], { minute: "2-digit", second: "2-digit" })}
+            onHover={setHover}
+          />
+        </div>
+      </div>
     </div>
   );
 }
 
 /* 2 — anomaly: bars with threshold + big spent value */
 function AnomalyCard() {
+  const [paused, setPaused] = useState(false);
+  const [windowSecs, setWindowSecs] = useState(30);
+  const [metric, setMetric] = useState<"spend" | "usage">("spend");
+  const [hover, setHover] = useState<HoverPoint | null>(null);
+  const [spend, setSpend] = useState(() =>
+    makePoints([274, 289, 264, 307, 331, 1210, 1718, 2112], 3),
+  );
+  const [usage, setUsage] = useState(() =>
+    makePoints([18, 19, 17, 21, 22, 58, 81, 96], 3),
+  );
+
+  useEffect(() => {
+    if (paused) return;
+    const timer = setInterval(() => {
+      setSpend((current) => {
+        const index = current.length;
+        const last = current.at(-1)?.value ?? 2112;
+        const next = Math.max(240, last + Math.sin(index * 0.66) * 78 - 12);
+        return [...current.slice(-46), nextPoint(current, next)];
+      });
+      setUsage((current) => {
+        const index = current.length;
+        const last = current.at(-1)?.value ?? 96;
+        const next = Math.max(14, last + Math.cos(index * 0.7) * 4.5 - 0.5);
+        return [...current.slice(-46), nextPoint(current, next)];
+      });
+    }, 1050);
+    return () => clearInterval(timer);
+  }, [paused]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPaused(true), 1600);
+    return () => clearTimeout(t);
+  }, []);
+
+  const data = metric === "spend" ? spend : usage;
+  const value = data.at(-1)?.value ?? (metric === "spend" ? 2112 : 96);
+  const threshold = metric === "spend" ? 2112 : 82;
+  const moneyLabel = formatMoney(spend.at(-1)?.value ?? 2112);
+
   return (
     <div className="rounded-card bg-surface p-3 shadow-hairline">
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
           High freezer spend
         </span>
-        <span className="flex items-center gap-1 text-[11.5px] text-ink-2">
-          View
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M7 7h10v10" /></svg>
-        </span>
+        <button
+          type="button"
+          aria-pressed={paused}
+          onClick={() => setPaused((value) => !value)}
+          className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11.5px] text-ink-2
+            transition-[background-color,color,transform] duration-150 hover:bg-hover hover:text-ink active:scale-[0.96]"
+        >
+          {paused ? "Resume" : "Pause"}
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M7 7h10v10" /></svg>
+        </button>
       </div>
-      <svg viewBox="0 0 244 62" className="mt-2 h-15 w-full">
-        <defs>
-          <linearGradient id="anomaly" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--red)" />
-            <stop offset="70%" stopColor="var(--accent)" />
-          </linearGradient>
-        </defs>
-        {/* threshold + avg */}
-        <line x1="0" y1="8" x2="196" y2="8" stroke="var(--red)" strokeWidth="1" strokeDasharray="3 3" />
-        <text x="244" y="11" textAnchor="end" fontSize="8.5" fill="var(--red)" fontFamily="var(--font-mono-face)">$2,112.00</text>
-        <line x1="0" y1="38" x2="196" y2="38" stroke="var(--line-strong)" strokeWidth="1" strokeDasharray="2 3" />
-        <text x="244" y="41" textAnchor="end" fontSize="8.5" fill="var(--ink-3)">$277 avg</text>
-        {/* bars — anomaly carries status color */}
-        <rect x="16" y="34" width="34" height="20" rx="4" fill="var(--accent-tint)" />
-        <rect x="70" y="40" width="34" height="14" rx="4" fill="var(--accent-tint)" />
-        <rect x="124" y="8" width="34" height="46" rx="4" fill="url(#anomaly)" />
-        {["Oct", "Nov", "Dec"].map((m, i) => (
-          <text key={m} x={33 + i * 54} y="61" textAnchor="middle" fontSize="8.5" fill="var(--ink-3)">{m}</text>
-        ))}
-      </svg>
+      <div className="mt-2 overflow-hidden rounded-control bg-inset shadow-hairline">
+        <div className="flex items-center justify-between border-b border-line px-2.5 py-1.5">
+          <span className="text-[11px] text-ink-3 tabular-nums">
+            {hover
+              ? metric === "spend"
+                ? formatMoney(hover.value)
+                : `${Math.round(hover.value)} kWh`
+              : `${metric === "spend" ? "$2,112" : "82 kWh"} threshold`}
+          </span>
+          <span className="flex rounded-full bg-field p-0.5">
+            {(["spend", "usage"] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                aria-pressed={metric === item}
+                onClick={() => setMetric(item)}
+                className={`rounded-full px-2 py-0.5 text-[10.5px] font-medium transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.96] ${
+                  metric === item ? "bg-surface text-ink shadow-btn" : "text-ink-3 hover:text-ink-2"
+                }`}
+              >
+                {item === "spend" ? "Spend" : "Usage"}
+              </button>
+            ))}
+          </span>
+        </div>
+        <div className="h-[104px]">
+          <Liveline
+            data={data}
+            value={value}
+            theme="dark"
+            color="#ee5c61"
+            grid
+            scrub
+            badge
+            badgeVariant="minimal"
+            fill
+            pulse
+            momentum
+            exaggerate
+            showValue
+            valueMomentumColor
+            paused={paused}
+            window={windowSecs}
+            windows={WINDOWS}
+            onWindowChange={setWindowSecs}
+            windowStyle="rounded"
+            referenceLine={{ value: threshold, label: metric === "spend" ? "threshold" : "peak limit" }}
+            lineWidth={2.25}
+            cursor="crosshair"
+            padding={{ top: 12, right: 58, bottom: 24, left: 10 }}
+            formatValue={(v) => (metric === "spend" ? formatMoney(v) : `${Math.round(v)} kWh`)}
+            formatTime={(time) => new Date(time * 1000).toLocaleTimeString([], { minute: "2-digit", second: "2-digit" })}
+            onHover={setHover}
+          />
+        </div>
+      </div>
       <div className="mt-1.5 flex items-baseline gap-2">
         <span className="text-[17px] font-semibold tracking-[-0.01em] text-ink tabular-nums">
-          $2,112.00 spent
+          {moneyLabel} spent
         </span>
         <Mono tone="red">+$1,834.66</Mono>
         <span className="text-[11px] text-ink-3">vs 3 months</span>
@@ -114,10 +320,13 @@ function AnomalyCard() {
 /* 3 — allocation: hero number + segmented bar + legend */
 function AllocationCard() {
   const segments = [
-    { name: "VAN", pct: 72.5, cls: "bg-orange" },
-    { name: "CHOC", pct: 22.8, cls: "bg-line-strong" },
-    { name: "MINT", pct: 4.7, cls: "bg-line" },
+    { name: "VAN", label: "Vanilla", pct: 72.5, amount: "$51,785", cls: "bg-orange", tone: "text-orange" },
+    { name: "CHOC", label: "Chocolate", pct: 22.8, amount: "$16,278", cls: "bg-line-strong", tone: "text-ink-2" },
+    { name: "MINT", label: "Mint", pct: 4.7, amount: "$3,357", cls: "bg-line", tone: "text-ink-3" },
   ];
+  const [selected, setSelected] = useState(segments[0].name);
+  const active = segments.find((segment) => segment.name === selected) ?? segments[0];
+
   return (
     <div className="rounded-card bg-surface p-3 shadow-hairline">
       <span className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
@@ -127,20 +336,60 @@ function AllocationCard() {
         Vanilla allocation
       </span>
       <span className="mt-1 block text-[20px] font-semibold tracking-[-0.01em] text-ink tabular-nums">
-        $51,785
+        {active.amount}
       </span>
-      <div className="mt-2 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
+      <div
+        className="mt-2 flex h-7 gap-0.5 overflow-hidden rounded-full bg-field p-0.5"
+        role="group"
+        aria-label="Allocation segments"
+      >
         {segments.map((s) => (
-          <span key={s.name} className={`h-full rounded-full ${s.cls}`} style={{ width: `${s.pct}%` }} />
+          <button
+            key={s.name}
+            type="button"
+            aria-pressed={selected === s.name}
+            aria-label={`${s.label}: ${s.pct}%`}
+            onClick={() => setSelected(s.name)}
+            className={`relative h-full overflow-hidden rounded-full ${s.cls} transition-[opacity,transform,box-shadow] duration-300 active:scale-[0.98]`}
+            style={{
+              width: `${s.pct}%`,
+              opacity: selected === s.name ? 1 : 0.58,
+              boxShadow: selected === s.name ? "inset 0 0 0 1px rgba(255,255,255,0.22)" : undefined,
+              transitionTimingFunction: EASE,
+            }}
+          >
+            <span
+              className="absolute inset-y-1 left-1 rounded-full bg-white/20 transition-[width,opacity] duration-500"
+              style={{
+                width: selected === s.name ? "calc(100% - 8px)" : "0%",
+                opacity: selected === s.name ? 1 : 0,
+                transitionTimingFunction: EASE,
+              }}
+            />
+          </button>
         ))}
       </div>
-      <div className="mt-2 flex items-center gap-3">
+      <div className="mt-2 flex items-center gap-1.5">
         {segments.map((s) => (
-          <span key={s.name} className="flex items-center gap-1 text-[11px] text-ink-2">
+          <button
+            key={s.name}
+            type="button"
+            aria-pressed={selected === s.name}
+            onClick={() => setSelected(s.name)}
+            className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${
+              selected === s.name ? "bg-field text-ink" : "text-ink-2 hover:bg-hover hover:text-ink"
+            }`}
+          >
             <span className={`size-1.5 rounded-full ${s.cls}`} />
             {s.name} <span className="tabular-nums">{s.pct}%</span>
-          </span>
+          </button>
         ))}
+      </div>
+      <div className="mt-2 min-h-8 rounded-control bg-inset px-2.5 py-1.5 shadow-hairline">
+        <span className={`block text-[11.5px] font-medium ${active.tone}`}>{active.label}</span>
+        <span className="block text-[11px] text-ink-3">
+          Click segments to inspect contribution without changing the card height.
+        </span>
       </div>
     </div>
   );
@@ -185,8 +434,10 @@ const PAGES = [
 export default function InsightCards() {
   const [page, setPage] = useState(0);
   const [swapping, setSwapping] = useState(false);
+  const [manual, setManual] = useState(false);
 
   useEffect(() => {
+    if (manual) return;
     const fade = setTimeout(() => setSwapping(true), PAGE_MS - SWAP_MS);
     const next = setTimeout(() => {
       setPage((p) => (p + 1) % PAGES.length);
@@ -196,12 +447,18 @@ export default function InsightCards() {
       clearTimeout(fade);
       clearTimeout(next);
     };
-  }, [page]);
+  }, [manual, page]);
+
+  const move = (direction: -1 | 1) => {
+    setManual(true);
+    setSwapping(false);
+    setPage((current) => (current + direction + PAGES.length) % PAGES.length);
+  };
 
   const { prose, Card, pill } = PAGES[page];
 
   return (
-    <div className="min-h-[218px] w-full max-w-80">
+    <div className="min-h-[320px] w-full max-w-80">
       {/* pager header */}
       <div className="flex items-center justify-between">
         <span className="flex items-baseline gap-1.5">
@@ -213,9 +470,7 @@ export default function InsightCards() {
             <button
               key={i}
               aria-label={i === 0 ? "Previous insight" : "Next insight"}
-              onClick={() =>
-                setPage((p) => (p + (i === 0 ? PAGES.length - 1 : 1)) % PAGES.length)
-              }
+              onClick={() => move(i === 0 ? -1 : 1)}
               className="flex size-6 items-center justify-center rounded-[6px] text-ink-3
                 transition-[background-color,color,transform] duration-100 hover:bg-hover
                 hover:text-ink active:scale-[0.96]"

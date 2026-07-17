@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * TASK ROWS — storyboard
+ * TASK ROWS
  *
  *     0ms   rows enter staggered (80ms apart)
  *   600ms   row 1 ring sweeps 0 → 66%
  *  1500ms   row 1 expands — detail steps drop down
  *  3900ms   row 1 collapses; row 2 flips to Failed + retry
  *  5300ms   row 2 resolves to Completed
- *  7700ms   reset
+ * The status run completes once; task details stay clickable.
  * ───────────────────────────────────────────────────────── */
 
 const TICKS = [600, 900, 2400, 1400, 2400, 600];
@@ -18,17 +18,15 @@ const TICKS = [600, 900, 2400, 1400, 2400, 600];
 function useTick(intervals: number[]) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    const t = setTimeout(
-      () => setTick((x) => (x + 1) % intervals.length),
-      intervals[tick],
-    );
+    if (tick >= intervals.length - 1) return;
+    const t = setTimeout(() => setTick((x) => x + 1), intervals[tick]);
     return () => clearTimeout(t);
   }, [tick, intervals]);
   return tick;
 }
 
 function SpinnerRing({ active, children }: { active?: boolean; children?: React.ReactNode }) {
-  const size = 22, stroke = 2;
+  const size = 24, stroke = 2;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   return (
@@ -64,31 +62,33 @@ function Badge({ tone, children }: { tone: "red" | "green"; children: React.Reac
 }
 
 const XIcon = (
-  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
 );
 const CheckIcon = (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
 );
 const RetryIcon = (
-  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" /></svg>
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" /></svg>
 );
 
 const DETAILS = [
-  { label: "Pasteurizing base", meta: "96 / 128" },
-  { label: "Chilling to 4°C", meta: "41%" },
+  { label: "Reading POS export", meta: "3 files" },
+  { label: "Scoring stockout risk", meta: "68%" },
 ];
 
 export default function TaskRows({ variant = "Capsules" }: { variant?: string }) {
   const tick = useTick(TICKS);
-  const expanded = tick === 2;
+  const [manualExpanded, setManualExpanded] = useState<boolean | null>(null);
+  const [selectedRow, setSelectedRow] = useState<string | null>(null);
+  const expanded = manualExpanded ?? tick === 2;
   const row2: "pending" | "failed" | "done" = tick < 3 ? "pending" : tick === 3 ? "failed" : "done";
 
   const rows = [
     {
       key: "verify",
       badge: <Badge tone="green">{CheckIcon}</Badge>,
-      label: "Suppliers verified",
-      amount: "12 dairies",
+      label: "Verified vendor records",
+      amount: "12 suppliers",
       pill: (
         <span className="inline-flex h-5.5 items-center rounded-full bg-green-tint px-2 text-[11.5px] font-medium text-green">
           Completed
@@ -99,8 +99,8 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
     {
       key: "index",
       badge: <SpinnerRing active>2</SpinnerRing>,
-      label: "Churning batch #42",
-      amount: "128 gal",
+      label: "Build reorder task list",
+      amount: "7 SKUs",
       pill: null,
       expandable: true,
     },
@@ -114,8 +114,8 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
         ) : (
           <Badge tone="green">{CheckIcon}</Badge>
         ),
-      label: "Freezing gelato base",
-      amount: "2.1k units",
+      label: "Draft supplier emails",
+      amount: "2 messages",
       pill:
         row2 === "failed" ? (
           <span className="inline-flex h-5.5 items-center gap-1.5 rounded-full bg-red-tint px-2 text-[11.5px] font-medium text-red" style={{ animation: "fade-in 200ms ease-out both" }}>
@@ -139,6 +139,7 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
     >
       {rows.map((row, i) => {
         const open = row.expandable && expanded;
+        const selected = selectedRow === row.key;
         return (
           <div
             key={row.key}
@@ -150,28 +151,42 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
               animation: `fade-up 450ms cubic-bezier(0.23,1,0.32,1) ${i * 80}ms both`,
             }}
           >
-            <div className="flex h-11 items-center gap-2.5 pr-1.5 pl-2.5 transition-colors duration-100 hover:bg-hover">
+            <button
+              type="button"
+              aria-pressed={row.expandable ? undefined : selected}
+              aria-expanded={row.expandable ? open : undefined}
+              onClick={() => {
+                if (row.expandable) {
+                  setManualExpanded((current) => !(current ?? expanded));
+                  return;
+                }
+                setSelectedRow((current) => (current === row.key ? null : row.key));
+              }}
+              className={`flex h-11 w-full items-center gap-2.5 px-2.5 text-left transition-colors duration-100 hover:bg-inset ${
+                selected ? "bg-inset" : ""
+              }`}
+            >
               {row.badge}
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">
                 {row.label}
               </span>
               <span className="text-[12.5px] text-ink-2 tabular-nums">{row.amount}</span>
               {row.pill}
-              <button
-                aria-label="Expand"
-                aria-expanded={open}
-                className="flex size-7 shrink-0 items-center justify-center rounded-full
-                  text-ink-3 transition-colors duration-100 hover:bg-line/70 hover:text-ink-2"
+              <span
+                aria-hidden="true"
+                className={`flex size-7 shrink-0 items-center justify-center rounded-full text-ink-3 transition-colors duration-100 ${
+                  row.expandable ? "text-ink-3" : "opacity-45"
+                }`}
               >
                 <svg
-                  width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                  width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
                   className="transition-transform duration-300"
                   style={{ transform: open ? "rotate(180deg)" : "rotate(0)" }}
                 >
-                  <path d="M6 9l6 6 6-6" />
+                  {row.expandable ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
                 </svg>
-              </button>
-            </div>
+              </span>
+            </button>
 
             {/* dropdown detail — same expandable grammar as Chain of Thought */}
             {row.expandable && (

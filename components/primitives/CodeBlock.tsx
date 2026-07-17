@@ -3,12 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * CODE BLOCK — storyboard
- * Agent-written code streams in line by line.
- *
- *     0ms   header visible, empty body
- *   400ms   lines stream in (240ms apart), caret on last
- *   done    hold 3s, reset — copy button really copies
+ * CODE BLOCK
+ * Agent-written code streams line by line; copy is live.
  * ───────────────────────────────────────────────────────── */
 
 const LINE_MS = 240;
@@ -63,7 +59,7 @@ export default function CodeBlock() {
   return (
     <div className="w-full max-w-95 overflow-hidden rounded-card bg-surface shadow-card">
       {/* header */}
-      <div className="flex items-center justify-between border-b border-line py-1.5 pr-1.5 pl-3">
+      <div className="primitive-card-bar flex items-center justify-between border-b border-line">
         <span className="flex items-baseline gap-2">
           <span className="font-mono text-[12px] font-medium text-ink">churn.ts</span>
           <span className="text-[11.5px] text-ink-3">TypeScript</span>
