@@ -70,16 +70,13 @@ export default function ApprovalCard() {
           <div key={qi} className="p-3.5" style={{ animation: "fade-up 350ms cubic-bezier(0.23,1,0.32,1) both" }}>
             <div className="flex items-start justify-between gap-3">
               <span className="text-[13px] font-medium text-ink">{question.q}</span>
-              {/* arrow — advances, sends on the last question */}
               <button
-                aria-label={last ? "Send answers" : "Next question"}
-                className="flex size-6.5 shrink-0 items-center justify-center rounded-full bg-ink
-                  text-surface shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_2px_rgba(16,24,40,0.1)]
-                  transition-transform duration-150"
-                style={{ transform: beat === 2 ? "scale(0.9)" : "scale(1)" }}
+                aria-label="Dismiss"
+                className="-mt-0.5 -mr-1 flex size-6 shrink-0 items-center justify-center rounded-[6px]
+                  text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  {last ? <path d="M12 19V5M5 12l7-7 7 7" /> : <path d="M5 12h14M12 5l7 7-7 7" />}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
               </button>
             </div>
@@ -87,16 +84,17 @@ export default function ApprovalCard() {
               {question.options.map((option, i) => {
                 const on = beat >= 1 && question.pick.includes(i);
                 return (
-                  <label key={option} className="-mx-1.5 flex cursor-pointer items-center gap-2.5 rounded-control px-1.5 py-1 transition-colors duration-100 hover:bg-hover">
+                  <label key={option} className="-mx-1.5 flex cursor-pointer items-center gap-2 rounded-control px-1.5 py-1 transition-colors duration-100 hover:bg-hover">
+                    <span className="w-3 text-center text-[11px] text-ink-3 tabular-nums">{i + 1}</span>
                     <span
-                      className={`flex size-5 shrink-0 items-center justify-center transition-colors duration-200
-                        ${question.type === "radio" ? "rounded-full" : "rounded-[6px]"}
+                      className={`flex size-4 shrink-0 items-center justify-center transition-colors duration-200
+                        ${question.type === "radio" ? "rounded-full" : "rounded-[5px]"}
                         ${on ? "bg-ink text-canvas" : "shadow-[inset_0_0_0_1.5px_var(--line-strong)] text-transparent"}`}
                     >
                       {question.type === "radio" ? (
-                        <span className="size-2 rounded-full bg-canvas transition-transform duration-200" style={{ transform: on ? "scale(1)" : "scale(0)" }} />
+                        <span className="size-1.5 rounded-full bg-canvas transition-transform duration-200" style={{ transform: on ? "scale(1)" : "scale(0)" }} />
                       ) : (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                       )}
                     </span>
                     <span className={`text-[13px] transition-colors duration-200 ${on ? "text-ink" : "text-ink-2"}`}>
@@ -105,28 +103,51 @@ export default function ApprovalCard() {
                   </label>
                 );
               })}
+              <div className="-mx-1.5 flex items-center gap-2 rounded-control px-1.5 py-1 transition-colors duration-100 hover:bg-hover">
+                <span className="w-3 text-center text-[11px] text-ink-3 tabular-nums">0</span>
+                <span className="text-[13px] text-ink-3">Type something…</span>
+              </div>
             </div>
           </div>
         )}
 
-        {/* footer — progress pills + skip */}
-        <div className="flex items-center justify-between bg-inset px-3.5 py-2">
-          <span className="flex items-center gap-1">
+        {/* footer — ring-dot pager + send arrow */}
+        <div className="flex items-center justify-between px-2.5 pb-2.5">
+          <span className="flex items-center gap-1.5">
+            <button aria-label="Previous" className="flex size-5.5 items-center justify-center rounded-[5px] text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink-2">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
             {QUESTIONS.map((_, i) => (
               <span
                 key={i}
-                className="h-1 rounded-full transition-[background-color,width] duration-300"
-                style={{
-                  width: i === qi && !sent ? 18 : 10,
-                  background:
-                    sent || i < qi ? "var(--ink-3)" : i === qi ? "var(--ink)" : "var(--line-strong)",
-                }}
+                className="rounded-full transition-all duration-300"
+                style={
+                  i === qi && !sent
+                    ? { width: 10, height: 10, border: "2.5px solid var(--ink)" }
+                    : sent || i < qi
+                      ? { width: 7, height: 7, background: "var(--ink-3)" }
+                      : { width: 7, height: 7, border: "1.5px solid var(--ink-3)" }
+                }
               />
             ))}
+            <button aria-label="Next" className="flex size-5.5 items-center justify-center rounded-[5px] text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink-2">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+            </button>
           </span>
           {!sent && (
-            <button className="h-6.5 rounded-control px-2 text-[12.5px] font-medium text-ink-2 transition-colors duration-100 hover:bg-hover hover:text-ink">
-              Skip
+            <button
+              aria-label={last ? "Send answers" : "Next question"}
+              className="flex size-7 items-center justify-center rounded-[8px] transition-[background-color,color,transform] duration-200"
+              style={{
+                background: beat >= 1 ? "var(--ink)" : "var(--field)",
+                color: beat >= 1 ? "var(--surface)" : "var(--ink-3)",
+                boxShadow: beat >= 1 ? "inset 0 1px 0 rgba(255,255,255,0.14)" : "var(--shadow-btn)",
+                transform: beat === 2 ? "scale(0.92)" : "scale(1)",
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
             </button>
           )}
         </div>
