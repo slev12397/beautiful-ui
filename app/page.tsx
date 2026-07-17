@@ -39,17 +39,13 @@ export default function Home() {
             <ThemeToggle />
           </div>
 
-          <p className="mt-10 text-[12.5px] text-ink-3">
-            The only component set with
-          </p>
-          <h1 className="mt-1 text-[34px] leading-[1.05] font-semibold tracking-[-0.03em] text-ink">
-            Universal Craft
-            <span className="align-super text-[0.4em]">™</span>
+          <h1 className="mt-10 text-[22px] leading-snug font-semibold tracking-[-0.02em] text-ink text-balance">
+            Crafted primitives for AI-native interfaces.
           </h1>
-          <p className="mt-4 text-[13px] leading-relaxed text-ink-2 text-pretty">
-            Crafted primitives for AI-native interfaces — thinking states,
-            approvals, streaming, and everything agents need to talk to humans.
-            Every primitive is one self-contained file: copy, paste, ship.
+          <p className="mt-3 text-[13px] leading-relaxed text-ink-2 text-pretty">
+            Thinking states, approvals, streaming, and everything agents need
+            to talk to humans. Every primitive is one self-contained file —
+            copy, paste, ship.
           </p>
 
           <dl className="mt-6 flex flex-col gap-2.5 border-t border-dashed border-line pt-5">
