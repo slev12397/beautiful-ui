@@ -13,6 +13,7 @@ import ContextCards from "@/components/primitives/ContextCards";
 import DiffTable from "@/components/primitives/DiffTable";
 import FineTuneCard from "@/components/primitives/FineTuneCard";
 import FilterTable from "@/components/primitives/FilterTable";
+import RecordsTable from "@/components/primitives/RecordsTable";
 import SidebarNav from "@/components/primitives/SidebarNav";
 import InsightCards from "@/components/primitives/InsightCards";
 import CodeBlock from "@/components/primitives/CodeBlock";
@@ -33,6 +34,7 @@ const DEMOS: Record<string, ComponentType<{ variant?: string }>> = {
   "diff-table": DiffTable,
   "fine-tune-card": FineTuneCard,
   "filter-table": FilterTable,
+  "records-table": RecordsTable,
   "sidebar-nav": SidebarNav,
   "insight-cards": InsightCards,
   "code-block": CodeBlock,

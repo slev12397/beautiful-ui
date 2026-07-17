@@ -168,14 +168,14 @@ export default function ChatComposer() {
               aria-label="Send"
               disabled={!canSend}
               onClick={send}
-              className="flex size-6 items-center justify-center rounded-full
+              className="flex size-7 items-center justify-center rounded-[8px]
                 transition-[background-color,color,transform] duration-200 enabled:active:scale-[0.96]"
               style={{
                 background: canSend ? "var(--ink)" : "var(--line-strong)",
                 color: canSend ? "var(--surface)" : "var(--ink-2)",
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 19V5M5 12l7-7 7 7" />
               </svg>
             </button>

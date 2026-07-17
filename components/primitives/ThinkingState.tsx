@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
  * THINKING — expandable agent trace, four variants
@@ -99,9 +99,14 @@ export default function ThinkingState({ variant = "Steps" }: { variant?: string 
   const expanded = manualExpanded ?? autoExpanded;
   const working = stage < 3;
   const visible = stage < 2 ? 0 : stage === 2 ? Math.min(2, v.rows.length) : v.rows.length;
+  const traceRef = useRef<HTMLDivElement>(null);
+  const [lineHeight, setLineHeight] = useState(0);
+  useLayoutEffect(() => {
+    if (traceRef.current) setLineHeight(traceRef.current.offsetHeight);
+  }, [visible, expanded, variant, stage]);
 
   return (
-    <div key={variant} className="mx-auto flex min-h-[168px] w-fit max-w-95 flex-col justify-center">
+    <div key={variant} className="flex min-h-[176px] w-full max-w-95 flex-col">
       {/* header — shared across variants */}
       <button
         type="button"
@@ -152,7 +157,13 @@ export default function ThinkingState({ variant = "Steps" }: { variant?: string 
         }}
       >
         <div className="overflow-hidden">
-          <div className="mt-1 ml-[5px] flex flex-col gap-1 border-l border-line py-1 pl-4">
+          <div className="relative mt-1 ml-[5px] pl-4">
+            <span
+              aria-hidden
+              className="absolute top-1 left-0 w-px bg-line"
+              style={{ height: lineHeight ? lineHeight - 8 : 0, transition: "height 500ms cubic-bezier(0.23,1,0.32,1)" }}
+            />
+            <div ref={traceRef} className="flex flex-col gap-1 py-1">
             {v.query && (
               <div className="flex h-6 items-center gap-2" style={{ animation: expanded ? "fade-up 300ms cubic-bezier(0.23,1,0.32,1) both" : undefined }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" className="shrink-0">
@@ -236,6 +247,7 @@ export default function ThinkingState({ variant = "Steps" }: { variant?: string 
                 +7 more
               </span>
             )}
+            </div>
           </div>
         </div>
       </div>

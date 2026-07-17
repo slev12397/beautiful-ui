@@ -121,7 +121,6 @@ function CompareCard() {
             series={series}
             theme="dark"
             grid
-            scrub
             pulse={false}
             exaggerate
             window={SNAPSHOT_WINDOW}

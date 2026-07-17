@@ -71,6 +71,12 @@ export const META: Meta[] = [
     file: "DiffTable.tsx",
   },
   {
+    id: "records-table",
+    title: "Records Table",
+    caption: "CRM-style grid with tags, sorting, and relationship status.",
+    file: "RecordsTable.tsx",
+  },
+  {
     id: "filter-table",
     title: "Filter Table",
     caption: "Status chips that reorganize live data.",

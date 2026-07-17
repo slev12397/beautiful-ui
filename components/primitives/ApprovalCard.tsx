@@ -50,6 +50,11 @@ export default function ApprovalCard() {
     });
     if (question.type === "radio") {
       setCustom((current) => ({ ...current, [qi]: "" }));
+      // single-choice auto-advances
+      window.setTimeout(() => {
+        if (qi === QUESTIONS.length - 1) setSent(true);
+        else setQi((current) => Math.min(QUESTIONS.length - 1, current + 1));
+      }, 480);
     }
   };
 
@@ -150,7 +155,7 @@ export default function ApprovalCard() {
 
         {/* footer — ring-dot pager + send arrow */}
         <div className="primitive-card-footer flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <button
               type="button"
               aria-label="Previous"
@@ -160,28 +165,26 @@ export default function ApprovalCard() {
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
             </button>
-            {QUESTIONS.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                aria-label={`Go to question ${i + 1}`}
-                aria-current={i === qi && !sent ? "step" : undefined}
-                disabled={sent}
-                onClick={() => setQi(i)}
-                className="flex size-5 items-center justify-center rounded-full transition-colors duration-100 enabled:hover:bg-hover disabled:cursor-default"
-              >
-                <span
-                  className="rounded-full transition-all duration-300"
+            <span className="flex items-center gap-1">
+              {QUESTIONS.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Go to question ${i + 1}`}
+                  aria-current={i === qi && !sent ? "step" : undefined}
+                  disabled={sent}
+                  onClick={() => setQi(i)}
+                  className="rounded-full transition-all duration-300 disabled:cursor-default"
                   style={
                     i === qi && !sent
-                      ? { width: 10, height: 10, border: "2.5px solid var(--ink)" }
+                      ? { width: 9, height: 9, border: "2.5px solid var(--ink)" }
                       : sent || i < qi
                         ? { width: 7, height: 7, background: "var(--ink-3)" }
                         : { width: 7, height: 7, border: "1.5px solid var(--ink-3)" }
                   }
                 />
-              </button>
-            ))}
+              ))}
+            </span>
             <button
               type="button"
               aria-label="Next"
