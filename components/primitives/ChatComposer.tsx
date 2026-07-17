@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
  *   hold    3s, reset
  * ───────────────────────────────────────────────────────── */
 
-const PROMPT = "Compare with prior scans";
+const PROMPT = "Compare mint chip to last summer";
 const CHAR_MS = 40;
 
 type Phase = "idle" | "typing" | "armed" | "sent" | "reply1" | "reply2" | "done";
@@ -87,10 +87,10 @@ export default function ChatComposer() {
       <div className="flex items-center justify-between border-b border-line p-1.5">
         <div className="flex items-center">
           <span className="rounded-[6px] bg-field px-2 py-[3px] text-[13px] text-ink">
-            Comparison
+            Flavors
           </span>
           <span className="cursor-pointer rounded-[6px] px-2 py-[3px] text-[13px] text-ink opacity-50 transition-opacity duration-100 hover:opacity-75">
-            Sequence
+            Suppliers
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -132,18 +132,18 @@ export default function ChatComposer() {
 
         {phase === "reply1" || phase === "reply2" || phase === "done" ? (
           <Section
-            label="Prior Series"
-            sub="Patient History"
+            label="Sales History"
+            sub="Flavor Data"
             time="4s"
-            body="Loaded 3 prior scans for side-by-side comparison."
+            body="Pulled 3 summers of mint chip sales for comparison."
           />
         ) : null}
         {phase === "reply2" || phase === "done" ? (
           <Section
             label="Comparison"
-            sub="Change Detection"
+            sub="Trend Detection"
             time="2s"
-            body="Aligned sequences and flagged two regions of change."
+            body="Mint chip is up 12% with stronger weekend peaks."
             resolving={phase === "reply2"}
           />
         ) : null}
@@ -159,7 +159,7 @@ export default function ChatComposer() {
                 <span className="ml-px inline-block h-3 w-0.5 translate-y-0.5 rounded-full bg-ink" />
               </span>
             ) : (
-              <span className="text-ink-3">Prompt or tag a scan with @</span>
+              <span className="text-ink-3">Prompt or tag a flavor with @</span>
             )}
           </div>
           <div className="flex items-center justify-end">

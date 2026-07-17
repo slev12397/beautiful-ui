@@ -40,8 +40,8 @@ function CompareCard() {
     <div className="rounded-card bg-surface p-3 shadow-hairline">
       <div className="flex items-center gap-4">
         {[
-          { name: "Robinhood", delta: "-4.41%", sub: "-$2,377.66", tone: "red", dot: "bg-orange" },
-          { name: "Coinbase", delta: "+1.15%", sub: "+$617.22", tone: "green", dot: "bg-accent" },
+          { name: "Mint Chip", delta: "-4.41%", sub: "-$2,377.66", tone: "red", dot: "bg-orange" },
+          { name: "Pistachio", delta: "+1.15%", sub: "+$617.22", tone: "green", dot: "bg-accent" },
         ].map((s) => (
           <div key={s.name} className="flex-1">
             <span className="flex items-center gap-1.5 text-[11.5px] text-ink-2">
@@ -73,7 +73,7 @@ function AnomalyCard() {
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
-          High transaction size
+          High freezer spend
         </span>
         <span className="flex items-center gap-1 text-[11.5px] text-ink-2">
           View
@@ -114,17 +114,17 @@ function AnomalyCard() {
 /* 3 — allocation: hero number + segmented bar + legend */
 function AllocationCard() {
   const segments = [
-    { name: "BTC", pct: 72.5, cls: "bg-orange" },
-    { name: "ETH", pct: 22.8, cls: "bg-line-strong" },
-    { name: "DOGE", pct: 4.7, cls: "bg-line" },
+    { name: "VAN", pct: 72.5, cls: "bg-orange" },
+    { name: "CHOC", pct: 22.8, cls: "bg-line-strong" },
+    { name: "MINT", pct: 4.7, cls: "bg-line" },
   ];
   return (
     <div className="rounded-card bg-surface p-3 shadow-hairline">
       <span className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
         <span className="flex size-3.5 items-center justify-center rounded-full bg-orange text-[8px] font-bold text-white">
-          ₿
+          V
         </span>
-        BTC allocation
+        Vanilla allocation
       </span>
       <span className="mt-1 block text-[20px] font-semibold tracking-[-0.01em] text-ink tabular-nums">
         $51,785
@@ -151,34 +151,34 @@ const PAGES = [
     key: "compare",
     prose: (
       <>
-        The worst performer in your <Entity name="Robinhood" tone="bg-orange" /> account
-        is Bitcoin — down <Mono tone="red">-6%</Mono> or <Mono tone="red">-$2,453.44</Mono>.
+        The worst performer in your <Entity name="Creamery" tone="bg-orange" /> is
+        Rocky Road — down <Mono tone="red">-6%</Mono> or <Mono tone="red">-$2,453.44</Mono>.
       </>
     ),
     Card: CompareCard,
-    pill: "If we look at diversification, what changes?",
+    pill: "Should I rebalance flavors?",
   },
   {
     key: "anomaly",
     prose: (
       <>
-        Unusually high transaction on <span className="font-medium text-ink">Dec 13</span> —{" "}
+        Unusually high freezer bill on <span className="font-medium text-ink">Dec 13</span> —{" "}
         <Mono tone="red">+$1,834.66</Mono> above your average.
       </>
     ),
     Card: AnomalyCard,
-    pill: "Get tips on optimizing monthly spending",
+    pill: "Get tips on cutting freezer costs",
   },
   {
     key: "allocation",
     prose: (
       <>
-        You&apos;re heavily invested in <Entity name="Bitcoin" tone="bg-orange" /> — it&apos;s{" "}
-        <span className="font-medium text-ink">72.5%</span> of your portfolio.
+        You&apos;re heavily invested in <Entity name="Vanilla" tone="bg-orange" /> — it&apos;s{" "}
+        <span className="font-medium text-ink">72.5%</span> of your case.
       </>
     ),
     Card: AllocationCard,
-    pill: "Should I reallocate my BTC?",
+    pill: "If we look at seasonals, what changes?",
   },
 ];
 

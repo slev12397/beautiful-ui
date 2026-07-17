@@ -74,8 +74,8 @@ const RetryIcon = (
 );
 
 const DETAILS = [
-  { label: "Parsing documents", meta: "96 / 128" },
-  { label: "Embedding chunks", meta: "41%" },
+  { label: "Pasteurizing base", meta: "96 / 128" },
+  { label: "Chilling to 4°C", meta: "41%" },
 ];
 
 export default function TaskRows({ variant = "Capsules" }: { variant?: string }) {
@@ -87,8 +87,8 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
     {
       key: "verify",
       badge: <Badge tone="green">{CheckIcon}</Badge>,
-      label: "Sources verified",
-      amount: "12 sources",
+      label: "Suppliers verified",
+      amount: "12 dairies",
       pill: (
         <span className="inline-flex h-5.5 items-center rounded-full bg-green-tint px-2 text-[11.5px] font-medium text-green">
           Completed
@@ -99,8 +99,8 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
     {
       key: "index",
       badge: <SpinnerRing active>2</SpinnerRing>,
-      label: "Indexing knowledge base",
-      amount: "128 files",
+      label: "Churning batch #42",
+      amount: "128 gal",
       pill: null,
       expandable: true,
     },
@@ -114,8 +114,8 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
         ) : (
           <Badge tone="green">{CheckIcon}</Badge>
         ),
-      label: "Drafting weekly summary",
-      amount: "2.1k tokens",
+      label: "Freezing gelato base",
+      amount: "2.1k units",
       pill:
         row2 === "failed" ? (
           <span className="inline-flex h-5.5 items-center gap-1.5 rounded-full bg-red-tint px-2 text-[11.5px] font-medium text-red" style={{ animation: "fade-in 200ms ease-out both" }}>

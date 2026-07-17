@@ -12,8 +12,8 @@ import { useEffect, useState } from "react";
 
 const ITEMS = [
   { key: "activity", label: "Activity" },
-  { key: "tasks", label: "Tasks" },
-  { key: "spaces", label: "Spaces", plus: true },
+  { key: "tasks", label: "Flavors" },
+  { key: "spaces", label: "Suppliers", plus: true },
   { key: "dashboard", label: "Dashboard" },
   { key: "analytics", label: "Analytics" },
 ];
@@ -53,9 +53,9 @@ export default function SidebarNav() {
       {/* workspace row */}
       <div className="mb-1 flex items-center gap-2 rounded-control px-2 py-1.5 transition-colors duration-100 hover:bg-hover">
         <span className="flex size-5 items-center justify-center rounded-[6px] bg-ink text-[9px] font-semibold text-surface">
-          P
+          C
         </span>
-        <span className="flex-1 text-[13px] font-medium text-ink">Personal</span>
+        <span className="flex-1 text-[13px] font-medium text-ink">Creamery</span>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
         </svg>
@@ -83,7 +83,7 @@ export default function SidebarNav() {
             <path d="M12 5v14M5 12h14" />
           </svg>
         </span>
-        New workflow
+        New flavor
       </button>
 
       <div className="mx-2 my-1 h-px bg-line" />

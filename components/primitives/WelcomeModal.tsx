@@ -44,7 +44,7 @@ export default function WelcomeModal() {
         {/* close */}
         <div className="flex items-start justify-between">
           <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
-            Welcome to Pipeline
+            Welcome to Scoops
           </h3>
           <button
             aria-label="Close"
@@ -57,7 +57,7 @@ export default function WelcomeModal() {
           </button>
         </div>
         <p className="mt-1 text-[12px] leading-snug text-ink-2">
-          <span className="font-medium text-ink">Your workspace is ready</span> —
+          <span className="font-medium text-ink">Your creamery is ready</span> —
           trial active.
         </p>
 
@@ -74,9 +74,9 @@ export default function WelcomeModal() {
               </svg>
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[12.5px] font-medium text-ink">Acme Inc</span>
+              <span className="block text-[12.5px] font-medium text-ink">Acme Creamery</span>
               <span className="block truncate text-[11.5px] text-ink-3">
-                pipeline.com/acme
+                scoops.com/acme
               </span>
             </span>
             <span
@@ -95,9 +95,9 @@ export default function WelcomeModal() {
                 <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
               </svg>
             </span>
-            <span className="text-[11.5px] font-medium text-ink">AI-detected deals</span>
+            <span className="text-[11.5px] font-medium text-ink">AI-detected flavors</span>
             <span className="flex-1 truncate text-[11.5px] whitespace-nowrap text-ink-2 tabular-nums">
-              56 deals
+              56 flavors
             </span>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 18l6-6-6-6" />
@@ -112,7 +112,7 @@ export default function WelcomeModal() {
             transition-[transform,opacity] duration-150 hover:opacity-90"
           style={{ transform: pressed ? "scale(0.98)" : "scale(1)" }}
         >
-          Start using Pipeline
+          Start using Scoops
         </button>
         <p className="mt-1.5 truncate text-center text-[11px] text-ink-3">
           No card required today.

@@ -17,10 +17,10 @@ const STATES = [
     key: "high",
     body: (
       <>
-        Incremental (merge) with watermark{" "}
-        <code className="rounded-md bg-accent-tint px-1.5 py-0.5 font-mono text-[12px] text-accent-ink">updated_at</code>{" "}
-        and primary key{" "}
-        <code className="rounded-md bg-accent-tint px-1.5 py-0.5 font-mono text-[12px] text-accent-ink">order_id</code>.
+        Reorder waffle cones from{" "}
+        <code className="rounded-md bg-accent-tint px-1.5 py-0.5 font-mono text-[12px] text-accent-ink">cone_king</code>{" "}
+        with lead time{" "}
+        <code className="rounded-md bg-accent-tint px-1.5 py-0.5 font-mono text-[12px] text-accent-ink">7_days</code>.
       </>
     ),
     signal: 3,
@@ -33,9 +33,9 @@ const STATES = [
     key: "review",
     body: (
       <>
-        Incremental (windowed) with watermark{" "}
-        <code className="rounded-md bg-orange-tint px-1.5 py-0.5 font-mono text-[12px] text-orange">refresh_date</code>{" "}
-        and 7-day lookback.
+        Switch vanilla to{" "}
+        <code className="rounded-md bg-orange-tint px-1.5 py-0.5 font-mono text-[12px] text-orange">vanilla_madagascar</code>{" "}
+        for peak season.
       </>
     ),
     signal: 2,
@@ -48,14 +48,14 @@ const STATES = [
     key: "none",
     body: (
       <>
-        No usable watermark detected. Falling back to{" "}
-        <span className="font-medium text-ink">full refresh</span>.
+        No supplier signal detected. Falling back to{" "}
+        <span className="font-medium text-ink">full restock</span>.
       </>
     ),
     signal: 0,
     tone: "var(--ink-3)",
     label: "No signal",
-    cta: "Accept full refresh",
+    cta: "Accept full restock",
     ctaStyle: "bg-ink text-canvas",
   },
 ];
@@ -83,7 +83,7 @@ export default function RecommendationCard() {
       <div className="p-3.5">
         <div className="flex items-center justify-between">
           <span className="text-[13px] font-semibold text-ink">
-            Smart sync recommendation
+            Smart restock recommendation
           </span>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 9l6 6 6-6" />

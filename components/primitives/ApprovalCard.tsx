@@ -13,21 +13,21 @@ import { useEffect, useState } from "react";
 
 const QUESTIONS = [
   {
-    q: "How long should the deck be?",
+    q: "How many flavors should we launch?",
     type: "radio" as const,
-    options: ["Brief (3–6 slides)", "Standard (7–12 slides)", "Exhaustive"],
+    options: ["Three (core line)", "Five (full case)", "Just one hero"],
     pick: [0],
   },
   {
-    q: "What colors does the deck need?",
+    q: "Which mix-ins should we stock?",
     type: "check" as const,
-    options: ["Black", "Blue", "Orange"],
+    options: ["Chocolate chips", "Waffle bits", "Sprinkles"],
     pick: [0, 1],
   },
   {
-    q: "Who is the audience?",
+    q: "Which market do we enter first?",
     type: "radio" as const,
-    options: ["Executives", "Full team", "External clients"],
+    options: ["Food trucks", "Grocery freezers", "Scoop shops"],
     pick: [1],
   },
 ];

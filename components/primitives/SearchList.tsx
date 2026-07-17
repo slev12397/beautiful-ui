@@ -14,18 +14,18 @@ import { useEffect, useState } from "react";
  * ───────────────────────────────────────────────────────── */
 
 const ITEMS = [
-  "Summarize this thread",
-  "Draft follow-up email",
-  "Extract action items",
-  "Compare to last quarter",
-  "Translate to Spanish",
-  "Generate test cases",
-  "Explain this error",
+  "Forecast summer demand",
+  "Find waffle cone suppliers",
+  "Compare seasonal flavors",
+  "Draft flavor launch plan",
+  "Check cold-chain status",
+  "Audit sugar costs",
+  "Retire low sellers",
 ];
 
 const SCRIPT: { text: string; hold: number }[] = [
   { text: "", hold: 1100 },
-  { text: "Dra", hold: 1500 },
+  { text: "For", hold: 1500 },
   { text: "Quantum", hold: 2200 },
 ];
 
@@ -71,7 +71,7 @@ export default function SearchList() {
                 <span className="ml-px inline-block h-3 w-0.5 translate-y-0.5 rounded-full bg-ink" />
               </span>
             ) : (
-              <span className="text-ink-3">Search actions…</span>
+              <span className="text-ink-3">Search flavors…</span>
             )}
           </span>
           {query && (

@@ -17,11 +17,11 @@ const HOLD_MS = 3200;
 type Tok = { t: string; c?: "kw" | "str" | "num" | "fn" | "dim" };
 
 const LINES: Tok[][] = [
-  [{ t: "export async function ", c: "kw" }, { t: "syncOrders", c: "fn" }, { t: "() {", c: "dim" }],
-  [{ t: "  const ", c: "kw" }, { t: "since = " }, { t: "await ", c: "kw" }, { t: "getWatermark", c: "fn" }, { t: "(", c: "dim" }, { t: "\"updated_at\"", c: "str" }, { t: ");", c: "dim" }],
-  [{ t: "  const ", c: "kw" }, { t: "rows = " }, { t: "await ", c: "kw" }, { t: "source." }, { t: "fetch", c: "fn" }, { t: "({ since });", c: "dim" }],
-  [{ t: "  await ", c: "kw" }, { t: "warehouse." }, { t: "merge", c: "fn" }, { t: "(rows, { key: ", c: "dim" }, { t: "\"order_id\"", c: "str" }, { t: " });", c: "dim" }],
-  [{ t: "  return ", c: "kw" }, { t: "rows.length;" }],
+  [{ t: "export async function ", c: "kw" }, { t: "churnBatch", c: "fn" }, { t: "() {", c: "dim" }],
+  [{ t: "  const ", c: "kw" }, { t: "flavor = " }, { t: "await ", c: "kw" }, { t: "getFlavor", c: "fn" }, { t: "(", c: "dim" }, { t: "\"pistachio\"", c: "str" }, { t: ");", c: "dim" }],
+  [{ t: "  const ", c: "kw" }, { t: "base = " }, { t: "await ", c: "kw" }, { t: "dairy." }, { t: "fetch", c: "fn" }, { t: "({ flavor });", c: "dim" }],
+  [{ t: "  await ", c: "kw" }, { t: "freezer." }, { t: "store", c: "fn" }, { t: "(base, { temp: ", c: "dim" }, { t: "\"-14C\"", c: "str" }, { t: " });", c: "dim" }],
+  [{ t: "  return ", c: "kw" }, { t: "base.gallons;" }],
   [{ t: "}", c: "dim" }],
 ];
 
@@ -33,11 +33,11 @@ const COLORS: Record<string, string> = {
   dim: "var(--ink-3)",
 };
 
-const RAW = `export async function syncOrders() {
-  const since = await getWatermark("updated_at");
-  const rows = await source.fetch({ since });
-  await warehouse.merge(rows, { key: "order_id" });
-  return rows.length;
+const RAW = `export async function churnBatch() {
+  const flavor = await getFlavor("pistachio");
+  const base = await dairy.fetch({ flavor });
+  await freezer.store(base, { temp: "-14C" });
+  return base.gallons;
 }`;
 
 export default function CodeBlock() {
@@ -65,7 +65,7 @@ export default function CodeBlock() {
       {/* header */}
       <div className="flex items-center justify-between border-b border-line py-1.5 pr-1.5 pl-3">
         <span className="flex items-baseline gap-2">
-          <span className="font-mono text-[12px] font-medium text-ink">sync.ts</span>
+          <span className="font-mono text-[12px] font-medium text-ink">churn.ts</span>
           <span className="text-[11.5px] text-ink-3">TypeScript</span>
         </span>
         <button

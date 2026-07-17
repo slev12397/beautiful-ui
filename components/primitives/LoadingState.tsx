@@ -46,7 +46,7 @@ function useElapsed() {
 }
 
 export default function LoadingState({
-  label = "Thinking",
+  label = "Churning",
   variant = "Drive",
 }: {
   label?: string;

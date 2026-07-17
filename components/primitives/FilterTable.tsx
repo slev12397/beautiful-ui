@@ -22,11 +22,11 @@ const FILTERS: { key: "all" | Status; label: string; dot?: string; count: number
 ];
 
 const ROWS: { task: string; date: string; status: Status; owner: string }[] = [
-  { task: "Claim review", date: "Dec 03", status: "todo", owner: "R. Weimann" },
-  { task: "Policy check", date: "Sep 22", status: "progress", owner: "E. Crist" },
-  { task: "Account migration", date: "Jan 02", status: "todo", owner: "K. Terry" },
-  { task: "Data validation", date: "Nov 08", status: "progress", owner: "S. Trantow" },
-  { task: "Final approval", date: "Apr 14", status: "done", owner: "J. Jerde" },
+  { task: "Restock vanilla", date: "Dec 03", status: "todo", owner: "B. Gelato" },
+  { task: "Churn pistachio", date: "Sep 22", status: "progress", owner: "E. Cone" },
+  { task: "Print menu boards", date: "Jan 02", status: "todo", owner: "K. Sundae" },
+  { task: "Taste-test batch 42", date: "Nov 08", status: "progress", owner: "S. Sprinkle" },
+  { task: "Order waffle cones", date: "Apr 14", status: "done", owner: "J. Fudge" },
 ];
 
 const PILLS: Record<Status, { label: string; cls: string }> = {

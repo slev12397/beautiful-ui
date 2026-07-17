@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Header } from "@/components/site/Header";
+import { Hero } from "@/components/site/Hero";
 import { Grid } from "@/components/site/Grid";
 import { META } from "@/lib/meta";
 
@@ -21,8 +21,10 @@ export default function Home() {
 
   return (
     <main className="pb-6">
-      <Header />
-      <Grid sources={sources} />
+      <Hero />
+      <div className="pt-12">
+        <Grid sources={sources} />
+      </div>
       <footer className="mx-auto mt-14 flex w-full max-w-6xl items-center justify-between border-t border-line px-6 pt-6 pb-10">
         <span className="text-[13px] text-ink-3">
           Beautiful UI — simple is beautiful.

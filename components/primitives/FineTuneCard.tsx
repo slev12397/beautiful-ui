@@ -88,13 +88,13 @@ export default function FineTuneCard() {
   const menuOpen = stage === 4 || stage === 5;
   const optionPicked = stage === 5;
   const done = stage >= 6;
-  const typeValue = done ? "Overlay" : "Select type";
+  const typeValue = done ? "Limited" : "Select type";
 
   return (
     <div className="relative w-60 rounded-card bg-surface shadow-raised">
       {/* header */}
       <div className="flex items-center justify-between border-b border-line px-3 py-2.5">
-        <span className="text-[13px] font-medium text-ink">Hero card</span>
+        <span className="text-[13px] font-medium text-ink">Flavor card</span>
         {done ? (
           <span
             className="flex items-center gap-1.5 text-[12px] font-medium text-green"
@@ -197,14 +197,14 @@ export default function FineTuneCard() {
                 transformOrigin: "bottom right",
               }}
             >
-              {["Navigation", "Logic", "Overlay"].map((item) => (
+              {["Seasonal", "Classic", "Limited"].map((item) => (
                 <div
                   key={item}
                   className="flex h-6.5 items-center rounded-[6px] px-2 text-[12.5px] text-ink
                     transition-colors duration-150 hover:bg-field"
                   style={{
                     background:
-                      item === "Overlay" && optionPicked ? "var(--field)" : "transparent",
+                      item === "Limited" && optionPicked ? "var(--field)" : "transparent",
                   }}
                 >
                   {item}

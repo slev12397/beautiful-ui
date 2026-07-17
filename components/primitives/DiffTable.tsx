@@ -25,15 +25,15 @@ function useStage(steps: number[]) {
 }
 
 const ROWS = [
-  { id: "EMP002", dept: "Sales", email: "j.ford@acme.com", removed: true },
-  { id: "EMP023", dept: "Engineering", email: "k.turner@acme.com", removed: true },
-  { id: "EMP061", dept: "HR", email: "d.roberts@acme.com", removed: false },
+  { id: "Rocky Road", dept: "Classic", email: "bear-creek-dairy", removed: true },
+  { id: "Bubblegum", dept: "Retro", email: "sweet-labs", removed: true },
+  { id: "Mint Chip", dept: "Classic", email: "verde-farms", removed: false },
 ];
 
 const DOT: Record<string, string> = {
-  Sales: "bg-accent",
-  Engineering: "bg-ink-3",
-  HR: "bg-orange",
+  Classic: "bg-accent",
+  Retro: "bg-ink-3",
+  Seasonal: "bg-orange",
 };
 
 export default function DiffTable() {
@@ -63,7 +63,7 @@ export default function DiffTable() {
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-line">
-              {["Employee", "Department", "Email"].map((h) => (
+              {["Flavor", "Category", "Supplier"].map((h) => (
                 <th key={h} className="px-3 py-2.5 text-[12px] font-medium text-ink-3">
                   {h}
                 </th>
@@ -121,16 +121,16 @@ export default function DiffTable() {
                   <div className="overflow-hidden" style={{ background: "var(--green-tint)" }}>
                     <div className="flex items-center border-t border-line">
                       <span className="px-3 py-2.5 text-[13px] font-medium text-green tabular-nums">
-                        EMP074
+                        Pistachio
                       </span>
                       <span className="px-3 py-2.5">
                         <span className="inline-flex h-5.5 items-center gap-1.5 rounded-full bg-surface px-2 text-[11.5px] font-medium shadow-hairline">
                           <span className="size-1.5 rounded-full bg-green" />
-                          <span className="text-ink-2">HR</span>
+                          <span className="text-ink-2">Seasonal</span>
                         </span>
                       </span>
                       <span className="px-3 py-2.5 text-[13px] text-green">
-                        m.lopez@acme.com
+                        verde-farms
                       </span>
                     </div>
                   </div>

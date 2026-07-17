@@ -18,18 +18,18 @@ const HOLD_MS = 3400;
 type Token = { text: string; cite?: boolean };
 
 const TOKENS: Token[] = [
-  ..."Air quality in New York today is poor — the forecast lists an AQI of 200, categorized as “Unhealthy.”"
+  ..."Pistachio is your fastest-growing flavor — sales are up 23% this month and margins beat vanilla by 8 points."
     .split(" ")
     .map((text) => ({ text })),
   { text: "", cite: true },
-  ..."Nearby areas like Long Island (AQI 195) are in the same range."
+  ..."Stone-fruit flavors are trending in the same range."
     .split(" ")
     .map((text) => ({ text })),
 ];
 
 const FOLLOW_UPS = [
-  "I'm near Central Park, can you check here",
-  "Is any improvement expected tomorrow",
+  "Which flavors sell best in winter",
+  "Compare gelato and soft serve margins",
 ];
 
 function SourceChip() {
@@ -43,7 +43,7 @@ function SourceChip() {
         <path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" />
         <path d="M9 12l2 2 4-4" />
       </svg>
-      forecast.weather
+      scoopdata.io
     </span>
   );
 }

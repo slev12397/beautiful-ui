@@ -20,16 +20,16 @@ const Icons: Record<string, React.ReactNode> = {
 };
 
 const ROWS = [
-  { icon: "think", label: "Thinking", chip: "Restructuring rows as capsule headers…", mono: false },
-  { icon: "write", label: "Write 204 lines", chip: "TaskRows.tsx", mono: true },
-  { icon: "run", label: "Rebuild and verify", chip: "npm run build", mono: true },
-  { icon: "read", label: "Read image", chip: "loading-final.png", mono: true },
+  { icon: "think", label: "Thinking", chip: "Planning the churn schedule…", mono: false },
+  { icon: "write", label: "Write 204 lines", chip: "ChurnSchedule.tsx", mono: true },
+  { icon: "run", label: "Rebuild and verify", chip: "npm run freeze", mono: true },
+  { icon: "read", label: "Read image", chip: "flavor-chart.png", mono: true },
 ];
 
 const DIFFS = [
-  { file: "globals.css", add: 13, del: 0 },
-  { file: "TaskRows.tsx", add: 74, del: 41 },
-  { file: "meta.ts", add: 8, del: 2 },
+  { file: "flavors.css", add: 13, del: 0 },
+  { file: "ChurnSchedule.tsx", add: 74, del: 41 },
+  { file: "menu.ts", add: 8, del: 2 },
 ];
 
 export default function ToolChips() {

@@ -15,14 +15,14 @@ const CHUNKS = [
   {
     id: "Chunk-01",
     chars: "290 characters",
-    body: "To connect your email, open the Integrations tab and select Gmail. Grant read access so the agent can sync recent messages.",
-    source: "Onboarding Guide.pdf",
+    body: "To onboard a new dairy, verify cold-chain certification and schedule a first tasting.",
+    source: "Supplier Handbook.pdf",
   },
   {
     id: "Chunk-02",
     chars: "1,250 characters",
-    body: "After connecting, the agent analyzes recent emails to detect patterns — replies, summaries, and tagging.",
-    source: "Onboarding Guide.pdf",
+    body: "Seasonal flavors rotate every six weeks; retire anything under 40 scoops a week.",
+    source: "Supplier Handbook.pdf",
   },
 ];
 
