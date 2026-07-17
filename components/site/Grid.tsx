@@ -61,12 +61,20 @@ function Card({
   const [variant, setVariant] = useState(entry.variants?.[0]);
 
   return (
-    <div
-      className="group flex w-full flex-col"
+    <section
+      id={entry.id}
+      className="group flex w-full scroll-mt-6 flex-col border-b border-dashed border-line px-7 py-8"
       style={{
-        animation: `fade-up 600ms cubic-bezier(0.23,1,0.32,1) ${index * 60}ms both`,
+        animation: `fade-up 600ms cubic-bezier(0.23,1,0.32,1) ${Math.min(index, 4) * 60}ms both`,
       }}
     >
+      <div className="mb-3 flex items-baseline gap-2">
+        <span className="font-mono text-[11px] text-ink-3 tabular-nums">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        <h3 className="text-[13px] font-semibold text-ink">{entry.title}</h3>
+        <p className="truncate text-[12.5px] text-ink-3">{entry.caption}</p>
+      </div>
       <div className="relative flex h-72 items-center justify-center overflow-hidden rounded-window bg-canvas p-5 shadow-hairline">
         <div className="w-full max-w-120 [&>*]:mx-auto">
           <Demo variant={variant} />
@@ -109,13 +117,7 @@ function Card({
           </button>
         </div>
       </div>
-      <div className="flex items-baseline gap-1.5 px-1.5 pt-2.5 pb-1">
-        <h3 className="shrink-0 text-[12.5px] font-medium text-ink">
-          {entry.title}
-        </h3>
-        <p className="truncate text-[12.5px] text-ink-3">{entry.caption}</p>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -199,7 +201,7 @@ export function Grid({ sources }: { sources: Record<string, string> }) {
 
   return (
     <>
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-x-5 gap-y-7 px-6 md:grid-cols-2">
+      <div className="flex w-full flex-col">
         {REGISTRY.map((entry, i) => (
           <Card
             key={entry.id}
