@@ -32,7 +32,7 @@ function ScrubField({
 
   return (
     <label
-      className="flex h-6.5 min-w-0 items-center gap-1.5 rounded-chip py-1 pr-1.5 pl-1
+      className="flex h-6.5 min-w-0 items-center gap-1 rounded-chip py-1 pr-1 pl-0.5
         transition-[background-color,box-shadow] duration-200"
       style={{
         background: active ? "var(--accent-tint)" : "var(--field)",
@@ -67,7 +67,7 @@ function ScrubField({
           }
         }}
         className="flex h-full shrink-0 cursor-ew-resize touch-none items-center rounded-[4px]
-          px-1 text-[12px] text-ink-3 select-none hover:text-ink-2 focus-visible:text-accent-ink
+          px-0.5 text-[12px] text-ink-3 select-none hover:text-ink-2 focus-visible:text-accent-ink
           focus-visible:outline-none"
       >
         {label}
@@ -82,7 +82,7 @@ function ScrubField({
         aria-label={`${label} value`}
         className="min-w-0 flex-1 bg-transparent text-[12px] text-ink tabular-nums outline-none"
       />
-      {suffix && <span className="shrink-0 text-[12px] text-ink-3">{suffix}</span>}
+      {suffix && <span className="shrink-0 pr-0.5 text-[11.5px] text-ink-3">{suffix}</span>}
     </label>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Liveline, type HoverPoint, type LivelinePoint, type LivelineSeries } from "liveline";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
  * INSIGHT CARDS
@@ -9,33 +9,18 @@ import { useEffect, useMemo, useState } from "react";
  * carousel. Autoplay yields as soon as a person uses it.
  * ───────────────────────────────────────────────────────── */
 
-const PAGE_MS = 3400;
-const SWAP_MS = 250;
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
-const WINDOWS = [
-  { label: "15s", secs: 15 },
-  { label: "30s", secs: 30 },
-  { label: "1m", secs: 60 },
-];
+const SNAPSHOT_WINDOW = 72;
 
 const formatPercent = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
 const formatMoney = (v: number) => `$${Math.round(v).toLocaleString("en-US")}`;
-const nowSeconds = () => Math.floor(Date.now() / 1000);
+const SNAPSHOT_END = Math.floor(Date.now() / 1000);
 
-function makePoints(values: number[], gap = 2): LivelinePoint[] {
-  const now = nowSeconds();
+function makePoints(values: number[], gap = 6): LivelinePoint[] {
   return values.map((value, index) => ({
-    time: now - (values.length - 1 - index) * gap,
+    time: SNAPSHOT_END - (values.length - 1 - index) * gap,
     value,
   }));
-}
-
-function nextPoint(points: LivelinePoint[], value: number) {
-  const last = points.at(-1);
-  return {
-    time: Math.max(nowSeconds(), (last?.time ?? nowSeconds()) + 1),
-    value: Math.round(value * 100) / 100,
-  };
 }
 
 /* inline @entity mention */
@@ -58,40 +43,14 @@ function Mono({ children, tone }: { children: React.ReactNode; tone: "red" | "gr
 
 /* 1 — return comparison: 2 series, legend + big deltas + line chart */
 function CompareCard() {
-  const [paused, setPaused] = useState(false);
-  const [windowSecs, setWindowSecs] = useState(30);
   const [hover, setHover] = useState<HoverPoint | null>(null);
-  const [data, setData] = useState(() => ({
-    mint: makePoints([-2.9, -3.4, -3.05, -3.86, -3.52, -4.1, -3.82, -4.41]),
-    pistachio: makePoints([0.22, 0.58, 0.42, 0.91, 0.76, 1.08, 0.96, 1.15]),
-  }));
-
-  useEffect(() => {
-    if (paused) return;
-    const timer = setInterval(() => {
-      setData((current) => {
-        const index = current.mint.length;
-        const mintLast = current.mint.at(-1)?.value ?? -4.41;
-        const pistachioLast = current.pistachio.at(-1)?.value ?? 1.15;
-        return {
-          mint: [
-            ...current.mint.slice(-52),
-            nextPoint(current.mint, mintLast + Math.sin(index * 0.74) * 0.18 - 0.03),
-          ],
-          pistachio: [
-            ...current.pistachio.slice(-52),
-            nextPoint(current.pistachio, pistachioLast + Math.cos(index * 0.62) * 0.08 + 0.02),
-          ],
-        };
-      });
-    }, 950);
-    return () => clearInterval(timer);
-  }, [paused]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setPaused(true), 1600);
-    return () => clearTimeout(t);
-  }, []);
+  const data = useMemo(
+    () => ({
+      mint: makePoints([-2.9, -3.4, -3.05, -3.86, -3.52, -4.1, -3.82, -4.41]),
+      pistachio: makePoints([0.22, 0.58, 0.42, 0.91, 0.76, 1.08, 0.96, 1.15]),
+    }),
+    [],
+  );
 
   const latestMint = data.mint.at(-1)?.value ?? -4.41;
   const latestPistachio = data.pistachio.at(-1)?.value ?? 1.15;
@@ -99,14 +58,14 @@ function CompareCard() {
     () => [
       {
         id: "mint",
-        label: "Mint Chip",
+        label: "",
         data: data.mint,
         value: latestMint,
         color: "#f68f3c",
       },
       {
         id: "pistachio",
-        label: "Pistachio",
+        label: "",
         data: data.pistachio,
         value: latestPistachio,
         color: "#3d9aff",
@@ -116,7 +75,7 @@ function CompareCard() {
   );
 
   return (
-    <div className="rounded-card bg-surface p-3 shadow-hairline">
+    <div className="min-h-[278px] rounded-card bg-surface p-3 shadow-hairline">
       <div className="flex items-center gap-4">
         {[
           {
@@ -151,17 +110,11 @@ function CompareCard() {
           <span className="text-[11px] text-ink-3 tabular-nums">
             {hover ? formatPercent(hover.value) : "Scrub chart"}
           </span>
-          <button
-            type="button"
-            aria-pressed={paused}
-            onClick={() => setPaused((value) => !value)}
-            className="rounded-full px-2 py-0.5 text-[10.5px] font-medium text-ink-2
-              transition-[background-color,color,transform] duration-150 hover:bg-hover hover:text-ink active:scale-[0.96]"
-          >
-            {paused ? "Resume" : "Pause"}
-          </button>
+          <span className="rounded-full bg-field px-2 py-0.5 text-[10.5px] font-medium text-ink-2">
+            Snapshot
+          </span>
         </div>
-        <div className="h-[104px]">
+        <div className="h-[146px]">
           <Liveline
             data={[]}
             value={0}
@@ -169,19 +122,15 @@ function CompareCard() {
             theme="dark"
             grid
             scrub
-            pulse
+            pulse={false}
             exaggerate
-            window={windowSecs}
-            windows={WINDOWS}
-            onWindowChange={setWindowSecs}
-            windowStyle="rounded"
-            seriesToggleCompact
-            paused={paused}
+            window={SNAPSHOT_WINDOW}
+            paused
             cursor="crosshair"
             lineWidth={2.25}
-            padding={{ top: 12, right: 12, bottom: 24, left: 10 }}
+            padding={{ top: 14, right: 12, bottom: 16, left: 10 }}
             formatValue={formatPercent}
-            formatTime={(time) => new Date(time * 1000).toLocaleTimeString([], { minute: "2-digit", second: "2-digit" })}
+            formatTime={() => "snapshot"}
             onHover={setHover}
           />
         </div>
@@ -192,40 +141,16 @@ function CompareCard() {
 
 /* 2 — anomaly: bars with threshold + big spent value */
 function AnomalyCard() {
-  const [paused, setPaused] = useState(false);
-  const [windowSecs, setWindowSecs] = useState(30);
   const [metric, setMetric] = useState<"spend" | "usage">("spend");
   const [hover, setHover] = useState<HoverPoint | null>(null);
-  const [spend, setSpend] = useState(() =>
-    makePoints([274, 289, 264, 307, 331, 1210, 1718, 2112], 3),
+  const spend = useMemo(
+    () => makePoints([274, 289, 264, 307, 331, 1210, 1718, 2112], 7),
+    [],
   );
-  const [usage, setUsage] = useState(() =>
-    makePoints([18, 19, 17, 21, 22, 58, 81, 96], 3),
+  const usage = useMemo(
+    () => makePoints([18, 19, 17, 21, 22, 58, 81, 96], 7),
+    [],
   );
-
-  useEffect(() => {
-    if (paused) return;
-    const timer = setInterval(() => {
-      setSpend((current) => {
-        const index = current.length;
-        const last = current.at(-1)?.value ?? 2112;
-        const next = Math.max(240, last + Math.sin(index * 0.66) * 78 - 12);
-        return [...current.slice(-46), nextPoint(current, next)];
-      });
-      setUsage((current) => {
-        const index = current.length;
-        const last = current.at(-1)?.value ?? 96;
-        const next = Math.max(14, last + Math.cos(index * 0.7) * 4.5 - 0.5);
-        return [...current.slice(-46), nextPoint(current, next)];
-      });
-    }, 1050);
-    return () => clearInterval(timer);
-  }, [paused]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setPaused(true), 1600);
-    return () => clearTimeout(t);
-  }, []);
 
   const data = metric === "spend" ? spend : usage;
   const value = data.at(-1)?.value ?? (metric === "spend" ? 2112 : 96);
@@ -233,22 +158,15 @@ function AnomalyCard() {
   const moneyLabel = formatMoney(spend.at(-1)?.value ?? 2112);
 
   return (
-    <div className="rounded-card bg-surface p-3 shadow-hairline">
+    <div className="min-h-[278px] rounded-card bg-surface p-3 shadow-hairline">
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
           High freezer spend
         </span>
-        <button
-          type="button"
-          aria-pressed={paused}
-          onClick={() => setPaused((value) => !value)}
-          className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11.5px] text-ink-2
-            transition-[background-color,color,transform] duration-150 hover:bg-hover hover:text-ink active:scale-[0.96]"
-        >
-          {paused ? "Resume" : "Pause"}
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M7 7h10v10" /></svg>
-        </button>
+        <span className="rounded-full bg-field px-2 py-0.5 text-[10.5px] font-medium text-ink-2">
+          Snapshot
+        </span>
       </div>
       <div className="mt-2 overflow-hidden rounded-control bg-inset shadow-hairline">
         <div className="flex items-center justify-between border-b border-line px-2.5 py-1.5">
@@ -275,7 +193,7 @@ function AnomalyCard() {
             ))}
           </span>
         </div>
-        <div className="h-[104px]">
+        <div className="h-[146px]">
           <Liveline
             data={data}
             value={value}
@@ -286,22 +204,19 @@ function AnomalyCard() {
             badge
             badgeVariant="minimal"
             fill
-            pulse
-            momentum
+            pulse={false}
+            momentum={false}
             exaggerate
             showValue
             valueMomentumColor
-            paused={paused}
-            window={windowSecs}
-            windows={WINDOWS}
-            onWindowChange={setWindowSecs}
-            windowStyle="rounded"
+            paused
+            window={SNAPSHOT_WINDOW}
             referenceLine={{ value: threshold, label: metric === "spend" ? "threshold" : "peak limit" }}
             lineWidth={2.25}
             cursor="crosshair"
-            padding={{ top: 12, right: 58, bottom: 24, left: 10 }}
+            padding={{ top: 14, right: 58, bottom: 16, left: 10 }}
             formatValue={(v) => (metric === "spend" ? formatMoney(v) : `${Math.round(v)} kWh`)}
-            formatTime={(time) => new Date(time * 1000).toLocaleTimeString([], { minute: "2-digit", second: "2-digit" })}
+            formatTime={() => "snapshot"}
             onHover={setHover}
           />
         </div>
@@ -328,7 +243,7 @@ function AllocationCard() {
   const active = segments.find((segment) => segment.name === selected) ?? segments[0];
 
   return (
-    <div className="rounded-card bg-surface p-3 shadow-hairline">
+    <div className="min-h-[278px] rounded-card bg-surface p-3 shadow-hairline">
       <span className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
         <span className="flex size-3.5 items-center justify-center rounded-full bg-orange text-[8px] font-bold text-white">
           V
@@ -339,7 +254,7 @@ function AllocationCard() {
         {active.amount}
       </span>
       <div
-        className="mt-2 flex h-7 gap-0.5 overflow-hidden rounded-full bg-field p-0.5"
+        className="mt-3 flex h-9 gap-0.5 overflow-hidden rounded-full bg-field p-0.5"
         role="group"
         aria-label="Allocation segments"
       >
@@ -385,10 +300,10 @@ function AllocationCard() {
           </button>
         ))}
       </div>
-      <div className="mt-2 min-h-8 rounded-control bg-inset px-2.5 py-1.5 shadow-hairline">
+      <div className="mt-3 min-h-16 rounded-control bg-inset px-2.5 py-2 shadow-hairline">
         <span className={`block text-[11.5px] font-medium ${active.tone}`}>{active.label}</span>
-        <span className="block text-[11px] text-ink-3">
-          Click segments to inspect contribution without changing the card height.
+        <span className="mt-1 block text-[11px] leading-relaxed text-ink-3">
+          Contribution snapshot across current inventory value. Segment selection changes the inspected group without moving the card.
         </span>
       </div>
     </div>
@@ -433,32 +348,15 @@ const PAGES = [
 
 export default function InsightCards() {
   const [page, setPage] = useState(0);
-  const [swapping, setSwapping] = useState(false);
-  const [manual, setManual] = useState(false);
-
-  useEffect(() => {
-    if (manual) return;
-    const fade = setTimeout(() => setSwapping(true), PAGE_MS - SWAP_MS);
-    const next = setTimeout(() => {
-      setPage((p) => (p + 1) % PAGES.length);
-      setSwapping(false);
-    }, PAGE_MS);
-    return () => {
-      clearTimeout(fade);
-      clearTimeout(next);
-    };
-  }, [manual, page]);
 
   const move = (direction: -1 | 1) => {
-    setManual(true);
-    setSwapping(false);
     setPage((current) => (current + direction + PAGES.length) % PAGES.length);
   };
 
   const { prose, Card, pill } = PAGES[page];
 
   return (
-    <div className="min-h-[320px] w-full max-w-80">
+    <div className="min-h-[408px] w-full max-w-86">
       {/* pager header */}
       <div className="flex items-center justify-between">
         <span className="flex items-baseline gap-1.5">
@@ -486,7 +384,7 @@ export default function InsightCards() {
       {/* page content — blurred crossfade */}
       <div
         className="transition-[opacity,filter] duration-250"
-        style={{ opacity: swapping ? 0 : 1, filter: swapping ? "blur(3px)" : "blur(0)" }}
+        style={{ opacity: 1, filter: "blur(0)" }}
       >
         <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-2">{prose}</p>
         <div className="mt-2">

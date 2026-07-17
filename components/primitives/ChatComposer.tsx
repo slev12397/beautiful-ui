@@ -45,9 +45,9 @@ function Section({
 }
 
 export default function ChatComposer() {
-  const [phase, setPhase] = useState<Phase>("idle");
+  const [phase, setPhase] = useState<Phase>("done");
   const [draft, setDraft] = useState("");
-  const [submitted, setSubmitted] = useState("");
+  const [submitted, setSubmitted] = useState("Compare mint chip to last summer");
   const [tab, setTab] = useState("Flavors");
   const inputRef = useRef<HTMLInputElement>(null);
 

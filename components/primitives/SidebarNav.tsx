@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
  * SIDEBAR NAV
@@ -32,9 +32,26 @@ function Icon({ kind }: { kind: string }) {
 
 export default function SidebarNav() {
   const [active, setActive] = useState("tasks");
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [box, setBox] = useState<{ top: number; height: number } | null>(null);
   const [query, setQuery] = useState("");
   const [badge, setBadge] = useState(4);
   const sections = ["Workspace", "Objects"];
+  const navRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useLayoutEffect(() => {
+    const container = navRef.current;
+    const target = itemRefs.current[hovered ?? active];
+    if (!container || !target) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    setBox({
+      top: targetRect.top - containerRect.top,
+      height: targetRect.height,
+    });
+  }, [hovered, active]);
 
   return (
     <div className="w-60 rounded-card bg-surface p-2 shadow-raised">
@@ -92,7 +109,22 @@ export default function SidebarNav() {
       </button>
 
       {/* items */}
-      <div className="flex flex-col gap-2">
+      <div
+        ref={navRef}
+        onMouseLeave={() => setHovered(null)}
+        className="relative flex flex-col gap-2"
+      >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 rounded-[7px] bg-hover"
+          style={{
+            top: box?.top ?? 0,
+            height: box?.height ?? 0,
+            opacity: box ? 1 : 0,
+            transition:
+              "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
+          }}
+        />
         {sections.map((section) => (
           <div key={section}>
             <div className="px-2 pb-1 pt-1 text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-3">
@@ -104,13 +136,17 @@ export default function SidebarNav() {
                 return (
                   <button
                     key={item.key}
+                    ref={(el) => {
+                      itemRefs.current[item.key] = el;
+                    }}
                     type="button"
+                    onMouseEnter={() => setHovered(item.key)}
+                    onFocus={() => setHovered(item.key)}
+                    onBlur={() => setHovered(null)}
                     onClick={() => setActive(item.key)}
                     aria-current={isActive ? "page" : undefined}
-                    className={`group relative flex w-full items-center gap-2 rounded-control px-2 py-1.5 text-left
-                      transition-[background-color,transform] duration-150 active:scale-[0.96] ${
-                        isActive ? "bg-field" : "hover:bg-hover"
-                      }`}
+                    className="group relative z-10 flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left
+                      transition-[color,transform] duration-150 active:scale-[0.96]"
                   >
                     <span className={isActive ? "text-ink" : "text-ink-3"}>
                       <Icon kind={item.key} />
