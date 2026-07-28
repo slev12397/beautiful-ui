@@ -71,16 +71,9 @@ const RetryIcon = (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" /></svg>
 );
 
-const DETAILS = [
-  { label: "Reading POS export", meta: "3 files" },
-  { label: "Scoring stockout risk", meta: "68%" },
-];
-
 export default function TaskRows({ variant = "Capsules" }: { variant?: string }) {
   const tick = useTick(TICKS);
-  const [manualExpanded, setManualExpanded] = useState<boolean | null>(null);
-  const [selectedRow, setSelectedRow] = useState<string | null>(null);
-  const expanded = manualExpanded ?? tick === 2;
+  const [manualOpen, setManualOpen] = useState<Record<string, boolean>>({});
   const row2: "pending" | "failed" | "done" = tick < 3 ? "pending" : tick === 3 ? "failed" : "done";
 
   const rows = [
@@ -94,7 +87,10 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
           Completed
         </span>
       ),
-      expandable: false,
+      details: [
+        { label: "Matched tax and contact IDs", meta: "12/12" },
+        { label: "Flagged stale records", meta: "0" },
+      ],
     },
     {
       key: "index",
@@ -102,7 +98,10 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
       label: "Build reorder task list",
       amount: "7 SKUs",
       pill: null,
-      expandable: true,
+      details: [
+        { label: "Reading POS export", meta: "3 files" },
+        { label: "Scoring stockout risk", meta: "68%" },
+      ],
     },
     {
       key: "draft",
@@ -126,7 +125,10 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
             Completed
           </span>
         ) : null,
-      expandable: false,
+      details: [
+        { label: "Cone supplier follow-up", meta: "draft" },
+        { label: "Pistachio reorder note", meta: "draft" },
+      ],
     },
   ];
 
@@ -138,8 +140,7 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
       }`}
     >
       {rows.map((row, i) => {
-        const open = row.expandable && expanded;
-        const selected = selectedRow === row.key;
+        const open = manualOpen[row.key] ?? (row.key === "index" && tick === 2);
         return (
           <div
             key={row.key}
@@ -153,18 +154,9 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
           >
             <button
               type="button"
-              aria-pressed={row.expandable ? undefined : selected}
-              aria-expanded={row.expandable ? open : undefined}
-              onClick={() => {
-                if (row.expandable) {
-                  setManualExpanded((current) => !(current ?? expanded));
-                  return;
-                }
-                setSelectedRow((current) => (current === row.key ? null : row.key));
-              }}
-              className={`flex h-11 w-full items-center gap-2.5 px-2.5 text-left transition-colors duration-100 hover:bg-inset ${
-                selected ? "bg-inset" : ""
-              }`}
+              aria-expanded={open}
+              onClick={() => setManualOpen((current) => ({ ...current, [row.key]: !open }))}
+              className="flex h-11 w-full items-center gap-2.5 px-2.5 text-left transition-colors duration-100 hover:bg-inset"
             >
               {row.badge}
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">
@@ -174,24 +166,21 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
               {row.pill}
               <span
                 aria-hidden="true"
-                className={`flex size-7 shrink-0 items-center justify-center rounded-full text-ink-3 transition-colors duration-100 ${
-                  row.expandable ? "text-ink-3" : "opacity-45"
-                }`}
+                className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-3"
               >
                 <svg
                   width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
                   className="transition-transform duration-300"
                   style={{ transform: open ? "rotate(180deg)" : "rotate(0)" }}
                 >
-                  {row.expandable ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
+                  <path d="M6 9l6 6 6-6" />
                 </svg>
               </span>
             </button>
 
             {/* dropdown detail — same expandable grammar as Chain of Thought */}
-            {row.expandable && (
-              <div
-                className="grid transition-[grid-template-rows,opacity] duration-300"
+            <div
+              className="grid transition-[grid-template-rows,opacity] duration-300"
                 style={{
                   gridTemplateRows: open ? "1fr" : "0fr",
                   opacity: open ? 1 : 0,
@@ -200,7 +189,7 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
               >
                 <div className="overflow-hidden">
                   <div className="mx-3.5 mb-2.5 flex flex-col gap-1.5 border-l border-line pl-3.5">
-                    {DETAILS.map((d, j) => (
+                    {row.details.map((d, j) => (
                       <div
                         key={d.label}
                         className="flex items-center justify-between"
@@ -219,7 +208,6 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
                   </div>
                 </div>
               </div>
-            )}
           </div>
         );
       })}

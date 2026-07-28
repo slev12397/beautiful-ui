@@ -197,9 +197,9 @@ export default function FineTuneCard() {
             type="button"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((current) => !current)}
-            className="flex h-6.5 w-full items-center justify-between rounded-chip bg-field py-1 pr-1 pl-2
-              shadow-inset-field transition-shadow duration-200 focus-visible:outline-none"
-            style={{ boxShadow: menuOpen ? "inset 0 1px 2px rgba(0,0,0,0.12), 0 0 0 1px var(--accent)" : undefined }}
+            className="flex h-6.5 w-full items-center justify-between rounded-chip bg-inset py-1 pr-1 pl-2
+              shadow-hairline transition-shadow duration-200 focus-visible:outline-none"
+            style={{ boxShadow: menuOpen ? "0 0 0 1px var(--accent)" : undefined }}
           >
             <span className={`text-[12px] ${typeValue !== "Select type" ? "text-ink" : "text-ink-3"}`}>
               {typeValue}

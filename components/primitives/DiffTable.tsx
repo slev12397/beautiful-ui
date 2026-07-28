@@ -18,9 +18,9 @@ function useStage(steps: number[]) {
 }
 
 const ROWS = [
-  { id: "Rocky Road", dept: "Classic", email: "bear-creek-dairy", removed: true },
-  { id: "Bubblegum", dept: "Retro", email: "sweet-labs", removed: true },
-  { id: "Mint Chip", dept: "Classic", email: "verde-farms", removed: false },
+  { id: "Rocky Road", dept: "Classic", email: "aurora-scoops", removed: true },
+  { id: "Bubblegum", dept: "Retro", email: "kumo-creamery", removed: true },
+  { id: "Mint Chip", dept: "Classic", email: "maple-orbit", removed: false },
 ];
 
 const DOT: Record<string, string> = {
@@ -31,8 +31,7 @@ const DOT: Record<string, string> = {
 
 export default function DiffTable() {
   const stage = useStage([800, 1000, 1000]);
-  // 0 plain · 1 badge · 2 red tint · 3 completed diff
-  const badge = stage >= 1;
+  // 0 plain · 1 red tint · 2 completed diff
   const tinted = stage >= 2;
   const added = stage >= 3;
 
@@ -41,17 +40,6 @@ export default function DiffTable() {
       <div className="relative overflow-hidden rounded-card bg-surface shadow-card">
         <div className="primitive-card-bar flex items-center justify-between border-b border-line">
           <span className="text-[12.5px] font-medium text-ink">Proposed menu cleanup</span>
-          <span
-            className="inline-flex h-5 items-center rounded-md bg-accent px-1.5 text-[10px] font-semibold tracking-wide text-white
-              transition-[opacity,transform] duration-300"
-            style={{
-              opacity: badge ? 1 : 0,
-              transform: badge ? "translateY(0)" : "translateY(-4px)",
-              transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
-            }}
-          >
-            AI SUGGESTION
-          </span>
         </div>
 
         <table className="w-full table-fixed border-collapse text-left">
@@ -129,7 +117,7 @@ export default function DiffTable() {
                         </span>
                       </span>
                       <span className="primitive-table-cell text-[13px] text-green">
-                        verde-farms
+                        maple-orbit
                       </span>
                     </div>
                   </div>

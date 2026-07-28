@@ -1,7 +1,7 @@
 "use client";
 
-import { Liveline, type HoverPoint, type LivelinePoint, type LivelineSeries } from "liveline";
-import { useMemo, useState } from "react";
+import { Liveline, type LivelinePoint, type LivelineSeries } from "liveline";
+import { useEffect, useMemo, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
  * INSIGHT CARDS
@@ -10,7 +10,6 @@ import { useMemo, useState } from "react";
  * ───────────────────────────────────────────────────────── */
 
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
-const SNAPSHOT_WINDOW = 72;
 
 const formatPercent = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
 const formatMoney = (v: number) => `$${Math.round(v).toLocaleString("en-US")}`;
@@ -21,6 +20,21 @@ function makePoints(values: number[], gap = 6): LivelinePoint[] {
     time: SNAPSHOT_END - (values.length - 1 - index) * gap,
     value,
   }));
+}
+
+function useDarkMode() {
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const update = () => setDark(root.classList.contains("dark"));
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  return dark;
 }
 
 /* inline @entity mention */
@@ -41,9 +55,30 @@ function Mono({ children, tone }: { children: React.ReactNode; tone: "red" | "gr
   );
 }
 
+function chartIndexFromPointer(event: React.MouseEvent<HTMLDivElement>, pointCount: number) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const progress = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+  return Math.round(progress * (pointCount - 1));
+}
+
+function ChartTooltip({ rows }: { rows: { label: string; value: string; color: string }[] }) {
+  return (
+    <div className="insight-chart-tooltip">
+      <span className="insight-chart-tooltip-time">Today, 12:00</span>
+      {rows.map((row) => (
+        <div key={row.label} className="insight-chart-tooltip-row">
+          <span className="insight-chart-tooltip-label"><span className="insight-chart-tooltip-dot" style={{ background: row.color }} />{row.label}</span>
+          <strong>{row.value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* 1 — return comparison: 2 series, legend + big deltas + line chart */
 function CompareCard() {
-  const [hover, setHover] = useState<HoverPoint | null>(null);
+  const dark = useDarkMode();
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const data = useMemo(
     () => ({
       mint: makePoints([-2.9, -3.4, -3.05, -3.86, -3.52, -4.1, -3.82, -4.41]),
@@ -108,30 +143,38 @@ function CompareCard() {
       <div className="mt-2 overflow-hidden rounded-control bg-inset shadow-hairline">
         <div className="flex items-center justify-between border-b border-line px-2.5 py-1.5">
           <span className="text-[11px] text-ink-3 tabular-nums">
-            {hover ? formatPercent(hover.value) : "Scrub chart"}
+            Trend snapshot
           </span>
           <span className="rounded-full bg-field px-2 py-0.5 text-[10.5px] font-medium text-ink-2">
             Snapshot
           </span>
         </div>
-        <div className="h-[146px]">
+        <div
+          className="insight-chart-stage relative h-[166px]"
+          onMouseMove={(event) => setHoverIndex(chartIndexFromPointer(event, data.mint.length))}
+          onMouseLeave={() => setHoverIndex(null)}
+        >
           <Liveline
             data={[]}
             value={0}
             series={series}
-            theme="dark"
-            grid
+            theme={dark ? "dark" : "light"}
+            grid={false}
             pulse={false}
-            exaggerate
-            window={SNAPSHOT_WINDOW}
+            window={42}
             paused
-            cursor="crosshair"
+            scrub={false}
+            cursor="default"
             lineWidth={2.25}
-            padding={{ top: 14, right: 12, bottom: 16, left: 10 }}
+            padding={{ top: 24, right: 0, bottom: 22, left: 0 }}
             formatValue={formatPercent}
-            formatTime={() => "snapshot"}
-            onHover={setHover}
           />
+          {hoverIndex !== null && <>
+            <span className="insight-chart-cursor" style={{ left: `${(hoverIndex / (data.mint.length - 1)) * 100}%` }} />
+            <span className="insight-chart-tooltip-anchor" style={{ left: `${Math.min(Math.max((hoverIndex / (data.mint.length - 1)) * 100, 28), 72)}%` }}>
+              <ChartTooltip rows={[{ label: "Mint Chip", value: formatPercent(data.mint[hoverIndex].value), color: "var(--orange)" }, { label: "Pistachio", value: formatPercent(data.pistachio[hoverIndex].value), color: "var(--accent)" }]} />
+            </span>
+          </>}
         </div>
       </div>
     </div>
@@ -140,8 +183,9 @@ function CompareCard() {
 
 /* 2 — anomaly: bars with threshold + big spent value */
 function AnomalyCard() {
+  const dark = useDarkMode();
   const [metric, setMetric] = useState<"spend" | "usage">("spend");
-  const [hover, setHover] = useState<HoverPoint | null>(null);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const spend = useMemo(
     () => makePoints([274, 289, 264, 307, 331, 1210, 1718, 2112], 7),
     [],
@@ -153,7 +197,7 @@ function AnomalyCard() {
 
   const data = metric === "spend" ? spend : usage;
   const value = data.at(-1)?.value ?? (metric === "spend" ? 2112 : 96);
-  const threshold = metric === "spend" ? 2112 : 82;
+  const threshold = metric === "spend" ? "$2,112" : "82 kWh";
   const moneyLabel = formatMoney(spend.at(-1)?.value ?? 2112);
 
   return (
@@ -170,11 +214,11 @@ function AnomalyCard() {
       <div className="mt-2 overflow-hidden rounded-control bg-inset shadow-hairline">
         <div className="flex items-center justify-between border-b border-line px-2.5 py-1.5">
           <span className="text-[11px] text-ink-3 tabular-nums">
-            {hover
+            {hoverIndex !== null
               ? metric === "spend"
-                ? formatMoney(hover.value)
-                : `${Math.round(hover.value)} kWh`
-              : `${metric === "spend" ? "$2,112" : "82 kWh"} threshold`}
+                ? formatMoney(data[hoverIndex].value)
+                : `${Math.round(data[hoverIndex].value)} kWh`
+              : `${threshold} threshold`}
           </span>
           <span className="flex rounded-full bg-field p-0.5">
             {(["spend", "usage"] as const).map((item) => (
@@ -192,32 +236,34 @@ function AnomalyCard() {
             ))}
           </span>
         </div>
-        <div className="h-[146px]">
+        <div
+          className="insight-chart-stage relative h-[166px]"
+          onMouseMove={(event) => setHoverIndex(chartIndexFromPointer(event, data.length))}
+          onMouseLeave={() => setHoverIndex(null)}
+        >
           <Liveline
             data={data}
             value={value}
-            theme="dark"
+            theme={dark ? "dark" : "light"}
             color="#ee5c61"
             grid
-            scrub
-            badge
-            badgeVariant="minimal"
-            fill
+            scrub={false}
+            fill={false}
             pulse={false}
             momentum={false}
-            exaggerate
-            showValue
-            valueMomentumColor
             paused
-            window={SNAPSHOT_WINDOW}
-            referenceLine={{ value: threshold, label: metric === "spend" ? "threshold" : "peak limit" }}
+            window={49}
             lineWidth={2.25}
             cursor="crosshair"
-            padding={{ top: 14, right: 58, bottom: 16, left: 10 }}
+            padding={{ top: 18, right: 0, bottom: 22, left: 0 }}
             formatValue={(v) => (metric === "spend" ? formatMoney(v) : `${Math.round(v)} kWh`)}
-            formatTime={() => "snapshot"}
-            onHover={setHover}
           />
+          {hoverIndex !== null && <>
+            <span className="insight-chart-cursor" style={{ left: `${(hoverIndex / (data.length - 1)) * 100}%` }} />
+            <span className="insight-chart-tooltip-anchor" style={{ left: `${Math.min(Math.max((hoverIndex / (data.length - 1)) * 100, 28), 72)}%` }}>
+              <ChartTooltip rows={[{ label: metric === "spend" ? "Spend" : "Usage", value: metric === "spend" ? formatMoney(data[hoverIndex].value) : `${Math.round(data[hoverIndex].value)} kWh`, color: "var(--red)" }]} />
+            </span>
+          </>}
         </div>
       </div>
       <div className="mt-1.5 flex items-baseline gap-2">

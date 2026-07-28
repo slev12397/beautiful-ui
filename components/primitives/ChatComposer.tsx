@@ -71,9 +71,9 @@ export default function ChatComposer() {
   };
 
   return (
-    <div className="flex min-h-[248px] w-full max-w-95 flex-col self-start overflow-hidden rounded-card bg-surface shadow-card">
+    <div className="flex h-[288px] w-full max-w-95 flex-col self-start overflow-hidden rounded-card bg-surface shadow-card">
       {/* header — tabs + actions */}
-      <div className="flex items-center justify-between border-b border-line p-1.5">
+      <div className="flex shrink-0 items-center justify-between border-b border-line p-1.5">
         <div className="flex items-center">
           {["Flavors", "Suppliers"].map((item) => (
             <button
@@ -108,8 +108,8 @@ export default function ChatComposer() {
         </div>
       </div>
 
-      {/* conversation */}
-      <div className="flex flex-col gap-2.5 px-3 pt-2.5 pb-1">
+      {/* conversation — fixed region so the card never changes shape */}
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-3 pt-2.5 pb-1">
         {/* user bubble — right aligned, soft block */}
         <div className="flex justify-end pl-14">
           <div
@@ -145,7 +145,7 @@ export default function ChatComposer() {
       </div>
 
       {/* composer */}
-      <div className="mt-auto p-1.5">
+      <div className="mt-auto shrink-0 p-1.5">
         <div
           role="presentation"
           onClick={() => inputRef.current?.focus()}

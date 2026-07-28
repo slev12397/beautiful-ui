@@ -11,23 +11,23 @@ type Status = "todo" | "progress" | "done";
 
 const FILTERS: { key: "all" | Status; label: string; dot?: string; count: number }[] = [
   { key: "all", label: "All", count: 5 },
-  { key: "todo", label: "To do", dot: "bg-red", count: 2 },
-  { key: "progress", label: "In Progress", dot: "bg-accent", count: 2 },
-  { key: "done", label: "Completed", dot: "bg-green", count: 1 },
+  { key: "todo", label: "To do", dot: "#f09a2f", count: 2 },
+  { key: "progress", label: "In Progress", dot: "#16a6c7", count: 2 },
+  { key: "done", label: "Completed", dot: "#25a878", count: 1 },
 ];
 
 const ROWS: { task: string; date: string; status: Status; owner: string }[] = [
-  { task: "Restock vanilla", date: "Dec 03", status: "todo", owner: "B. Gelato" },
-  { task: "Churn pistachio", date: "Sep 22", status: "progress", owner: "E. Cone" },
-  { task: "Print menu boards", date: "Jan 02", status: "todo", owner: "K. Sundae" },
-  { task: "Taste-test batch 42", date: "Nov 08", status: "progress", owner: "S. Sprinkle" },
-  { task: "Order waffle cones", date: "Apr 14", status: "done", owner: "J. Fudge" },
+  { task: "Restock mango sorbet", date: "Dec 03", status: "todo", owner: "Mango Moon Gelato" },
+  { task: "Churn black sesame", date: "Sep 22", status: "progress", owner: "Kumo Creamery" },
+  { task: "Print summer menu", date: "Jan 02", status: "todo", owner: "Coral Coast Sorbet" },
+  { task: "Taste-test batch 42", date: "Nov 08", status: "progress", owner: "Maple Orbit" },
+  { task: "Order waffle cones", date: "Apr 14", status: "done", owner: "Aurora Scoops" },
 ];
 
 const PILLS: Record<Status, { label: string; cls: string }> = {
-  todo: { label: "To do", cls: "bg-red-tint text-red" },
-  progress: { label: "In Progress", cls: "bg-accent-tint text-accent-ink" },
-  done: { label: "Completed", cls: "bg-green-tint text-green" },
+  todo: { label: "To do", cls: "filter-status-todo" },
+  progress: { label: "In Progress", cls: "filter-status-progress" },
+  done: { label: "Completed", cls: "filter-status-done" },
 };
 
 export default function FilterTable() {
@@ -49,7 +49,7 @@ export default function FilterTable() {
                 font-medium transition-[background-color,box-shadow,color] duration-200
                 ${active ? "bg-surface text-ink shadow-btn" : "text-ink-2 hover:bg-hover"}`}
             >
-              {f.dot && <span className={`size-1.5 rounded-full ${f.dot}`} />}
+              {f.dot && <span className="size-1.5 rounded-full" style={{ background: f.dot }} />}
               {f.label}
               <span
                 className={`rounded-[4px] px-1 text-[10.5px] tabular-nums

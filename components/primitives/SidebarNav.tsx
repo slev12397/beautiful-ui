@@ -58,15 +58,15 @@ export default function SidebarNav() {
       {/* workspace row */}
       <button
         type="button"
-        className="mb-1 flex w-full items-center gap-2 rounded-control px-2 py-1.5 text-left
+        className="mb-1 flex w-full items-center gap-2.5 rounded-control p-1.5 text-left
           transition-[background-color,transform] duration-100 hover:bg-hover active:scale-[0.96]"
       >
-        <span className="flex size-5.5 items-center justify-center rounded-[7px] bg-ink text-[9px] font-semibold text-surface">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-ink text-[13px] font-semibold text-surface">
           C
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13px] font-medium leading-tight text-ink">Creamery Ops</span>
-          <span className="block truncate text-[11px] leading-tight text-ink-3">Production workspace</span>
+          <span className="block truncate text-[11px] leading-tight text-ink-3">Production Workspace</span>
         </span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
@@ -98,14 +98,14 @@ export default function SidebarNav() {
           setActive("tasks");
         }}
         className="mb-2 flex w-full items-center gap-2 rounded-control px-2 py-1.5 text-[13px]
-          font-medium text-accent-ink transition-[background-color,transform] duration-100 hover:bg-accent-tint active:scale-[0.96]"
+          font-medium text-accent transition-[background-color,transform] duration-100 hover:bg-accent-tint active:scale-[0.96]"
       >
-        <span className="flex size-4 items-center justify-center rounded-full bg-accent text-white">
+        <span className="min-w-0 flex-1 truncate text-left">New task</span>
+        <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-accent text-white">
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
           </svg>
         </span>
-        New task
       </button>
 
       {/* items */}
