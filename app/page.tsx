@@ -3,6 +3,7 @@ import path from "node:path";
 import { Grid } from "@/components/site/Grid";
 import { Nav } from "@/components/site/Nav";
 import { EmailCapture } from "@/components/site/EmailCapture";
+import { GlimmHover } from "@/components/site/GlimmHover";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
 import { META } from "@/lib/meta";
 
@@ -49,7 +50,7 @@ export default function Home() {
           </div>
 
           <div className="mt-8 shrink-0 lg:mt-6">
-            <div className="group/turbo">
+            <GlimmHover className="group/turbo">
             <a
               href="https://turbodesign.co/"
               target="_blank"
@@ -94,7 +95,7 @@ export default function Home() {
                 <path d="M7 17L17 7M7 7h10v10" />
               </svg>
             </a>
-            </div>
+            </GlimmHover>
             <a
               href="https://cal.com/shane-levine-7bnfdw/30min?overlayCalendar=true"
               target="_blank"
