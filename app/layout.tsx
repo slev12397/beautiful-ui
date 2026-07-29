@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { GlimmProvider } from "glimm/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -30,7 +29,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${inter.variable} ${mono.variable} font-sans`}>
-        <GlimmProvider palette="azure">{children}</GlimmProvider>
+        {children}
       </body>
     </html>
   );

@@ -3,7 +3,6 @@ import path from "node:path";
 import { Grid } from "@/components/site/Grid";
 import { Nav } from "@/components/site/Nav";
 import { EmailCapture } from "@/components/site/EmailCapture";
-import { GlimmHover } from "@/components/site/GlimmHover";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
 import { META } from "@/lib/meta";
 
@@ -50,7 +49,6 @@ export default function Home() {
           </div>
 
           <div className="mt-8 shrink-0 lg:mt-6">
-            <GlimmHover className="group/turbo">
             <a
               href="https://turbodesign.co/"
               target="_blank"
@@ -82,20 +80,6 @@ export default function Home() {
                 Get expert product design for your business.
               </span>
             </a>
-            <a
-              href="https://glimm.dev/"
-              target="_blank"
-              rel="noreferrer"
-              className="mx-2 mt-0.5 inline-flex items-center gap-1 rounded-[5px] text-[11.5px] text-ink-2
-                opacity-0 transition-opacity duration-200 group-hover/turbo:opacity-100
-                hover:text-ink focus-visible:opacity-100"
-            >
-              glimm.dev
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M7 17L17 7M7 7h10v10" />
-              </svg>
-            </a>
-            </GlimmHover>
             <a
               href="https://cal.com/shane-levine-7bnfdw/30min?overlayCalendar=true"
               target="_blank"
