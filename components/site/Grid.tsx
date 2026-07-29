@@ -84,20 +84,26 @@ function Card({
   return (
     <section
       id={entry.id}
-      className="group flex w-full scroll-mt-8 flex-col border-b border-dashed border-line px-8 py-10"
+      className="primitive-showcase group flex w-full scroll-mt-8 flex-col border-b border-dashed border-line px-8 py-10"
       style={{
         animation: `fade-up 600ms cubic-bezier(0.23,1,0.32,1) ${Math.min(index, 4) * 60}ms both`,
       }}
     >
-      <div className="mb-3 flex items-baseline gap-2">
-        <span className="font-mono text-[11px] text-ink-3 tabular-nums">
+      <div className="mb-3 flex items-start gap-2 sm:items-baseline">
+        <span className="mt-0.5 font-mono text-[11px] text-ink-3 tabular-nums sm:mt-0">
           {String(index + 1).padStart(2, "0")}
         </span>
-        <h3 className="text-[13px] font-semibold text-ink">{entry.title}</h3>
-        <p className="truncate text-[12.5px] text-ink-3">{entry.caption}</p>
+        <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
+          <h3 className="whitespace-nowrap text-[13px] font-semibold text-ink">
+            {entry.title}
+          </h3>
+          <p className="mt-0.5 text-[12.5px] text-ink-3 text-pretty sm:mt-0 sm:truncate">
+            {entry.caption}
+          </p>
+        </div>
       </div>
       <div
-        className="relative flex items-center justify-center overflow-hidden rounded-window bg-canvas p-3 shadow-hairline"
+        className="primitive-demo-surface relative flex items-center justify-center overflow-hidden rounded-window bg-canvas p-3 shadow-hairline"
         style={{ minHeight: previewHeight }}
       >
         <div ref={contentRef} className="w-full max-w-120 [&>*]:mx-auto">

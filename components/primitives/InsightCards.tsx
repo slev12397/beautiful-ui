@@ -55,7 +55,7 @@ function Mono({ children, tone }: { children: React.ReactNode; tone: "red" | "gr
   );
 }
 
-function chartIndexFromPointer(event: React.MouseEvent<HTMLDivElement>, pointCount: number) {
+function chartIndexFromPointer(event: React.PointerEvent<HTMLDivElement>, pointCount: number) {
   const rect = event.currentTarget.getBoundingClientRect();
   const progress = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
   return Math.round(progress * (pointCount - 1));
@@ -151,8 +151,11 @@ function CompareCard() {
         </div>
         <div
           className="insight-chart-stage relative h-[166px]"
-          onMouseMove={(event) => setHoverIndex(chartIndexFromPointer(event, data.mint.length))}
-          onMouseLeave={() => setHoverIndex(null)}
+          onPointerDown={(event) => setHoverIndex(chartIndexFromPointer(event, data.mint.length))}
+          onPointerMove={(event) => setHoverIndex(chartIndexFromPointer(event, data.mint.length))}
+          onPointerLeave={() => setHoverIndex(null)}
+          onPointerCancel={() => setHoverIndex(null)}
+          onPointerUp={() => setHoverIndex(null)}
         >
           <Liveline
             data={[]}
@@ -238,8 +241,11 @@ function AnomalyCard() {
         </div>
         <div
           className="insight-chart-stage relative h-[166px]"
-          onMouseMove={(event) => setHoverIndex(chartIndexFromPointer(event, data.length))}
-          onMouseLeave={() => setHoverIndex(null)}
+          onPointerDown={(event) => setHoverIndex(chartIndexFromPointer(event, data.length))}
+          onPointerMove={(event) => setHoverIndex(chartIndexFromPointer(event, data.length))}
+          onPointerLeave={() => setHoverIndex(null)}
+          onPointerCancel={() => setHoverIndex(null)}
+          onPointerUp={() => setHoverIndex(null)}
         >
           <Liveline
             data={data}

@@ -158,7 +158,9 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
               onClick={() => setManualOpen((current) => ({ ...current, [row.key]: !open }))}
               className="flex h-11 w-full items-center gap-2.5 px-2.5 text-left transition-colors duration-100 hover:bg-inset"
             >
-              {row.badge}
+              <span className="flex size-6 shrink-0 items-center justify-center">
+                {row.badge}
+              </span>
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">
                 {row.label}
               </span>
@@ -188,23 +190,26 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
                 }}
               >
                 <div className="overflow-hidden">
-                  <div className="mx-3.5 mb-2.5 flex flex-col gap-1.5 border-l border-line pl-3.5">
-                    {row.details.map((d, j) => (
-                      <div
-                        key={d.label}
-                        className="flex items-center justify-between"
-                        style={
-                          open
-                            ? { animation: `fade-up 300ms cubic-bezier(0.23,1,0.32,1) ${120 + j * 100}ms both` }
-                            : undefined
-                        }
-                      >
-                        <span className="text-[12px] text-ink-2">{d.label}</span>
-                        <span className="font-mono text-[11.5px] text-ink-3 tabular-nums">
-                          {d.meta}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="mb-2.5 grid grid-cols-[24px_1fr] gap-2.5 px-2.5">
+                    <span aria-hidden className="mx-auto h-full w-px bg-line" />
+                    <div className="flex flex-col gap-1.5">
+                      {row.details.map((d, j) => (
+                        <div
+                          key={d.label}
+                          className="flex items-center justify-between"
+                          style={
+                            open
+                              ? { animation: `fade-up 300ms cubic-bezier(0.23,1,0.32,1) ${120 + j * 100}ms both` }
+                              : undefined
+                          }
+                        >
+                          <span className="text-[12px] text-ink-2">{d.label}</span>
+                          <span className="font-mono text-[11.5px] text-ink-3 tabular-nums">
+                            {d.meta}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

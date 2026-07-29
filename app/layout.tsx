@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { GlimmProvider, InterceptLinks } from "glimm/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,7 +30,10 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${inter.variable} ${mono.variable} font-sans`}>
-        {children}
+        <GlimmProvider palette="azure">
+          <InterceptLinks />
+          {children}
+        </GlimmProvider>
       </body>
     </html>
   );

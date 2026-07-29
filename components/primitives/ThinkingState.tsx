@@ -160,13 +160,13 @@ export default function ThinkingState({ variant = "Steps" }: { variant?: string 
           <div className="relative mt-1 ml-[5px] pl-4">
             <span
               aria-hidden
-              className="absolute top-1 left-0 w-px bg-line"
-              style={{ height: lineHeight ? lineHeight - 8 : 0, transition: "height 500ms cubic-bezier(0.23,1,0.32,1)" }}
+              className="absolute left-[3px] w-px bg-line"
+              style={{ top: -8, height: lineHeight ? lineHeight - 2 : 0, transition: "height 500ms cubic-bezier(0.23,1,0.32,1)" }}
             />
             <div ref={traceRef} className="flex flex-col gap-1 py-1">
             {v.query && (
-              <div className="flex h-6 items-center gap-2" style={{ animation: expanded ? "fade-up 300ms cubic-bezier(0.23,1,0.32,1) both" : undefined }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" className="shrink-0">
+              <div className="flex h-6 items-center gap-2 px-1.5" style={{ animation: expanded ? "fade-up 300ms cubic-bezier(0.23,1,0.32,1) both" : undefined }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" className="shrink-0">
                   <circle cx="11" cy="11" r="7" />
                   <path d="M21 21l-4.3-4.3" />
                 </svg>
