@@ -184,9 +184,9 @@ export default function StreamingText() {
           {FOLLOW_UPS.map((text, i) => (
             <button
               key={text}
-              className="-mx-1.5 flex items-center gap-2 rounded-control border-b border-line
+              className="-mx-1.5 flex items-center gap-2 border-b border-line
                 px-1.5 py-1.5 text-left text-[12.5px] text-ink transition-colors
-                duration-100 last:border-0 hover:bg-hover-2"
+                duration-100 hover:bg-hover-2"
               style={
                 done
                   ? { animation: `fade-up 350ms cubic-bezier(0.23,1,0.32,1) ${i * 90}ms both` }

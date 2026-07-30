@@ -173,6 +173,8 @@ body {
     var(--stripe) 7px,
     var(--stripe) 8px
   );
+  /* Pin the stripe pattern to the viewport so it stays put on scroll. */
+  background-attachment: fixed;
   color: var(--ink);
   font-feature-settings: "cv11", "ss01";
   font-size: 14px;
@@ -183,6 +185,73 @@ body {
 ::selection {
   background: var(--accent-tint);
   color: var(--ink);
+}
+
+/* ── theme-switch rainbow sweep (self-contained "glimm" band) ──
+ * A blurred rainbow column wipes across the viewport when the
+ * dark/light toggle flips. Portaled over everything, never
+ * interactive, and disabled under reduced-motion. */
+.glimm-sweep-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.glimm-sweep-band {
+  position: absolute;
+  top: -10%;
+  left: 0;
+  height: 120%;
+  width: 38vw;
+  filter: blur(44px);
+  transform: translateX(-70vw) skewX(-14deg);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 58, 128, 0.5) 18%,
+    rgba(255, 170, 40, 0.5) 34%,
+    rgba(120, 220, 120, 0.5) 50%,
+    rgba(56, 150, 255, 0.55) 66%,
+    rgba(168, 92, 255, 0.5) 82%,
+    transparent 100%
+  );
+  animation: glimm-sweep 720ms cubic-bezier(0.5, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes glimm-sweep {
+  0% {
+    transform: translateX(-70vw) skewX(-14deg);
+    opacity: 0;
+  }
+  16% {
+    opacity: 0.92;
+  }
+  84% {
+    opacity: 0.92;
+  }
+  100% {
+    transform: translateX(180vw) skewX(-14deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glimm-sweep-band {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Keep the component nav scrollable but hide its scrollbar. */
+.component-nav-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+.component-nav-scroll::-webkit-scrollbar {
+  display: none; /* WebKit */
 }
 
 @media (min-width: 64rem) {

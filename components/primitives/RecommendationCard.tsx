@@ -96,7 +96,7 @@ export default function RecommendationCard() {
     <div className="w-full max-w-95 overflow-hidden rounded-card bg-surface shadow-card">
       <div className="primitive-card-pad">
         <span className="text-[13px] font-semibold text-ink">
-          Smart restock recommendation
+          Want me to place this restock order?
         </span>
         <p
           key={active.key}

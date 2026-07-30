@@ -168,7 +168,7 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
               {row.pill}
               <span
                 aria-hidden="true"
-                className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-3"
+                className="-ml-2 flex size-7 shrink-0 items-center justify-center rounded-full text-ink-3"
               >
                 <svg
                   width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"

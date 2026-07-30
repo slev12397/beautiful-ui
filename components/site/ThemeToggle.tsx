@@ -1,21 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 /** Sun/moon segmented pill from the refs. */
 export function ThemeToggle() {
   const [dark, setDark] = useState<boolean | null>(null);
+  const [mounted, setMounted] = useState(false);
+  // A rainbow "glimm" band wipes across the viewport on each flip.
+  const [sweep, setSweep] = useState<{ id: number; toDark: boolean } | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     setDark(document.documentElement.classList.contains("dark"));
   }, []);
 
   function apply(next: boolean) {
+    if (next === dark) return;
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
     try {
       localStorage.setItem("bui-theme", next ? "dark" : "light");
     } catch {}
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce) setSweep((current) => ({ id: (current?.id ?? 0) + 1, toDark: next }));
   }
 
   return (
@@ -51,6 +59,19 @@ export function ThemeToggle() {
           <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
         </svg>
       </button>
+
+      {mounted && sweep &&
+        createPortal(
+          <div className="glimm-sweep-overlay" aria-hidden>
+            <span
+              key={sweep.id}
+              className="glimm-sweep-band"
+              style={{ animationDirection: sweep.toDark ? "normal" : "reverse" }}
+              onAnimationEnd={() => setSweep(null)}
+            />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

@@ -125,8 +125,9 @@ export default function ToolChips() {
                 </span>
                 <span className="shrink-0 text-[12.5px] font-medium text-ink">{row.label}</span>
                 <span
-                  className={`inline-flex h-5.5 min-w-0 flex-1 cursor-pointer items-center truncate rounded-chip bg-field px-1.5
-                    text-[11.5px] text-[#43464c] shadow-hairline transition-colors duration-100 hover:bg-hover dark:text-ink-2
+                  className={`inline-flex h-5.5 min-w-0 flex-1 cursor-pointer items-center truncate rounded-chip bg-hover-2 px-1.5
+                    text-[11.5px] text-[#43464c] shadow-hairline transition-colors duration-100 hover:bg-line-strong
+                    dark:bg-field dark:text-ink-2 dark:hover:bg-hover
                     ${row.mono ? "font-mono" : ""}`}
                 >
                   {row.chip}
