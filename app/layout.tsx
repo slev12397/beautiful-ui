@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { GlimmProvider } from "glimm/next";
 import "./globals.css";
 import { DevToolbar } from "@/components/site/DevToolbar";
 
@@ -30,8 +31,10 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${inter.variable} ${mono.variable} font-sans`}>
-        {children}
-        <DevToolbar />
+        <GlimmProvider zIndex={100000}>
+          {children}
+          <DevToolbar />
+        </GlimmProvider>
       </body>
     </html>
   );
