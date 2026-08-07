@@ -148,7 +148,7 @@ export default function RecommendationCard() {
           <span className="text-[12.5px] font-medium text-ink-2">{active.label}</span>
         </span>
 
-        <span className="flex items-center gap-2">
+        <span className="-mr-0.5 flex items-center gap-2">
           <button
             type="button"
             aria-expanded={open}

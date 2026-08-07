@@ -55,7 +55,7 @@ function SourceChip() {
       target="_blank"
       rel="noreferrer"
       className="ml-0 mr-1 inline-flex h-4.5 translate-y-[-1px] items-center gap-1 rounded-[5px]
-        bg-inset pr-1.5 pl-[3px] align-middle font-mono text-[10.5px] text-ink-2 shadow-hairline
+        bg-inset pr-[3px] pl-[3px] align-middle font-mono text-[10.5px] text-ink-2 shadow-hairline
         transition-colors duration-150 hover:bg-hover hover:text-ink"
       style={{ animation: "pop-in 250ms cubic-bezier(0.23,1,0.32,1) both" }}
     >
@@ -86,7 +86,7 @@ export default function StreamingText() {
   }, [count, done]);
 
   return (
-    <div className="min-h-[13rem] w-full max-w-95">
+    <div className="min-h-[15.5rem] w-full max-w-95">
       <p className="text-[13px] leading-relaxed text-ink">
         {TOKENS.slice(0, count).map((token, i) =>
           token.cite ? (
@@ -156,7 +156,7 @@ export default function StreamingText() {
         }}
       >
         <div className="overflow-hidden">
-          <div className="mt-1.5 flex flex-col rounded-control bg-inset p-1 shadow-hairline">
+          <div className="mt-1.5 flex flex-col rounded-[10px] bg-inset p-1 shadow-hairline">
             {SOURCES.map((source) => (
               <a
                 key={source.domain}

@@ -53,6 +53,13 @@ export const META: Meta[] = [
     file: "ChatComposer.tsx",
   },
   {
+    id: "prompt-bar",
+    title: "Prompt Bar",
+    caption: "Composer with @ sources, / commands, model picker, and dictation.",
+    file: "PromptBar.tsx",
+    variants: ["Rounded", "Pill"],
+  },
+  {
     id: "recommendation-card",
     title: "Recommendation Card",
     caption: "Agent suggestion with a confidence meter and actions.",

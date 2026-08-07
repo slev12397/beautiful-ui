@@ -192,7 +192,7 @@ export default function FineTuneCard() {
       {/* interaction section */}
       <div className="primitive-card-footer flex items-center justify-between">
         <span className="text-[12px] text-ink-3">Type</span>
-        <div className="relative w-30">
+        <div className="relative -mr-0.5 w-30">
           <button
             type="button"
             aria-expanded={menuOpen}
@@ -215,7 +215,7 @@ export default function FineTuneCard() {
 
           {menuOpen && (
             <div
-              className="absolute right-0 bottom-8 z-10 w-30 rounded-control bg-surface p-1 shadow-raised"
+              className="absolute right-0 bottom-8 z-10 w-30 rounded-[10px] bg-surface p-1 shadow-raised"
               style={{
                 animation: "pop-in 200ms cubic-bezier(0.23,1,0.32,1) both",
                 transformOrigin: "bottom right",

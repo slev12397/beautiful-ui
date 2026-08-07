@@ -6,6 +6,7 @@ import LoadingState from "@/components/primitives/LoadingState";
 import ThinkingState from "@/components/primitives/ThinkingState";
 import StreamingText from "@/components/primitives/StreamingText";
 import ChatComposer from "@/components/primitives/ChatComposer";
+import PromptBar from "@/components/primitives/PromptBar";
 import ApprovalCard from "@/components/primitives/ApprovalCard";
 import TaskRows from "@/components/primitives/TaskRows";
 import RecommendationCard from "@/components/primitives/RecommendationCard";
@@ -27,6 +28,7 @@ const DEMOS: Record<string, ComponentType<{ variant?: string }>> = {
   "thinking-state": ThinkingState,
   "streaming-text": StreamingText,
   "chat-composer": ChatComposer,
+  "prompt-bar": PromptBar,
   "approval-card": ApprovalCard,
   "task-rows": TaskRows,
   "recommendation-card": RecommendationCard,
