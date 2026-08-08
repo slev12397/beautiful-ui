@@ -278,14 +278,6 @@ export default function SelectionActions() {
           </span>
         </p>
 
-        {mode === "idle" && (
-          <SelectionHandles
-            hostRef={hostRef}
-            selectionRef={selectionRef}
-            visible={shown}
-          />
-        )}
-
         <div
           className="absolute top-0 left-0 z-10"
           style={{
@@ -523,73 +515,5 @@ export default function SelectionActions() {
       </div>
 
     </div>
-  );
-}
-
-function SelectionHandles({
-  hostRef,
-  selectionRef,
-  visible,
-}: {
-  hostRef: React.RefObject<HTMLDivElement | null>;
-  selectionRef: React.RefObject<HTMLSpanElement | null>;
-  visible: boolean;
-}) {
-  const [edges, setEdges] = useState<
-    { left: number; top: number; height: number; edge: "start" | "end" }[]
-  >([]);
-
-  useLayoutEffect(() => {
-    const host = hostRef.current;
-    const selection = selectionRef.current;
-    if (!host || !selection) return;
-
-    const measure = () => {
-      const lines = Array.from(selection.getClientRects());
-      const first = lines[0];
-      const last = lines.at(-1);
-      if (!first || !last) return;
-      const hostBounds = host.getBoundingClientRect();
-      setEdges([
-        {
-          left: Math.round(first.left - hostBounds.left),
-          top: Math.round(first.top - hostBounds.top),
-          height: Math.round(first.height),
-          edge: "start",
-        },
-        {
-          left: Math.round(last.right - hostBounds.left),
-          top: Math.round(last.top - hostBounds.top),
-          height: Math.round(last.height),
-          edge: "end",
-        },
-      ]);
-    };
-
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(host);
-    return () => observer.disconnect();
-  }, [hostRef, selectionRef]);
-
-  return (
-    <span
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-[1] transition-opacity duration-200"
-      style={{ opacity: visible ? 1 : 0 }}
-    >
-      {edges.map((item) => (
-        <span
-          key={item.edge}
-          className="absolute w-[1.5px] bg-accent"
-          style={{ left: item.left, top: item.top, height: item.height }}
-        >
-          <span
-            className="absolute left-1/2 size-2.5 -translate-x-1/2 rounded-full bg-accent shadow-[0_0_0_1px_var(--surface)]"
-            style={item.edge === "start" ? { top: -8 } : { bottom: -8 }}
-          />
-        </span>
-      ))}
-    </span>
   );
 }
