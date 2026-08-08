@@ -119,4 +119,10 @@ export const META: Meta[] = [
     caption: "The agent adjusts design properties in an inspector.",
     file: "FineTuneCard.tsx",
   },
+  {
+    id: "selection-actions",
+    title: "Selection Actions",
+    caption: "Highlight a passage and hand it to the agent to rewrite.",
+    file: "SelectionActions.tsx",
+  },
 ];
