@@ -1,7 +1,19 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createShader, PALETTES } from "glimm";
+import { createShader, playSweep, accentChain, ACCENTS } from "glimm";
+
+/* The built-in "prism" palette is only cyan→indigo→magenta, so a sweep
+ * reads as blue/purple. Build a true full-spectrum rainbow instead. */
+const RAINBOW = accentChain([
+  ACCENTS.red,
+  ACCENTS.orange,
+  ACCENTS.yellow,
+  ACCENTS.green,
+  ACCENTS.cyan,
+  ACCENTS.blue,
+  ACCENTS.purple,
+]);
 
 /* ─────────────────────────────────────────────────────────
  * PROMPT BAR
@@ -85,9 +97,9 @@ const COMMANDS = [
 ];
 
 const MODELS = [
-  { key: "sprinkles-4-8", name: "Sprinkles 4.8", tag: "Reasoning" },
-  { key: "scoop-2-mini", name: "Scoop 2 mini", tag: "Fast" },
-  { key: "sorbet-1", name: "Sorbet 1", tag: "Open" },
+  { key: "sprinkles-5", name: "Sprinkles 5", tag: "Flagship" },
+  { key: "vanilla-1", name: "Vanilla 1", tag: "Basic" },
+  { key: "freezer-burn", name: "Freezer Burn 0.4", tag: "Stale" },
 ];
 
 const FILES = ["flavor-chart.png", "summer-menu.pdf", "pos-export.csv"];
@@ -95,8 +107,15 @@ const DICTATION = "Compare pistachio weekends to last summer";
 
 /* self-running demo: walk the @ menu, then the / menu, and repeat.
  * Any pointer or key interaction hands control to the user. */
-const AUTO_STEPS: { draft: string; active?: number; connect?: boolean; hold: number }[] = [
-  { draft: "", connect: false, hold: 1100 },
+const AUTO_STEPS: {
+  draft: string;
+  active?: number;
+  connect?: boolean;
+  modelOpen?: boolean;
+  model?: string;
+  hold: number;
+}[] = [
+  { draft: "", connect: false, model: "vanilla-1", hold: 1100 },
   { draft: "@", active: 0, hold: 900 },
   { draft: "@", active: 1, hold: 620 },
   { draft: "@", active: 4, hold: 620 },
@@ -106,7 +125,11 @@ const AUTO_STEPS: { draft: string; active?: number; connect?: boolean; hold: num
   { draft: "/", active: 0, hold: 900 },
   { draft: "/", active: 1, hold: 620 },
   { draft: "/", active: 3, hold: 1000 },
-  { draft: "", hold: 1600 },
+  { draft: "", hold: 800 },
+  // open the model picker and upgrade to the flagship → rainbow sweep
+  { draft: "", modelOpen: true, hold: 1200 },
+  { draft: "", model: "sprinkles-5", hold: 2400 },
+  { draft: "", hold: 900 },
 ];
 
 /* the last @word or /word being typed, if any */
@@ -126,7 +149,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
   const [dismissed, setDismissed] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
-  const [model, setModel] = useState(MODELS[0]);
+  const [model, setModel] = useState(MODELS[1]);
   const [attachments, setAttachments] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
   const [active, setActive] = useState(0);
@@ -141,6 +164,8 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
   const modelRef = useRef<HTMLButtonElement>(null);
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const glimmRef = useRef<HTMLCanvasElement>(null);
+  const shaderRef = useRef<ReturnType<typeof createShader> | null>(null);
+  const sweepingRef = useRef(false);
 
   /* hand control to the user: stop the demo loop, and when they aim at
    * the input itself, clear the demo's leftover draft for a clean start */
@@ -169,41 +194,52 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
     if (target) setRowBox({ top: target.offsetTop, height: target.offsetHeight });
   }, [menu, query, active, connected, rows.length]);
 
-  /* Glimm prism shader — a rainbow band sweeps edge-to-edge behind the
-   * composer, showing as an iridescent rim. Progress ping-pongs so the
-   * sweep is seamless (no jump on wrap); reduced motion parks it. */
+  /* Glimm prism shader lives inside the composer, invisible at rest.
+   * Choosing the flagship model fires a one-shot rainbow sweep across
+   * the input's interior. */
   useEffect(() => {
     const canvas = glimmRef.current;
     if (!canvas) return;
-    const shader = createShader({
+    shaderRef.current = createShader({
       canvas,
-      palette: PALETTES.prism,
+      palette: RAINBOW,
       direction: "ltr",
-      bandTight: 5,
-      swellAmount: 0.75,
+      bandTight: 10,
+      swellAmount: 0.85,
     });
-    if (!shader) return;
-    shader.setAlpha(1);
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      shader.setProgress(0.5);
-      return () => shader.destroy();
-    }
-
-    let raf = 0;
-    const PERIOD = 2800; // ms for one edge-to-edge pass
-    const start = performance.now();
-    const loop = () => {
-      const cycle = ((performance.now() - start) % (2 * PERIOD)) / PERIOD; // 0..2
-      shader.setProgress(cycle < 1 ? cycle : 2 - cycle); // ping-pong
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
     return () => {
-      cancelAnimationFrame(raf);
-      shader.destroy();
+      shaderRef.current?.destroy();
+      shaderRef.current = null;
     };
   }, []);
+
+  const celebrate = () => {
+    const shader = shaderRef.current;
+    if (!shader || sweepingRef.current) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    sweepingRef.current = true;
+    const sweep = playSweep(shader, {
+      palette: RAINBOW,
+      direction: "ltr",
+      sweepMs: 1400,
+      outroMs: 800,
+      peakAlpha: 1.3,
+      bandTight: 10,
+      brightness: 1.4,
+      swellAmount: 1,
+      waveSpeed: 1.3,
+      easing: "easeOutExpo",
+    });
+    sweep.done.finally(() => {
+      sweepingRef.current = false;
+    });
+  };
+
+  const selectModel = (next: (typeof MODELS)[number]) => {
+    setModel(next);
+    setModelOpen(false);
+    if (next.key === "sprinkles-5") celebrate();
+  };
 
   /* autoplay: apply the current step, then advance after its hold */
   useEffect(() => {
@@ -212,6 +248,11 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
     setDraft(step.draft);
     if (step.active !== undefined) setActive(step.active);
     if (step.connect !== undefined) setConnected(step.connect);
+    if (step.modelOpen !== undefined) setModelOpen(step.modelOpen);
+    if (step.model) {
+      const next = MODELS.find((m) => m.key === step.model);
+      if (next) selectModel(next);
+    }
     const t = setTimeout(() => setAutoStep((s) => s + 1), step.hold);
     return () => clearTimeout(t);
   }, [auto, autoStep]);
@@ -369,8 +410,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
               type="button"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
-                setModel(m);
-                setModelOpen(false);
+                selectModel(m);
                 inputRef.current?.focus();
               }}
               className="flex h-7.5 w-full items-center gap-2 rounded-[6px] px-2 text-left transition-colors duration-100 hover:bg-hover"
@@ -385,29 +425,21 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
         </div>
       )}
 
-      {/* rainbow glimm rim — the prism band sweeps behind the surface */}
-      <canvas
-        ref={glimmRef}
-        aria-hidden="true"
-        className="pointer-events-none absolute z-0"
-        style={{
-          inset: "-2px",
-          borderRadius: pill
-            ? attachments.length > 0 || expanded
-              ? "26px"
-              : "9999px"
-            : "16px",
-          filter: "blur(3px)",
-          opacity: 0.9,
-        }}
-      />
-
       {/* ── composer ───────────────────────────────────── */}
       <div
-        className={`relative z-10 flex flex-col gap-1.5 border border-line bg-surface p-1.5 shadow-card transition-[border-color,border-radius] duration-150 focus-within:border-line-strong ${
+        className={`relative isolate flex flex-col gap-1.5 overflow-hidden border border-line bg-surface p-1.5 shadow-card transition-[border-color,border-radius] duration-150 focus-within:border-line-strong ${
           pill ? (attachments.length > 0 || expanded ? "rounded-[24px]" : "rounded-full") : "rounded-[14px]"
         }`}
       >
+        {/* rainbow glimm sweep — plays across the interior on model change.
+            explicit w/h: a <canvas> is a replaced element and won't stretch
+            to inset-0 alone, which feeds back into the shader's ResizeObserver. */}
+        <canvas
+          ref={glimmRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10 h-full w-full"
+          style={{ borderRadius: "inherit" }}
+        />
         <span
           ref={measureRef}
           aria-hidden="true"
