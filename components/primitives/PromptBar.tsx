@@ -133,10 +133,12 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
   const [auto, setAuto] = useState(true);
   const [autoStep, setAutoStep] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const [rowBox, setRowBox] = useState<{ top: number; height: number } | null>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const modelRef = useRef<HTMLButtonElement>(null);
+  const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   /* hand control to the user: stop the demo loop, and when they aim at
    * the input itself, clear the demo's leftover draft for a clean start */
@@ -157,6 +159,13 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
         : [];
 
   useEffect(() => setActive(0), [menu, query]);
+
+  /* a single highlight glides to the active row instead of each row
+   * toggling its own background — matches the gliding pill in the nav */
+  useLayoutEffect(() => {
+    const target = rowRefs.current[active];
+    if (target) setRowBox({ top: target.offsetTop, height: target.offsetHeight });
+  }, [menu, query, active, connected, rows.length]);
 
   /* autoplay: apply the current step, then advance after its hold */
   useEffect(() => {
@@ -246,18 +255,33 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
           className="absolute inset-x-0 bottom-full z-10 mb-2 rounded-[10px] bg-surface p-1 shadow-raised"
           style={{ animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom center" }}
         >
+          {/* single gliding highlight — floats to the active row */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-1 rounded-[6px] bg-hover"
+            style={{
+              top: rowBox?.top ?? 0,
+              height: rowBox?.height ?? 0,
+              opacity: rowBox && rows.length > 0 ? 1 : 0,
+              transition:
+                "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
+            }}
+          />
           {rows.map((row, i) => {
             const source = menu === "at" ? SOURCES.find((s) => s.key === row.key) : undefined;
             return (
               <button
                 key={row.key}
                 type="button"
+                ref={(el) => {
+                  rowRefs.current[i] = el;
+                }}
                 onMouseDown={(event) => event.preventDefault()}
                 onMouseEnter={() => setActive(i)}
                 onClick={() => pick(row)}
-                className={`flex h-9 w-full items-center gap-2.5 rounded-[6px] px-2 text-left transition-colors duration-100 ${
-                  i === active ? "bg-hover" : source?.attach ? "bg-field" : ""
-                } ${source?.attach ? "mb-1" : ""}`}
+                className={`relative z-10 flex h-9 w-full items-center gap-2.5 rounded-[6px] px-2 text-left ${
+                  source?.attach ? "bg-field mb-1" : ""
+                }`}
               >
                 {source && (
                   <span className="flex size-5.5 shrink-0 items-center justify-center text-ink-2">
