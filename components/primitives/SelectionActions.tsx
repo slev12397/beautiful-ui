@@ -20,6 +20,7 @@ import {
   Xmark,
 } from "iconoir-react";
 import { Shimmer } from "@/components/atoms/Shimmer";
+import { StreamText } from "@/components/atoms/StreamText";
 
 /* ─────────────────────────────────────────────────────────
  * SELECTION ACTIONS
@@ -34,10 +35,6 @@ const PICKED =
   "Churn it first thing Saturday so the batch has time to firm up before the afternoon rush.";
 const REWRITE =
   "Churn pistachio first thing Saturday so the batch has time to fully firm before the afternoon rush.";
-
-const ORIGINAL_WORDS = PICKED.split(" ");
-const REWRITE_WORDS = REWRITE.split(" ");
-const WORD_MS = 80;
 
 type Mode = "idle" | "thinking" | "streaming" | "result";
 
@@ -80,7 +77,6 @@ export default function SelectionActions() {
   const [action, setAction] = useState("Improve");
   const [prompt, setPrompt] = useState("");
   const [typingWidth, setTypingWidth] = useState<number | null>(null);
-  const [count, setCount] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [anchor, setAnchor] = useState({ x: 0, y: 0 });
   const [positioned, setPositioned] = useState(false);
@@ -104,16 +100,6 @@ export default function SelectionActions() {
     const timer = window.setTimeout(() => setMode("streaming"), 700);
     return () => window.clearTimeout(timer);
   }, [mode]);
-
-  useEffect(() => {
-    if (mode !== "streaming") return;
-    if (count >= REWRITE_WORDS.length) {
-      const timer = window.setTimeout(() => setMode("result"), 220);
-      return () => window.clearTimeout(timer);
-    }
-    const timer = window.setTimeout(() => setCount((value) => value + 1), WORD_MS);
-    return () => window.clearTimeout(timer);
-  }, [count, mode]);
 
   /* Attach beneath the final selected line, while centering the bar
    * against the complete selection bounds. requestAnimationFrame batches
@@ -145,7 +131,7 @@ export default function SelectionActions() {
 
   useLayoutEffect(() => {
     place();
-  }, [count, mode, place]);
+  }, [mode, place]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -218,7 +204,6 @@ export default function SelectionActions() {
   const run = (nextAction: string) => {
     setAction(nextAction);
     setExpanded(false);
-    setCount(0);
     setMode("thinking");
   };
 
@@ -227,7 +212,6 @@ export default function SelectionActions() {
     setPrompt("");
     setTypingWidth(null);
     setAction("Improve");
-    setCount(0);
     setMode("idle");
   };
 
@@ -252,29 +236,17 @@ export default function SelectionActions() {
             ref={selectionRef}
             className="box-decoration-clone rounded-[3px] bg-[color-mix(in_srgb,var(--accent)_14%,var(--surface))] text-ink dark:bg-accent-tint"
           >
-            {mode === "idle" || mode === "thinking"
-              ? PICKED
-              : ORIGINAL_WORDS.map((original, index) => {
-                  const complete = mode === "result" || index < count;
-                  const word = complete ? REWRITE_WORDS[index] : original;
-                  return (
-                    <span
-                      key={index}
-                      className={complete ? "text-ink" : "text-ink-3"}
-                      style={
-                        index === count - 1 && mode === "streaming"
-                          ? { animation: "fade-in 250ms ease-out both" }
-                          : undefined
-                      }
-                    >
-                      {word}
-                      {index < ORIGINAL_WORDS.length - 1 ? " " : ""}
-                      {index === count - 1 && mode === "streaming" && (
-                        <span className="ml-0.5 inline-block h-3 w-0.5 translate-y-0.5 rounded-full bg-ink" />
-                      )}
-                    </span>
-                  );
-                })}
+            {mode === "idle" || mode === "thinking" ? (
+              PICKED
+            ) : mode === "streaming" ? (
+              <StreamText
+                text={REWRITE}
+                onProgress={place}
+                onDone={() => setMode("result")}
+              />
+            ) : (
+              REWRITE
+            )}
           </span>
         </p>
 

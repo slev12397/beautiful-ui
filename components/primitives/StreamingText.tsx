@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
  * context, then actions and follow-up prompts become usable.
  * ───────────────────────────────────────────────────────── */
 
-const WORD_MS = 80;
+const WORD_MS = 55;
 const HOLD_MS = 3400;
 
 type Token = { text: string; cite?: boolean };
@@ -94,8 +94,8 @@ export default function StreamingText() {
           ) : (
             <span
               key={i}
-              className="inline"
-              style={{ animation: "fade-in 250ms ease-out both" }}
+              className="inline [will-change:filter,opacity]"
+              style={{ animation: "stream-in 420ms cubic-bezier(0.22,0.61,0.25,1) both" }}
             >
               {token.text}{" "}
             </span>

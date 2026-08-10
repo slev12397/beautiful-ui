@@ -279,16 +279,14 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
                 onMouseDown={(event) => event.preventDefault()}
                 onMouseEnter={() => setActive(i)}
                 onClick={() => pick(row)}
-                className={`relative z-10 flex h-9 w-full items-center gap-2.5 rounded-[6px] px-2 text-left ${
-                  source?.attach ? "bg-field mb-1" : ""
-                }`}
+                className="relative z-10 flex h-9 w-full items-center gap-2.5 rounded-[6px] px-2 text-left"
               >
                 {source && (
                   <span className="flex size-5.5 shrink-0 items-center justify-center text-ink-2">
                     {source.brand ? BRANDS[source.brand] : <Icon size={15}>{GLYPHS[source.glyph ?? "clip"]}</Icon>}
                   </span>
                 )}
-                <span className={`shrink-0 text-[12.5px] font-medium text-ink ${menu === "slash" ? "font-mono text-[12px]" : ""}`}>
+                <span className="shrink-0 text-[12.5px] font-medium text-ink">
                   {row.name}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">{row.desc}</span>
@@ -368,7 +366,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
             {attachments.map((file, i) => (
               <span
                 key={`${file}-${i}`}
-                className={`flex h-6.5 items-center gap-1.5 bg-field py-1 pr-1 pl-1.5 font-mono text-[11.5px] text-ink-2 shadow-hairline ${
+                className={`flex h-6.5 items-center gap-1.5 bg-field py-1 pr-1 pl-1.5 text-[11.5px] text-ink-2 shadow-hairline ${
                   pill ? "rounded-full" : "rounded-chip"
                 }`}
                 style={{ animation: "pop-in 200ms cubic-bezier(0.23,1,0.32,1) both" }}
