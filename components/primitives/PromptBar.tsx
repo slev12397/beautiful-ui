@@ -158,11 +158,14 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
   const [autoStep, setAutoStep] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [rowBox, setRowBox] = useState<{ top: number; height: number } | null>(null);
+  const [modelBox, setModelBox] = useState<{ top: number; height: number } | null>(null);
+  const [modelHovered, setModelHovered] = useState<number | null>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const modelRef = useRef<HTMLButtonElement>(null);
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const modelRowRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const glimmRef = useRef<HTMLCanvasElement>(null);
   const shaderRef = useRef<ReturnType<typeof createShader> | null>(null);
   const sweepingRef = useRef(false);
@@ -193,6 +196,19 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
     const target = rowRefs.current[active];
     if (target) setRowBox({ top: target.offsetTop, height: target.offsetHeight });
   }, [menu, query, active, connected, rows.length]);
+
+  /* same gliding highlight in the model menu — floats to the hovered
+   * row, falling back to the currently-selected model */
+  const modelIndex = MODELS.findIndex((m) => m.key === model.key);
+  useLayoutEffect(() => {
+    if (!modelOpen) return;
+    const target = modelRowRefs.current[modelHovered ?? modelIndex];
+    if (target) setModelBox({ top: target.offsetTop, height: target.offsetHeight });
+  }, [modelOpen, modelHovered, modelIndex]);
+
+  useEffect(() => {
+    if (!modelOpen) setModelHovered(null);
+  }, [modelOpen]);
 
   /* Glimm prism shader lives inside the composer, invisible at rest.
    * Choosing the flagship model fires a one-shot rainbow sweep across
@@ -401,19 +417,36 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
       {/* ── model menu ─────────────────────────────────── */}
       {modelOpen && (
         <div
+          onMouseLeave={() => setModelHovered(null)}
           className="absolute right-0 bottom-full z-10 mb-2 w-44 rounded-[10px] bg-surface p-1 shadow-raised"
           style={{ animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom right" }}
         >
-          {MODELS.map((m) => (
+          {/* single gliding highlight — floats to the hovered / selected row */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-1 rounded-[6px] bg-hover"
+            style={{
+              top: modelBox?.top ?? 0,
+              height: modelBox?.height ?? 0,
+              opacity: modelBox ? 1 : 0,
+              transition:
+                "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
+            }}
+          />
+          {MODELS.map((m, i) => (
             <button
               key={m.key}
               type="button"
+              ref={(el) => {
+                modelRowRefs.current[i] = el;
+              }}
               onMouseDown={(event) => event.preventDefault()}
+              onMouseEnter={() => setModelHovered(i)}
               onClick={() => {
                 selectModel(m);
                 inputRef.current?.focus();
               }}
-              className="flex h-7.5 w-full items-center gap-2 rounded-[6px] px-2 text-left transition-colors duration-100 hover:bg-hover"
+              className="relative z-10 flex h-7.5 w-full items-center gap-2 rounded-[6px] px-2 text-left"
             >
               <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink">{m.name}</span>
               <span className="shrink-0 text-[11px] text-ink-3">{m.tag}</span>
