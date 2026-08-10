@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createShader, PALETTES } from "glimm";
 
 /* ─────────────────────────────────────────────────────────
  * PROMPT BAR
@@ -84,7 +85,7 @@ const COMMANDS = [
 ];
 
 const MODELS = [
-  { key: "scoop-2", name: "Scoop 2", tag: "Reasoning" },
+  { key: "sprinkles-4-8", name: "Sprinkles 4.8", tag: "Reasoning" },
   { key: "scoop-2-mini", name: "Scoop 2 mini", tag: "Fast" },
   { key: "sorbet-1", name: "Sorbet 1", tag: "Open" },
 ];
@@ -139,6 +140,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
   const measureRef = useRef<HTMLSpanElement>(null);
   const modelRef = useRef<HTMLButtonElement>(null);
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const glimmRef = useRef<HTMLCanvasElement>(null);
 
   /* hand control to the user: stop the demo loop, and when they aim at
    * the input itself, clear the demo's leftover draft for a clean start */
@@ -166,6 +168,42 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
     const target = rowRefs.current[active];
     if (target) setRowBox({ top: target.offsetTop, height: target.offsetHeight });
   }, [menu, query, active, connected, rows.length]);
+
+  /* Glimm prism shader — a rainbow band sweeps edge-to-edge behind the
+   * composer, showing as an iridescent rim. Progress ping-pongs so the
+   * sweep is seamless (no jump on wrap); reduced motion parks it. */
+  useEffect(() => {
+    const canvas = glimmRef.current;
+    if (!canvas) return;
+    const shader = createShader({
+      canvas,
+      palette: PALETTES.prism,
+      direction: "ltr",
+      bandTight: 5,
+      swellAmount: 0.75,
+    });
+    if (!shader) return;
+    shader.setAlpha(1);
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      shader.setProgress(0.5);
+      return () => shader.destroy();
+    }
+
+    let raf = 0;
+    const PERIOD = 2800; // ms for one edge-to-edge pass
+    const start = performance.now();
+    const loop = () => {
+      const cycle = ((performance.now() - start) % (2 * PERIOD)) / PERIOD; // 0..2
+      shader.setProgress(cycle < 1 ? cycle : 2 - cycle); // ping-pong
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      shader.destroy();
+    };
+  }, []);
 
   /* autoplay: apply the current step, then advance after its hold */
   useEffect(() => {
@@ -347,9 +385,26 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
         </div>
       )}
 
+      {/* rainbow glimm rim — the prism band sweeps behind the surface */}
+      <canvas
+        ref={glimmRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute z-0"
+        style={{
+          inset: "-2px",
+          borderRadius: pill
+            ? attachments.length > 0 || expanded
+              ? "26px"
+              : "9999px"
+            : "16px",
+          filter: "blur(3px)",
+          opacity: 0.9,
+        }}
+      />
+
       {/* ── composer ───────────────────────────────────── */}
       <div
-        className={`relative flex flex-col gap-1.5 border border-line bg-surface p-1.5 shadow-card transition-[border-color,border-radius] duration-150 focus-within:border-line-strong ${
+        className={`relative z-10 flex flex-col gap-1.5 border border-line bg-surface p-1.5 shadow-card transition-[border-color,border-radius] duration-150 focus-within:border-line-strong ${
           pill ? (attachments.length > 0 || expanded ? "rounded-[24px]" : "rounded-full") : "rounded-[14px]"
         }`}
       >

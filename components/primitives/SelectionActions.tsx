@@ -66,10 +66,10 @@ const icons = {
 };
 
 const control =
-  "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-1.5 text-[12px] font-normal text-ink transition-[background-color,color,transform] duration-150 hover:bg-hover active:scale-[0.96]";
+  "inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-1.5 text-[12px] font-normal text-ink transition-[background-color,color,transform] duration-150 hover:bg-hover active:scale-[0.96]";
 
 const primary =
-  "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-ink px-2.5 text-[12.5px] font-normal text-canvas shadow-hairline transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-[0.96]";
+  "inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-ink px-2.5 text-[12.5px] font-normal text-canvas shadow-hairline transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-[0.96]";
 
 export default function SelectionActions() {
   const [shown, setShown] = useState(false);
