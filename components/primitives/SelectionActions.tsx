@@ -66,7 +66,7 @@ const icons = {
 };
 
 const control =
-  "inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-1.5 text-[12px] font-normal text-ink transition-[background-color,color,transform] duration-150 hover:bg-hover active:scale-[0.96]";
+  "inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12px] font-normal text-ink transition-[background-color,color,transform] duration-150 hover:bg-hover active:scale-[0.96]";
 
 const primary =
   "inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-ink px-2.5 text-[12.5px] font-normal text-canvas shadow-hairline transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-[0.96]";
@@ -384,7 +384,7 @@ export default function SelectionActions() {
                 <div
                   className="flex min-w-0 items-center gap-0.5 overflow-hidden transition-[max-width,opacity,transform] duration-400"
                   style={{
-                    maxWidth: hasPrompt ? 0 : expanded ? 430 : 206,
+                    maxWidth: hasPrompt ? 0 : expanded ? 462 : 224,
                     opacity: hasPrompt ? 0 : 1,
                     transform: hasPrompt ? "translateX(-8px)" : "translateX(0)",
                     transitionTimingFunction: "cubic-bezier(0.23,1,0.32,1)",
@@ -409,7 +409,7 @@ export default function SelectionActions() {
                   <div
                     className="flex min-w-0 items-center gap-0.5 overflow-hidden transition-[max-width,opacity,margin] duration-400"
                     style={{
-                      maxWidth: expanded ? 238 : 0,
+                      maxWidth: expanded ? 262 : 0,
                       opacity: expanded ? 1 : 0,
                       marginLeft: expanded ? 2 : 0,
                       transitionTimingFunction: "cubic-bezier(0.23,1,0.32,1)",
