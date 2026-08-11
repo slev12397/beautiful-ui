@@ -158,6 +158,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
   const [autoStep, setAutoStep] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [rowBox, setRowBox] = useState<{ top: number; height: number } | null>(null);
+  const [engaged, setEngaged] = useState(false);
   const [modelBox, setModelBox] = useState<{ top: number; height: number } | null>(null);
   const [modelHovered, setModelHovered] = useState<number | null>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
@@ -188,7 +189,10 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
         ? COMMANDS.filter((c) => c.name.slice(1).startsWith(query))
         : [];
 
-  useEffect(() => setActive(0), [menu, query]);
+  useEffect(() => {
+    setActive(0);
+    setEngaged(false);
+  }, [menu, query]);
 
   /* a single highlight glides to the active row instead of each row
    * toggling its own background — matches the gliding pill in the nav */
@@ -365,17 +369,18 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
       {/* ── @ / slash menu ─────────────────────────────── */}
       {menu && (
         <div
+          onMouseLeave={() => setEngaged(false)}
           className="absolute inset-x-0 bottom-full z-10 mb-2 rounded-[10px] bg-surface p-1 shadow-raised"
           style={{ animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom center" }}
         >
-          {/* single gliding highlight — floats to the active row */}
+          {/* single gliding highlight — appears once a row is hovered */}
           <span
             aria-hidden
             className="pointer-events-none absolute inset-x-1 rounded-[6px] bg-hover"
             style={{
               top: rowBox?.top ?? 0,
               height: rowBox?.height ?? 0,
-              opacity: rowBox && rows.length > 0 ? 1 : 0,
+              opacity: rowBox && engaged && rows.length > 0 ? 1 : 0,
               transition:
                 "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
             }}
@@ -390,7 +395,10 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
                   rowRefs.current[i] = el;
                 }}
                 onMouseDown={(event) => event.preventDefault()}
-                onMouseEnter={() => setActive(i)}
+                onMouseEnter={() => {
+                  setActive(i);
+                  setEngaged(true);
+                }}
                 onClick={() => pick(row)}
                 className="relative z-10 flex h-9 w-full items-center gap-2.5 rounded-[6px] px-2 text-left"
               >
@@ -563,6 +571,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
               if (menu && rows.length > 0) {
                 if (event.key === "ArrowDown" || event.key === "ArrowUp") {
                   event.preventDefault();
+                  setEngaged(true);
                   setActive((current) => (current + (event.key === "ArrowDown" ? 1 : rows.length - 1)) % rows.length);
                   return;
                 }
