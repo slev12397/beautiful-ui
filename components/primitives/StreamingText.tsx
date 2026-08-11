@@ -184,7 +184,7 @@ export default function StreamingText() {
           {FOLLOW_UPS.map((text, i) => (
             <button
               key={text}
-              className="-mx-1.5 flex items-center gap-2 border-b border-line
+              className="-mx-1.5 flex items-center gap-2 rounded-[7px] border-b border-line
                 px-1.5 py-1.5 text-left text-[12.5px] text-ink transition-colors
                 duration-100 hover:bg-hover-2"
               style={
