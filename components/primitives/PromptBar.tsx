@@ -259,8 +259,8 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
     const sweep = playSweep(shader, {
       palette: RAINBOW,
       direction: "ltr",
-      sweepMs: 1200,
-      outroMs: 260,
+      sweepMs: 950,
+      outroMs: 130,
       peakAlpha: 1.3,
       bandTight: 10,
       brightness: 1.4,
