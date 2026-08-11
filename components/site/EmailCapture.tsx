@@ -35,8 +35,7 @@ export function EmailCapture() {
 
   return (
     <section className="px-8 py-14">
-      <p className="font-mono text-[11px] tracking-wide text-ink-3">/ more</p>
-      <h2 className="mt-2 max-w-md text-[19px] leading-snug font-semibold tracking-[-0.02em] text-ink text-balance">
+      <h2 className="max-w-md text-[19px] leading-snug font-semibold tracking-[-0.02em] text-ink text-balance">
         New components, in your inbox.
       </h2>
       <p className="mt-2 max-w-md text-[13px] leading-relaxed text-ink-2 text-pretty">
