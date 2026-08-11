@@ -210,35 +210,53 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
     if (!modelOpen) setModelHovered(null);
   }, [modelOpen]);
 
-  /* Glimm prism shader lives inside the composer, invisible at rest.
-   * Choosing the flagship model fires a one-shot rainbow sweep across
-   * the input's interior. */
-  useEffect(() => {
+  /* Build the shader with a pinned hue phase. createShader seeds its
+   * internal hueShift from Math.random(), which made the sweep a different
+   * colour on every reload — pin it so the rainbow is identical each time. */
+  const makeShader = () => {
     const canvas = glimmRef.current;
-    if (!canvas) return;
-    shaderRef.current = createShader({
-      canvas,
-      palette: RAINBOW,
-      direction: "ltr",
-      bandTight: 10,
-      swellAmount: 0.85,
-    });
+    if (!canvas) return null;
+    const random = Math.random;
+    Math.random = () => 0;
+    try {
+      return createShader({
+        canvas,
+        palette: RAINBOW,
+        direction: "ltr",
+        bandTight: 10,
+        swellAmount: 0.85,
+      });
+    } finally {
+      Math.random = random;
+    }
+  };
+
+  /* Glimm shader lives inside the composer, invisible at rest. Selecting
+   * the flagship model fires a one-shot rainbow sweep across the interior. */
+  useEffect(() => {
+    shaderRef.current = makeShader();
     return () => {
       shaderRef.current?.destroy();
       shaderRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const celebrate = () => {
-    const shader = shaderRef.current;
-    if (!shader || sweepingRef.current) return;
+    if (sweepingRef.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Recreate the shader per sweep so uTime restarts at 0 — the hue phase
+    // (which drifts with time) is then identical on every trigger.
+    shaderRef.current?.destroy();
+    const shader = makeShader();
+    shaderRef.current = shader;
+    if (!shader) return;
     sweepingRef.current = true;
     const sweep = playSweep(shader, {
       palette: RAINBOW,
       direction: "ltr",
-      sweepMs: 1400,
-      outroMs: 800,
+      sweepMs: 1200,
+      outroMs: 260,
       peakAlpha: 1.3,
       bandTight: 10,
       brightness: 1.4,
@@ -428,7 +446,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
             style={{
               top: modelBox?.top ?? 0,
               height: modelBox?.height ?? 0,
-              opacity: modelBox ? 1 : 0,
+              opacity: modelBox && modelHovered !== null ? 1 : 0,
               transition:
                 "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
             }}
