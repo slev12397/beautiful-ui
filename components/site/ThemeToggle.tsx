@@ -1,39 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useGlimm } from "glimm/next";
+import { useEffect, useState } from "react";
 
 /** Sun/moon segmented pill from the refs. */
 export function ThemeToggle() {
   const [dark, setDark] = useState<boolean | null>(null);
-  const sweepingRef = useRef(false);
-  const { sweep } = useGlimm();
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
   }, []);
 
   function apply(next: boolean) {
-    if (next === dark || sweepingRef.current) return;
-    sweepingRef.current = true;
-
-    const transition = sweep(
-      () => {
-        setDark(next);
-        document.documentElement.classList.toggle("dark", next);
-        try {
-          localStorage.setItem("bui-theme", next ? "dark" : "light");
-        } catch {}
-      },
-      {
-        palette: "citrus",
-        direction: next ? "ltr" : "rtl",
-      },
-    );
-
-    transition.done.finally(() => {
-      sweepingRef.current = false;
-    });
+    if (next === dark) return;
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    try {
+      localStorage.setItem("bui-theme", next ? "dark" : "light");
+    } catch {}
   }
 
   return (
