@@ -15,3 +15,6 @@ npm-debug.log*
 next-env.d.ts
 .vercel
 .env*
+
+# private reference material (moved out of repo)
+/Refs
