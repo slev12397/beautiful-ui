@@ -143,7 +143,18 @@ function parseToken(draft: string): { kind: "at" | "slash"; query: string; start
   };
 }
 
-export default function PromptBar({ variant = "Rounded" }: { variant?: string }) {
+export default function PromptBar({
+  variant = "Rounded",
+  demo = true,
+  placeholder,
+  onSend,
+}: {
+  variant?: string;
+  /** the self-running walkthrough; turn off when embedding in a real surface */
+  demo?: boolean;
+  placeholder?: string;
+  onSend?: (text: string) => void;
+}) {
   const pill = variant === "Pill";
   const [draft, setDraft] = useState("");
   const [dismissed, setDismissed] = useState(false);
@@ -154,7 +165,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
   const [connected, setConnected] = useState(false);
   const [active, setActive] = useState(0);
   const [listening, setListening] = useState(false);
-  const [auto, setAuto] = useState(true);
+  const [auto, setAuto] = useState(demo);
   const [autoStep, setAutoStep] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [rowBox, setRowBox] = useState<{ top: number; height: number } | null>(null);
@@ -353,6 +364,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
   const canSend = draft.trim().length > 0 || attachments.length > 0;
   const send = () => {
     if (!canSend) return;
+    onSend?.(draft.trim());
     setDraft("");
     setAttachments([]);
     closeMenus();
@@ -360,7 +372,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
 
   return (
     <div
-      className="flex min-h-[384px] w-full max-w-105 flex-col justify-end pb-8"
+      className={demo ? "flex min-h-[384px] w-full max-w-105 flex-col justify-end pb-8" : "w-full"}
       onPointerDownCapture={takeOver}
       onKeyDownCapture={takeOver}
     >
@@ -591,7 +603,7 @@ export default function PromptBar({ variant = "Rounded" }: { variant?: string })
                 send();
               }
             }}
-            placeholder={listening ? "Listening…" : "Write a message…"}
+            placeholder={listening ? "Listening…" : placeholder ?? "Write a message…"}
             aria-label="Prompt"
             className={`min-h-7 min-w-0 w-full resize-none bg-transparent px-1 py-[5px] text-[13px] leading-[18px] text-ink outline-none [overflow-wrap:anywhere] placeholder:text-ink-3 ${
               expanded ? "col-span-full col-start-1 row-start-1" : "col-start-2 row-start-1"

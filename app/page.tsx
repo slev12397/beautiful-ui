@@ -104,12 +104,20 @@ export default function Home() {
           {/* footer — lives in the scroll column so the sticky rail is untouched */}
           <footer className="flex items-center justify-between gap-4 border-t border-dashed border-line px-8 py-6">
             <span className="text-[12px] text-ink-3">© 2026 Beautiful UI</span>
-            <Link
-              href="/license"
-              className="text-[12px] text-ink-3 transition-colors duration-150 hover:text-ink"
-            >
-              MIT License
-            </Link>
+            <span className="flex items-center gap-4">
+              <Link
+                href="/harness"
+                className="text-[12px] text-ink-3 transition-colors duration-150 hover:text-ink"
+              >
+                Ice Cream Harness
+              </Link>
+              <Link
+                href="/license"
+                className="text-[12px] text-ink-3 transition-colors duration-150 hover:text-ink"
+              >
+                MIT License
+              </Link>
+            </span>
           </footer>
         </div>
       </div>
