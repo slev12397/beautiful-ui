@@ -1,12 +1,14 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect } from "react";
 
 /* ─────────────────────────────────────────────────────────
  * FLOWCHART — an agent workflow on a dotted editor canvas.
  * Two steps: a Trigger card and an If/Else condition card,
- * joined by a measured connector. Nodes are real controls
- * (click the trigger to select it; its edge lights up).
+ * joined by a measured connector. Cards drag anywhere on
+ * the canvas; the connector follows. Condition chips open
+ * real dropdowns (same menu as the PromptBar model picker).
  * ───────────────────────────────────────────────────────── */
 
 const PURPLE = "#9a5cff";
@@ -16,9 +18,9 @@ const mix = (hue: string, pct: number, base = "var(--surface)") =>
   `color-mix(in srgb, ${hue} ${pct}%, ${base})`;
 
 /* ── layout constants ── */
-const PAD_Y = 28;
-const ROW_GAP = 76;
-const PILL_OFFSET = 36; // kind pill + gap above a card
+const PAD_Y = 24;
+const ROW_GAP = 64;
+const PILL_OFFSET = 30; // kind pill + gap above a card
 
 type StepNode = {
   id: string;
@@ -26,23 +28,19 @@ type StepNode = {
   x: number; // 0–1 center of the node
   w: number;
   kind?: { label: string; hue: string };
-  icon?: "cone";
   hue?: string;
   title?: string;
   caption?: string;
   condition?: boolean; // renders the if/else chip rows instead
 };
 
-type FlowEdge = { from: string; to: string; label?: string; at?: number };
-
 const NODES: StepNode[] = [
   {
     id: "trigger",
     row: 0,
     x: 0.5,
-    w: 350,
+    w: 300,
     kind: { label: "Trigger", hue: PURPLE },
-    icon: "cone",
     hue: PURPLE,
     title: "New order created",
     caption: "Trigger when a new order is created",
@@ -51,19 +49,33 @@ const NODES: StepNode[] = [
     id: "cond",
     row: 1,
     x: 0.5,
-    w: 400,
+    w: 356,
     kind: { label: "If / Else", hue: AMBER },
     condition: true,
   },
 ];
 
-const EDGES: FlowEdge[] = [{ from: "trigger", to: "cond" }];
+const EDGES = [{ from: "trigger", to: "cond" }];
 
 /* estimated heights for the first paint; measured immediately after */
-const EST_H: Record<string, number> = { trigger: 116, cond: 164 };
+const EST_H: Record<string, number> = { trigger: 92, cond: 134 };
+
+const PROPERTIES = ["flavor", "topping", "size", "scoops"];
+const FLAVORS = [
+  { name: "Rocky Road", tag: "Classic" },
+  { name: "Mint Chip", tag: "Classic" },
+  { name: "Pistachio", tag: "Seasonal" },
+  { name: "Bubblegum", tag: "Retro" },
+];
+const TOPPINGS = [
+  { name: "Brown butter bourbon brittle crunch" },
+  { name: "Rainbow sprinkles" },
+  { name: "Hot fudge" },
+  { name: "Candied pecans" },
+];
 
 /* ── icons ── */
-function ConeIcon({ size = 20 }: { size?: number }) {
+function ConeIcon({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="m7 11 4.08 10.35a1 1 0 0 0 1.84 0L17 11" />
@@ -75,7 +87,7 @@ function ConeIcon({ size = 20 }: { size?: number }) {
 
 function Chevron() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-ink-3">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-ink-3">
       <path d="m6 9 6 6 6-6" />
     </svg>
   );
@@ -83,58 +95,209 @@ function Chevron() {
 
 function Handle() {
   return (
-    <svg width="11" height="18" viewBox="0 0 11 18" className="shrink-0 text-ink-3/70">
-      {[4, 9, 14].flatMap((y) => [
-        <circle key={`l${y}`} cx="3.2" cy={y} r="1.2" fill="currentColor" />,
-        <circle key={`r${y}`} cx="8" cy={y} r="1.2" fill="currentColor" />,
+    <svg width="10" height="16" viewBox="0 0 10 16" className="shrink-0 cursor-grab text-ink-3/70">
+      {[3, 8, 13].flatMap((y) => [
+        <circle key={`l${y}`} cx="3" cy={y} r="1.1" fill="currentColor" />,
+        <circle key={`r${y}`} cx="7.5" cy={y} r="1.1" fill="currentColor" />,
       ])}
     </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+
+/* ── dropdown menu — same pattern as the PromptBar model picker ── */
+function Menu({
+  items,
+  value,
+  width,
+  align,
+  onPick,
+}: {
+  items: { name: string; tag?: string }[];
+  value: string;
+  width: string;
+  align: "left" | "right";
+  onPick: (name: string) => void;
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [box, setBox] = useState<{ top: number; height: number } | null>(null);
+
+  const valueIndex = items.findIndex((item) => item.name === value);
+  useLayoutEffect(() => {
+    const row = rowRefs.current[hovered ?? valueIndex];
+    if (row) setBox({ top: row.offsetTop, height: row.offsetHeight });
+  }, [hovered, valueIndex]);
+
+  return (
+    <div
+      onMouseLeave={() => setHovered(null)}
+      className={`absolute bottom-full z-20 mb-1.5 rounded-[10px] bg-surface p-1 shadow-raised ${width}
+        ${align === "right" ? "right-0" : "left-0"}`}
+      style={{
+        animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both",
+        transformOrigin: align === "right" ? "bottom right" : "bottom left",
+      }}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-1 rounded-[6px] bg-hover"
+        style={{
+          top: box?.top ?? 0,
+          height: box?.height ?? 0,
+          opacity: box && hovered !== null ? 1 : 0,
+          transition:
+            "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
+        }}
+      />
+      {items.map((item, i) => (
+        <button
+          key={item.name}
+          type="button"
+          ref={(el) => {
+            rowRefs.current[i] = el;
+          }}
+          onMouseEnter={() => setHovered(i)}
+          onClick={() => onPick(item.name)}
+          className="relative z-10 flex h-7.5 w-full cursor-pointer items-center gap-2 rounded-[6px] px-2 text-left"
+        >
+          <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink">{item.name}</span>
+          {item.tag && <span className="shrink-0 text-[11px] text-ink-3">{item.tag}</span>}
+          <span className={`shrink-0 text-ink ${item.name === value ? "" : "invisible"}`}>
+            <CheckIcon />
+          </span>
+        </button>
+      ))}
+    </div>
   );
 }
 
 /* ── chips used inside the condition card ── */
 function SourceChip() {
   return (
-    <span className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-[8px] bg-ink px-2 text-[13px] font-medium text-canvas">
-      <ConeIcon size={13} />
+    <span
+      data-ui
+      className="inline-flex h-6 shrink-0 items-center gap-1 rounded-[6px] bg-surface px-1.5 text-[12px] font-medium text-ink shadow-btn"
+    >
+      <span className="text-ink-2">
+        <ConeIcon size={12} />
+      </span>
       order
     </span>
   );
 }
 
-function SelectChip({ children, value }: { children: React.ReactNode; value?: boolean }) {
+function SelectChip({
+  id,
+  value,
+  dot,
+  items,
+  width,
+  align = "left",
+  open,
+  onToggle,
+  onPick,
+}: {
+  id: string;
+  value: string;
+  dot?: boolean;
+  items: { name: string; tag?: string }[];
+  width: string;
+  align?: "left" | "right";
+  open: boolean;
+  onToggle: (id: string) => void;
+  onPick: (id: string, name: string) => void;
+}) {
   return (
-    <button
-      type="button"
-      className="inline-flex h-7 min-w-0 cursor-pointer items-center gap-1.5 rounded-[8px] bg-field px-2
-        text-[13px] font-medium text-ink transition-colors duration-100 hover:bg-hover-2"
-    >
-      {value && <span className="size-2 shrink-0 rounded-full" style={{ background: AMBER }} />}
-      <span className="min-w-0 truncate">{children}</span>
-      <Chevron />
-    </button>
+    <span data-ui className="relative inline-flex min-w-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => onToggle(id)}
+        className={`inline-flex h-6 min-w-0 cursor-pointer items-center gap-1 rounded-[6px] px-1.5
+          text-[12px] font-medium text-ink transition-colors duration-100
+          ${open ? "bg-hover-2" : "bg-field hover:bg-hover-2"}`}
+      >
+        {dot && <span className="size-1.5 shrink-0 rounded-full" style={{ background: AMBER }} />}
+        <span className="min-w-0 truncate">{value}</span>
+        <Chevron />
+      </button>
+      {open && (
+        <Menu
+          items={items}
+          value={value}
+          width={width}
+          align={align}
+          onPick={(name) => onPick(id, name)}
+        />
+      )}
+    </span>
   );
 }
 
 function ConditionBody() {
+  const [values, setValues] = useState<Record<string, string>>({
+    prop1: "flavor",
+    val1: "Rocky Road",
+    prop2: "topping",
+    val2: "Brown butter bourbon brittle crunch",
+  });
+  const [open, setOpen] = useState<string | null>(null);
+
+  /* click anywhere else closes the menu */
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      if (!(event.target as Element).closest("[data-ui]")) setOpen(null);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+
+  const toggle = (id: string) => setOpen((current) => (current === id ? null : id));
+  const pick = (id: string, name: string) => {
+    setValues((current) => ({ ...current, [id]: name }));
+    setOpen(null);
+  };
+
+  const chip = (id: string, items: { name: string; tag?: string }[], width: string, extra?: object) => (
+    <SelectChip
+      id={id}
+      value={values[id]}
+      items={items}
+      width={width}
+      open={open === id}
+      onToggle={toggle}
+      onPick={pick}
+      {...extra}
+    />
+  );
+
   return (
-    <div className="flex flex-col gap-2 px-4 py-3.5">
-      <div className="flex min-w-0 items-center gap-2">
+    <div className="flex flex-col gap-1.5 px-3 py-2.5">
+      <div className="flex min-w-0 items-center gap-1.5">
         <Handle />
-        <span className="w-8 text-[14px] text-ink-2">If</span>
+        <span className="w-7 text-[12.5px] text-ink-2">If</span>
         <SourceChip />
-        <SelectChip>flavor</SelectChip>
-        <span className="text-[14px] text-ink-2">is</span>
-        <SelectChip value>Rocky Road</SelectChip>
+        {chip("prop1", PROPERTIES.map((name) => ({ name })), "w-36")}
+        <span className="text-[12.5px] text-ink-2">is</span>
+        {chip("val1", FLAVORS, "w-44", { dot: true, align: "right" })}
       </div>
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1.5">
         <Handle />
-        <span className="w-8 text-[14px] text-ink-2">and</span>
+        <span className="w-7 text-[12.5px] text-ink-2">and</span>
         <SourceChip />
-        <SelectChip>topping</SelectChip>
-        <span className="text-[14px] text-ink-2">is</span>
-        <span className="max-w-full pl-[61px]">
-          <SelectChip value>Brown butter bourbon brittle crunch</SelectChip>
+        {chip("prop2", PROPERTIES.map((name) => ({ name })), "w-36")}
+        <span className="text-[12.5px] text-ink-2">is</span>
+        <span className="max-w-full pl-[49px]">
+          {chip("val2", TOPPINGS, "w-64", { dot: true })}
         </span>
       </div>
     </div>
@@ -143,9 +306,9 @@ function ConditionBody() {
 
 function StepBody({ node }: { node: StepNode }) {
   return (
-    <div className="flex items-center gap-3.5 px-4 py-3.5">
+    <div className="flex items-center gap-2.5 px-3 py-2.5">
       <span
-        className="flex size-11 shrink-0 items-center justify-center rounded-[10px]"
+        className="flex size-9 shrink-0 items-center justify-center rounded-[8px]"
         style={{
           background: mix(node.hue!, 12),
           color: node.hue,
@@ -155,8 +318,8 @@ function StepBody({ node }: { node: StepNode }) {
         <ConeIcon />
       </span>
       <span className="min-w-0 text-left">
-        <span className="block truncate text-[15px] font-semibold text-ink">{node.title}</span>
-        <span className="mt-0.5 block text-[13.5px] leading-snug text-ink-2">{node.caption}</span>
+        <span className="block truncate text-[13px] font-semibold text-ink">{node.title}</span>
+        <span className="mt-0.5 block text-[12px] leading-snug text-ink-2">{node.caption}</span>
       </span>
     </div>
   );
@@ -169,6 +332,15 @@ export default function Flowchart() {
   const [width, setWidth] = useState(0);
   const [heights, setHeights] = useState<Record<string, number>>(EST_H);
   const [selected, setSelected] = useState<string | null>(null);
+  const [offsets, setOffsets] = useState<Record<string, { dx: number; dy: number }>>({});
+  const drag = useRef<{
+    id: string;
+    startX: number;
+    startY: number;
+    baseDx: number;
+    baseDy: number;
+    moved: boolean;
+  } | null>(null);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -200,7 +372,7 @@ export default function Flowchart() {
   /* rows → y offsets from measured node heights */
   const rows = [...new Set(NODES.map((n) => n.row))].sort((a, b) => a - b);
   const rowH = rows.map((r) =>
-    Math.max(...NODES.filter((n) => n.row === r).map((n) => heights[n.id] ?? 80)),
+    Math.max(...NODES.filter((n) => n.row === r).map((n) => heights[n.id] ?? 90)),
   );
   const rowY: number[] = [];
   rows.forEach((_, i) => {
@@ -210,8 +382,13 @@ export default function Flowchart() {
 
   const cw = width || 480;
   const place = (n: StepNode) => {
-    const w = Math.min(n.w, cw * (NODES.filter((m) => m.row === n.row).length > 1 ? 0.45 : 0.92));
-    return { w, cx: n.x * cw, top: rowY[rows.indexOf(n.row)] };
+    const w = Math.min(n.w, cw * 0.92);
+    const off = offsets[n.id];
+    return {
+      w,
+      cx: n.x * cw + (off?.dx ?? 0),
+      top: rowY[rows.indexOf(n.row)] + (off?.dy ?? 0),
+    };
   };
 
   /* card anchor points (pills sit above the card, so offset the top) */
@@ -219,37 +396,68 @@ export default function Flowchart() {
     const { cx, top } = place(n);
     return {
       top: { x: cx, y: top + (n.kind ? PILL_OFFSET : 0) },
-      bottom: { x: cx, y: top + (heights[n.id] ?? 80) },
+      bottom: { x: cx, y: top + (heights[n.id] ?? 90) },
     };
   };
 
-  const bezier = (edge: FlowEdge) => {
+  const bezier = (edge: { from: string; to: string }) => {
     const from = anchors(NODES.find((n) => n.id === edge.from)!).bottom;
     const to = anchors(NODES.find((n) => n.id === edge.to)!).top;
-    const k = Math.min(Math.max((to.y - from.y) * 0.55, 24), 84);
-    const point = (t: number) => {
-      const u = 1 - t;
-      const px =
-        u * u * u * from.x + 3 * u * u * t * from.x + 3 * u * t * t * to.x + t * t * t * to.x;
-      const py =
-        u * u * u * from.y +
-        3 * u * u * t * (from.y + k) +
-        3 * u * t * t * (to.y - k) +
-        t * t * t * to.y;
-      return { x: px, y: py };
-    };
-    return {
-      d: `M ${from.x} ${from.y} C ${from.x} ${from.y + k}, ${to.x} ${to.y - k}, ${to.x} ${to.y}`,
-      label: point(edge.at ?? 0.5),
-    };
+    const k = Math.min(Math.max(Math.abs(to.y - from.y) * 0.55, 24), 84);
+    return `M ${from.x} ${from.y} C ${from.x} ${from.y + k}, ${to.x} ${to.y - k}, ${to.x} ${to.y}`;
   };
 
-  const isLit = (edge: FlowEdge) => selected === edge.from || selected === edge.to;
+  /* ── dragging ── */
+  const onPointerDown = (node: StepNode) => (event: React.PointerEvent<HTMLDivElement>) => {
+    if ((event.target as Element).closest("[data-ui]")) return;
+    const off = offsets[node.id];
+    drag.current = {
+      id: node.id,
+      startX: event.clientX,
+      startY: event.clientY,
+      baseDx: off?.dx ?? 0,
+      baseDy: off?.dy ?? 0,
+      moved: false,
+    };
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  };
+
+  const onPointerMove = (node: StepNode) => (event: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || d.id !== node.id) return;
+    const dx = d.baseDx + event.clientX - d.startX;
+    const dy = d.baseDy + event.clientY - d.startY;
+    if (!d.moved && Math.hypot(dx - d.baseDx, dy - d.baseDy) < 3) return;
+    d.moved = true;
+
+    /* keep the card inside the canvas */
+    const { w } = place(node);
+    const h = heights[node.id] ?? 90;
+    const baseCx = node.x * cw;
+    const baseTop = rowY[rows.indexOf(node.row)];
+    const cx = Math.min(Math.max(baseCx + dx, w / 2 + 8), cw - w / 2 - 8);
+    const top = Math.min(Math.max(baseTop + dy, 8), canvasH - h - 8);
+    setOffsets((current) => ({ ...current, [node.id]: { dx: cx - baseCx, dy: top - baseTop } }));
+  };
+
+  const onPointerUp = (node: StepNode) => () => {
+    const d = drag.current;
+    if (d?.id === node.id) {
+      /* a real drag shouldn't also toggle selection */
+      if (d.moved) setTimeout(() => (drag.current = null), 0);
+      else drag.current = null;
+    }
+  };
+
+  const wasDragged = () => drag.current?.moved === true;
+
+  const isLit = (edge: { from: string; to: string }) =>
+    selected === edge.from || selected === edge.to;
 
   return (
     <div
       ref={canvasRef}
-      className="relative w-full overflow-hidden rounded-card bg-page shadow-hairline"
+      className="relative w-full select-none overflow-hidden rounded-card bg-page shadow-hairline"
       style={{
         height: canvasH,
         backgroundImage: "radial-gradient(var(--line-strong) 1px, transparent 1.25px)",
@@ -262,7 +470,7 @@ export default function Flowchart() {
         {EDGES.map((edge) => (
           <path
             key={`${edge.from}-${edge.to}`}
-            d={bezier(edge).d}
+            d={bezier(edge)}
             fill="none"
             stroke={isLit(edge) ? "var(--accent)" : "var(--line-strong)"}
             strokeWidth="1.25"
@@ -270,21 +478,6 @@ export default function Flowchart() {
           />
         ))}
       </svg>
-
-      {/* edge labels */}
-      {EDGES.filter((e) => e.label).map((edge) => {
-        const { label } = bezier(edge);
-        return (
-          <span
-            key={`label-${edge.from}-${edge.to}`}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-[5px] bg-page px-1.5 py-0.5
-              text-[11.5px] transition-colors duration-150 ${isLit(edge) ? "text-accent-ink" : "text-ink-3"}`}
-            style={{ left: label.x, top: label.y }}
-          >
-            {edge.label}
-          </span>
-        );
-      })}
 
       {/* nodes */}
       {NODES.map((node) => {
@@ -297,12 +490,15 @@ export default function Flowchart() {
               if (el) nodeRefs.current.set(node.id, el);
               else nodeRefs.current.delete(node.id);
             }}
-            className="absolute flex -translate-x-1/2 flex-col items-start gap-2"
-            style={{ left: cx, top, width: w }}
+            onPointerDown={onPointerDown(node)}
+            onPointerMove={onPointerMove(node)}
+            onPointerUp={onPointerUp(node)}
+            className="absolute flex -translate-x-1/2 touch-none flex-col items-start gap-1.5"
+            style={{ left: cx, top, width: w, zIndex: drag.current?.id === node.id ? 2 : 1 }}
           >
             {node.kind && (
               <span
-                className="inline-flex h-7 items-center rounded-[8px] px-2.5 text-[12.5px] font-medium"
+                className="inline-flex h-6 items-center rounded-[6px] px-2 text-[11.5px] font-medium"
                 style={{
                   background: mix(node.kind.hue, 14, "var(--page)"),
                   color: mix(node.kind.hue, 80, "var(--ink)"),
@@ -312,21 +508,24 @@ export default function Flowchart() {
               </span>
             )}
             {node.condition ? (
-              <div className="w-full rounded-window bg-surface shadow-card">
+              <div className="w-full rounded-card bg-surface shadow-card transition-shadow duration-150 hover:shadow-raised">
                 <ConditionBody />
               </div>
             ) : (
               <button
                 type="button"
-                onClick={() => setSelected(active ? null : node.id)}
-                aria-pressed={active}
-                className="w-full cursor-pointer rounded-window bg-surface text-left outline-none
-                  transition-shadow duration-150 focus-visible:shadow-[0_0_0_1.5px_var(--accent)]"
-                style={{
-                  boxShadow: active
-                    ? "0 0 0 1.5px var(--accent), 0 2px 10px rgba(0,0,0,0.045)"
-                    : "var(--shadow-card)",
+                onClick={() => {
+                  if (wasDragged()) return;
+                  setSelected(active ? null : node.id);
                 }}
+                aria-pressed={active}
+                className={`w-full cursor-pointer rounded-card bg-surface text-left outline-none
+                  transition-shadow duration-150 focus-visible:shadow-[0_0_0_1.5px_var(--accent)]
+                  ${
+                    active
+                      ? "shadow-[0_0_0_1.5px_var(--accent),0_2px_10px_rgba(0,0,0,0.045)]"
+                      : "shadow-card hover:shadow-raised"
+                  }`}
               >
                 <StepBody node={node} />
               </button>
