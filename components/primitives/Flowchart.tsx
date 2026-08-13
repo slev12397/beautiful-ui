@@ -3,11 +3,10 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
- * FLOWCHART — an agent workflow graph on a dotted canvas.
- * Nodes are real controls (click to select; incident edges
- * light up). Connectors are measured beziers, so the graph
- * stays crisp at any width. Attio/Plain-style editor look:
- * category pills, tinted icon tiles, labeled branches.
+ * FLOWCHART — an agent workflow on a dotted editor canvas.
+ * Two steps: a Trigger card and an If/Else condition card,
+ * joined by a measured connector. Nodes are real controls
+ * (click the trigger to select it; its edge lights up).
  * ───────────────────────────────────────────────────────── */
 
 const PURPLE = "#9a5cff";
@@ -17,9 +16,9 @@ const mix = (hue: string, pct: number, base = "var(--surface)") =>
   `color-mix(in srgb, ${hue} ${pct}%, ${base})`;
 
 /* ── layout constants ── */
-const PAD_Y = 24;
-const ROW_GAP = 54;
-const PILL_OFFSET = 26; // kind pill + gap above a card
+const PAD_Y = 28;
+const ROW_GAP = 76;
+const PILL_OFFSET = 36; // kind pill + gap above a card
 
 type StepNode = {
   id: string;
@@ -27,11 +26,10 @@ type StepNode = {
   x: number; // 0–1 center of the node
   w: number;
   kind?: { label: string; hue: string };
-  icon?: "ticket" | "clock" | "send";
+  icon?: "cone";
   hue?: string;
   title?: string;
   caption?: string;
-  chip?: { label: string; initials?: string };
   condition?: boolean; // renders the if/else chip rows instead
 };
 
@@ -42,86 +40,42 @@ const NODES: StepNode[] = [
     id: "trigger",
     row: 0,
     x: 0.5,
-    w: 300,
+    w: 350,
     kind: { label: "Trigger", hue: PURPLE },
-    icon: "ticket",
+    icon: "cone",
     hue: PURPLE,
-    title: "New ticket created",
-    caption: "Trigger when a new ticket is created",
+    title: "New order created",
+    caption: "Trigger when a new order is created",
   },
   {
     id: "cond",
     row: 1,
     x: 0.5,
-    w: 330,
+    w: 400,
     kind: { label: "If / Else", hue: AMBER },
     condition: true,
   },
-  {
-    id: "send",
-    row: 2,
-    x: 0.26,
-    w: 216,
-    icon: "send",
-    hue: "var(--accent)",
-    title: "Send DM message",
-    caption: "Send confirmation to",
-    chip: { label: "Requester" },
-  },
-  {
-    id: "wait",
-    row: 2,
-    x: 0.74,
-    w: 216,
-    icon: "clock",
-    hue: AMBER,
-    title: "Wait for approval",
-    caption: "Wait for approval from",
-    chip: { label: "Kevin Coleman", initials: "KC" },
-  },
 ];
 
-const EDGES: FlowEdge[] = [
-  { from: "trigger", to: "cond" },
-  { from: "cond", to: "send", label: "otherwise", at: 0.62 },
-  { from: "cond", to: "wait", label: "then", at: 0.62 },
-];
+const EDGES: FlowEdge[] = [{ from: "trigger", to: "cond" }];
 
 /* estimated heights for the first paint; measured immediately after */
-const EST_H: Record<string, number> = { trigger: 88, cond: 130, send: 66, wait: 66 };
+const EST_H: Record<string, number> = { trigger: 116, cond: 164 };
 
 /* ── icons ── */
-function Icon({ name, size = 16 }: { name: "ticket" | "clock" | "send"; size?: number }) {
-  const paths = {
-    ticket: (
-      <>
-        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
-        <path d="M13 5v2M13 11v2M13 17v2" />
-      </>
-    ),
-    clock: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-      </>
-    ),
-    send: (
-      <>
-        <path d="m22 2-7 20-4-9-9-4Z" />
-        <path d="M22 2 11 13" />
-      </>
-    ),
-  };
+function ConeIcon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {paths[name]}
+      <path d="m7 11 4.08 10.35a1 1 0 0 0 1.84 0L17 11" />
+      <path d="M17 7A5 5 0 0 0 7 7" />
+      <path d="M17 7a2 2 0 0 1 0 4H7a2 2 0 0 1 0-4" />
     </svg>
   );
 }
 
 function Chevron() {
   return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-ink-3">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-ink-3">
       <path d="m6 9 6 6 6-6" />
     </svg>
   );
@@ -129,10 +83,10 @@ function Chevron() {
 
 function Handle() {
   return (
-    <svg width="10" height="16" viewBox="0 0 10 16" className="shrink-0 text-ink-3/70">
-      {[3, 8, 13].flatMap((y) => [
-        <circle key={`l${y}`} cx="3" cy={y} r="1.1" fill="currentColor" />,
-        <circle key={`r${y}`} cx="7.5" cy={y} r="1.1" fill="currentColor" />,
+    <svg width="11" height="18" viewBox="0 0 11 18" className="shrink-0 text-ink-3/70">
+      {[4, 9, 14].flatMap((y) => [
+        <circle key={`l${y}`} cx="3.2" cy={y} r="1.2" fill="currentColor" />,
+        <circle key={`r${y}`} cx="8" cy={y} r="1.2" fill="currentColor" />,
       ])}
     </svg>
   );
@@ -141,9 +95,9 @@ function Handle() {
 /* ── chips used inside the condition card ── */
 function SourceChip() {
   return (
-    <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-[6px] bg-ink px-1.5 text-[11.5px] font-medium text-canvas">
-      <Icon name="ticket" size={11} />
-      ticket
+    <span className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-[8px] bg-ink px-2 text-[13px] font-medium text-canvas">
+      <ConeIcon size={13} />
+      order
     </span>
   );
 }
@@ -152,14 +106,10 @@ function SelectChip({ children, value }: { children: React.ReactNode; value?: bo
   return (
     <button
       type="button"
-      className="inline-flex h-6 min-w-0 cursor-pointer items-center gap-1 rounded-[6px] bg-field px-1.5
-        text-[12px] font-medium text-ink transition-colors duration-100 hover:bg-hover-2"
+      className="inline-flex h-7 min-w-0 cursor-pointer items-center gap-1.5 rounded-[8px] bg-field px-2
+        text-[13px] font-medium text-ink transition-colors duration-100 hover:bg-hover-2"
     >
-      {value && (
-        <span className="shrink-0" style={{ color: AMBER }}>
-          <Icon name="clock" size={11} />
-        </span>
-      )}
+      {value && <span className="size-2 shrink-0 rounded-full" style={{ background: AMBER }} />}
       <span className="min-w-0 truncate">{children}</span>
       <Chevron />
     </button>
@@ -168,23 +118,23 @@ function SelectChip({ children, value }: { children: React.ReactNode; value?: bo
 
 function ConditionBody() {
   return (
-    <div className="flex flex-col gap-1.5 px-3 py-2.5">
-      <div className="flex min-w-0 items-center gap-1.5">
+    <div className="flex flex-col gap-2 px-4 py-3.5">
+      <div className="flex min-w-0 items-center gap-2">
         <Handle />
-        <span className="w-6 text-[12.5px] text-ink-2">If</span>
+        <span className="w-8 text-[14px] text-ink-2">If</span>
         <SourceChip />
-        <SelectChip>status</SelectChip>
-        <span className="text-[12.5px] text-ink-2">is</span>
-        <SelectChip value>in progress</SelectChip>
+        <SelectChip>flavor</SelectChip>
+        <span className="text-[14px] text-ink-2">is</span>
+        <SelectChip value>Rocky Road</SelectChip>
       </div>
-      <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1.5">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2">
         <Handle />
-        <span className="w-6 text-[12.5px] text-ink-2">and</span>
+        <span className="w-8 text-[14px] text-ink-2">and</span>
         <SourceChip />
-        <SelectChip>If condition</SelectChip>
-        <span className="text-[12.5px] text-ink-2">is</span>
-        <span className="max-w-full pl-[46px]">
-          <SelectChip value>Too long name that doesn&apos;t fit</SelectChip>
+        <SelectChip>topping</SelectChip>
+        <span className="text-[14px] text-ink-2">is</span>
+        <span className="max-w-full pl-[61px]">
+          <SelectChip value>Brown butter bourbon brittle crunch</SelectChip>
         </span>
       </div>
     </div>
@@ -193,35 +143,20 @@ function ConditionBody() {
 
 function StepBody({ node }: { node: StepNode }) {
   return (
-    <div className="flex items-center gap-2.5 px-3 py-2.5">
+    <div className="flex items-center gap-3.5 px-4 py-3.5">
       <span
-        className="flex size-9 shrink-0 items-center justify-center rounded-[8px]"
+        className="flex size-11 shrink-0 items-center justify-center rounded-[10px]"
         style={{
           background: mix(node.hue!, 12),
           color: node.hue,
-          boxShadow: `0 0 0 1px ${mix(node.hue!, 22)}`,
+          boxShadow: `0 0 0 1px ${mix(node.hue!, 20)}`,
         }}
       >
-        <Icon name={node.icon!} />
+        <ConeIcon />
       </span>
       <span className="min-w-0 text-left">
-        <span className="block truncate text-[13px] font-semibold text-ink">{node.title}</span>
-        <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1 gap-y-1 text-[12px] leading-tight text-ink-2">
-          <span>{node.caption}</span>
-          {node.chip && (
-            <span className="inline-flex h-[18px] min-w-0 shrink-0 items-center gap-1 rounded-full bg-field px-1.5 text-[11px] font-medium text-ink-2">
-              {node.chip.initials && (
-                <span
-                  className="flex size-3 shrink-0 items-center justify-center rounded-full text-[6.5px] font-semibold text-white"
-                  style={{ background: mix("#c84f9d", 85, "var(--ink)") }}
-                >
-                  {node.chip.initials}
-                </span>
-              )}
-              <span className="truncate">{node.chip.label}</span>
-            </span>
-          )}
-        </span>
+        <span className="block truncate text-[15px] font-semibold text-ink">{node.title}</span>
+        <span className="mt-0.5 block text-[13.5px] leading-snug text-ink-2">{node.caption}</span>
       </span>
     </div>
   );
@@ -265,7 +200,7 @@ export default function Flowchart() {
   /* rows → y offsets from measured node heights */
   const rows = [...new Set(NODES.map((n) => n.row))].sort((a, b) => a - b);
   const rowH = rows.map((r) =>
-    Math.max(...NODES.filter((n) => n.row === r).map((n) => heights[n.id] ?? 66)),
+    Math.max(...NODES.filter((n) => n.row === r).map((n) => heights[n.id] ?? 80)),
   );
   const rowY: number[] = [];
   rows.forEach((_, i) => {
@@ -284,7 +219,7 @@ export default function Flowchart() {
     const { cx, top } = place(n);
     return {
       top: { x: cx, y: top + (n.kind ? PILL_OFFSET : 0) },
-      bottom: { x: cx, y: top + (heights[n.id] ?? 66) },
+      bottom: { x: cx, y: top + (heights[n.id] ?? 80) },
     };
   };
 
@@ -318,7 +253,7 @@ export default function Flowchart() {
       style={{
         height: canvasH,
         backgroundImage: "radial-gradient(var(--line-strong) 1px, transparent 1.25px)",
-        backgroundSize: "16px 16px",
+        backgroundSize: "22px 22px",
         backgroundPosition: "center",
       }}
     >
@@ -362,12 +297,12 @@ export default function Flowchart() {
               if (el) nodeRefs.current.set(node.id, el);
               else nodeRefs.current.delete(node.id);
             }}
-            className="absolute flex -translate-x-1/2 flex-col items-start gap-1.5"
+            className="absolute flex -translate-x-1/2 flex-col items-start gap-2"
             style={{ left: cx, top, width: w }}
           >
             {node.kind && (
               <span
-                className="inline-flex h-5 items-center rounded-[6px] px-1.5 text-[11px] font-medium"
+                className="inline-flex h-7 items-center rounded-[8px] px-2.5 text-[12.5px] font-medium"
                 style={{
                   background: mix(node.kind.hue, 14, "var(--page)"),
                   color: mix(node.kind.hue, 80, "var(--ink)"),
@@ -376,20 +311,26 @@ export default function Flowchart() {
                 {node.kind.label}
               </span>
             )}
-            <button
-              type="button"
-              onClick={() => setSelected(active ? null : node.id)}
-              aria-pressed={active}
-              className="w-full cursor-pointer rounded-card bg-surface text-left outline-none
-                transition-shadow duration-150 focus-visible:shadow-[0_0_0_1.5px_var(--accent)]"
-              style={{
-                boxShadow: active
-                  ? "0 0 0 1.5px var(--accent), 0 2px 10px rgba(0,0,0,0.045)"
-                  : "var(--shadow-card)",
-              }}
-            >
-              {node.condition ? <ConditionBody /> : <StepBody node={node} />}
-            </button>
+            {node.condition ? (
+              <div className="w-full rounded-window bg-surface shadow-card">
+                <ConditionBody />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSelected(active ? null : node.id)}
+                aria-pressed={active}
+                className="w-full cursor-pointer rounded-window bg-surface text-left outline-none
+                  transition-shadow duration-150 focus-visible:shadow-[0_0_0_1.5px_var(--accent)]"
+                style={{
+                  boxShadow: active
+                    ? "0 0 0 1.5px var(--accent), 0 2px 10px rgba(0,0,0,0.045)"
+                    : "var(--shadow-card)",
+                }}
+              >
+                <StepBody node={node} />
+              </button>
+            )}
           </div>
         );
       })}

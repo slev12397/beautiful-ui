@@ -104,7 +104,7 @@ export const META: Meta[] = [
   {
     id: "flowchart",
     title: "Flowchart",
-    caption: "Agent workflow graph with labeled branches on a dotted canvas.",
+    caption: "Workflow trigger and condition steps on a dotted canvas.",
     file: "Flowchart.tsx",
   },
   {
