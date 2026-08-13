@@ -16,6 +16,7 @@ import FineTuneCard from "@/components/primitives/FineTuneCard";
 import FilterTable from "@/components/primitives/FilterTable";
 import RecordsTable from "@/components/primitives/RecordsTable";
 import SidebarNav from "@/components/primitives/SidebarNav";
+import Flowchart from "@/components/primitives/Flowchart";
 import InsightCards from "@/components/primitives/InsightCards";
 import CodeBlock from "@/components/primitives/CodeBlock";
 import ToolChips from "@/components/primitives/ToolChips";
@@ -39,6 +40,7 @@ const DEMOS: Record<string, ComponentType<{ variant?: string }>> = {
   "filter-table": FilterTable,
   "records-table": RecordsTable,
   "sidebar-nav": SidebarNav,
+  "flowchart": Flowchart,
   "insight-cards": InsightCards,
   "code-block": CodeBlock,
   "tool-chips": ToolChips,

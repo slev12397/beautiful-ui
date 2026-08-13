@@ -102,6 +102,12 @@ export const META: Meta[] = [
     file: "SearchList.tsx",
   },
   {
+    id: "flowchart",
+    title: "Flowchart",
+    caption: "Agent workflow graph with labeled branches on a dotted canvas.",
+    file: "Flowchart.tsx",
+  },
+  {
     id: "insight-cards",
     title: "Insight Cards",
     caption: "Paged agent insights with scrub-ready live charts.",

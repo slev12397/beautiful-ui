@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { DevToolbar } from "@/components/site/DevToolbar";
+import { ThemeSync } from "@/components/site/ThemeSync";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,11 +26,12 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${inter.variable} ${mono.variable} font-sans`}>
+        <ThemeSync />
         {children}
         <DevToolbar />
       </body>

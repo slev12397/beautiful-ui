@@ -7,7 +7,13 @@ export function ThemeToggle() {
   const [dark, setDark] = useState<boolean | null>(null);
 
   useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
+    /* localStorage is the source of truth — the html class can be stale
+     * for a moment around hydration (see ThemeSync). */
+    try {
+      setDark(localStorage.getItem("bui-theme") !== "light");
+    } catch {
+      setDark(document.documentElement.classList.contains("dark"));
+    }
   }, []);
 
   function apply(next: boolean) {
