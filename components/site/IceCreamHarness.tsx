@@ -31,16 +31,6 @@ const NAME = "Shane";
 
 /* ── shared bits ──────────────────────────────────────────── */
 
-function SectionHeading({ number, title, detail }: { number: string; title: string; detail: string }) {
-  return (
-    <div className="mb-3 flex items-baseline gap-2">
-      <span className="font-mono text-[10.5px] tabular-nums text-ink-3">{number}</span>
-      <h2 className="text-[13px] font-semibold text-ink">{title}</h2>
-      <span className="truncate text-[12px] text-ink-3">{detail}</span>
-    </div>
-  );
-}
-
 function Prose({ children }: { children: ReactNode }) {
   return <p className="max-w-[620px] text-[13.5px] leading-[1.65] text-ink-2">{children}</p>;
 }
@@ -78,24 +68,24 @@ type Scenario = {
   prompt: string;
   beat: number;
   Answer: () => ReactNode;
+  /** optional artifact for the right-hand pane */
+  paneTitle?: string;
+  Pane?: () => ReactNode;
 };
 
 const SCENARIOS: Record<string, Scenario> = {
   todos: {
     prompt: "What urgent to-dos need my attention this morning?",
     beat: 1100,
+    paneTitle: "Tasks",
+    Pane: () => <TaskRows variant="List" />,
     Answer: () => (
       <>
         <Prose>
-          Three things are time-sensitive. I ordered them by how soon they&apos;ll bite and drafted the supplier
-          notes, so you can clear them without leaving the thread.
+          Three things are time-sensitive. I put the checklist in the side panel, ordered by how soon
+          they&apos;ll bite — and there&apos;s one call worth making first.
         </Prose>
         <div className="mt-5">
-          <SectionHeading number="01" title="Tasks" detail="agent checklist" />
-          <TaskRows variant="List" />
-        </div>
-        <div className="mt-6">
-          <SectionHeading number="02" title="Recommended next" detail="one call to make" />
           <RecommendationCard />
         </div>
       </>
@@ -129,11 +119,9 @@ const SCENARIOS: Record<string, Scenario> = {
         <ThinkingState variant="Search" />
         <Prose>Found it, plus the two docs it references. Here&apos;s the match and the context I pulled.</Prose>
         <div className="mt-5">
-          <SectionHeading number="01" title="Matches" detail="workspace search" />
           <SearchList />
         </div>
         <div className="mt-6">
-          <SectionHeading number="02" title="Context" detail="2 sources" />
           <ContextCards />
         </div>
       </>
@@ -150,13 +138,11 @@ const SCENARIOS: Record<string, Scenario> = {
         </Prose>
         <div className="mt-5 flex flex-col gap-7">
           <div>
-            <SectionHeading number="01" title="Launch filter" detail="status chips" />
             <div className="overflow-x-auto pb-1">
               <FilterTable />
             </div>
           </div>
           <div>
-            <SectionHeading number="02" title="Supplier records" detail="26 makers" />
             <div className="overflow-x-auto pb-1">
               <RecordsTable />
             </div>
@@ -172,11 +158,9 @@ const SCENARIOS: Record<string, Scenario> = {
       <>
         <Prose>I planned it out and wrote the function I&apos;ll use to stage the run. Nothing runs until you say so.</Prose>
         <div className="mt-5">
-          <SectionHeading number="01" title="Run" detail="4 tool calls" />
           <ToolChips />
         </div>
         <div className="mt-6">
-          <SectionHeading number="02" title="Batch function" detail="review before apply" />
           <CodeBlock />
         </div>
       </>
@@ -189,7 +173,6 @@ const SCENARIOS: Record<string, Scenario> = {
       <>
         <Prose>I staged the changes as a reviewable draft — nothing is applied yet. Sweep through and approve what looks right.</Prose>
         <div className="mt-5">
-          <SectionHeading number="01" title="Proposed edits" detail="review before apply" />
           <DiffTable />
         </div>
       </>
@@ -391,9 +374,10 @@ function GlideGroup({ children }: { children: ReactNode }) {
       onMouseLeave={() => setBox(null)}
       className="relative flex flex-col gap-px"
     >
+      {/* hover-2: the sidebar sits on canvas, where plain hover is invisible */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 rounded-[7px] bg-hover"
+        className="pointer-events-none absolute inset-x-0 rounded-[7px] bg-hover-2"
         style={{
           top: box?.top ?? 0,
           height: box?.height ?? 0,
@@ -408,11 +392,7 @@ function GlideGroup({ children }: { children: ReactNode }) {
 }
 
 function SectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <div className="px-2 pb-1 pt-1 text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-3">
-      {children}
-    </div>
-  );
+  return <div className="px-2 pb-1 pt-1 text-[11.5px] font-medium text-ink-3">{children}</div>;
 }
 
 function RailButton({
@@ -434,7 +414,7 @@ function RailButton({
       type="button"
       onClick={onClick}
       className={`relative z-10 flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left
-        transition-[color,transform] duration-150 active:scale-[0.98] ${active ? "bg-hover" : ""}`}
+        transition-[color,transform] duration-150 active:scale-[0.98] ${active ? "bg-hover-2" : ""}`}
     >
       <span className={active ? "text-ink" : "text-ink-3"}>{icon}</span>
       <span className={`min-w-0 flex-1 truncate text-[13px] ${active ? "font-medium text-ink" : "text-ink-2"}`}>
@@ -449,32 +429,149 @@ function RailButton({
   );
 }
 
+const WORKSPACES = [
+  { key: "creamery", name: "Creamery Ops", sub: "Support workspace", monogram: "C" },
+  { key: "gelato", name: "Gelato Lab", sub: "R&D workspace", monogram: "G" },
+  { key: "cone", name: "Cone King HQ", sub: "Wholesale workspace", monogram: "K" },
+];
+
+const NAV_ITEMS = [
+  { key: "home", label: "Home", icon: <path d="M3 11l9-8 9 8M5 9.5V21h14V9.5" /> },
+  { key: "chats", label: "Chats", icon: <path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" /> },
+  { key: "search", label: "Search", icon: <g><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></g> },
+];
+
+function NavIcon({ children }: { children: ReactNode }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {children}
+    </svg>
+  );
+}
+
 function Sidebar({ onPick, onNewChat }: { onPick: (id: ScenarioId, label: string) => void; onNewChat: () => void }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [nav, setNav] = useState("chats");
+  const [workspace, setWorkspace] = useState(WORKSPACES[0]);
+  const [wsOpen, setWsOpen] = useState(false);
+  const [unread, setUnread] = useState(true);
+  const [promoOpen, setPromoOpen] = useState(true);
+
+  /* click anywhere else closes the workspace menu */
+  useEffect(() => {
+    if (!wsOpen) return;
+    const close = (event: PointerEvent) => {
+      if (!(event.target as Element).closest("[data-ws]")) setWsOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [wsOpen]);
+
+  if (collapsed) {
+    return (
+      <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-line bg-canvas/35 p-2 lg:flex">
+        <button
+          type="button"
+          aria-label="Expand sidebar"
+          onClick={() => setCollapsed(false)}
+          className="flex size-8 items-center justify-center rounded-[7px] text-ink-3 transition-colors duration-150 hover:bg-hover-2 hover:text-ink"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
+        </button>
+        <div className="mt-2 flex flex-col gap-1">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              aria-label={item.label}
+              onClick={() => setNav(item.key)}
+              className={`flex size-8 items-center justify-center rounded-[7px] transition-colors duration-150 ${
+                nav === item.key ? "bg-hover-2 text-ink" : "text-ink-3 hover:bg-hover-2 hover:text-ink"
+              }`}
+            >
+              <NavIcon>{item.icon}</NavIcon>
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          aria-label="New chat"
+          onClick={onNewChat}
+          className="mt-2 flex size-8 items-center justify-center rounded-[7px] text-accent transition-[background-color,transform] duration-100 hover:bg-accent-tint active:scale-[0.94]"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
+        </button>
+        <span className="mt-auto flex size-7 items-center justify-center rounded-full bg-accent-tint text-[11px] font-semibold text-accent-ink">
+          {NAME.charAt(0)}
+        </span>
+      </aside>
+    );
+  }
+
   return (
     <aside className="hidden w-[264px] shrink-0 flex-col border-r border-line bg-canvas/35 p-2.5 lg:flex">
       {/* workspace switcher */}
       <div className="mb-2 flex items-center gap-1">
+        <span data-ws className="relative min-w-0 flex-1">
+          <button
+            type="button"
+            aria-expanded={wsOpen}
+            onClick={() => setWsOpen((current) => !current)}
+            className="flex w-full min-w-0 items-center gap-2.5 rounded-control p-1.5 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.98]"
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-ink text-[13px] font-semibold text-surface">{workspace.monogram}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[13px] font-medium leading-tight text-ink">{workspace.name}</span>
+              <span className="block truncate text-[11px] leading-tight text-ink-3">{workspace.sub}</span>
+            </span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M7 15l5 5 5-5M7 9l5-5 5 5" /></svg>
+          </button>
+          {wsOpen && (
+            <div
+              className="absolute left-0 top-full z-20 mt-1 w-56 rounded-[10px] bg-surface p-1 shadow-raised"
+              style={{ animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top left" }}
+            >
+              {WORKSPACES.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => {
+                    setWorkspace(item);
+                    setWsOpen(false);
+                  }}
+                  className="flex h-9 w-full cursor-pointer items-center gap-2 rounded-[6px] px-2 text-left transition-colors duration-100 hover:bg-hover"
+                >
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-[6px] bg-ink text-[11px] font-semibold text-surface">{item.monogram}</span>
+                  <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink">{item.name}</span>
+                  <span className={`shrink-0 text-ink ${item.key === workspace.key ? "" : "invisible"}`}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6L9 17l-5-5" /></svg>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </span>
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-control p-1.5 text-left transition-[background-color,transform] duration-100 hover:bg-hover active:scale-[0.98]"
+          aria-label="Collapse sidebar"
+          onClick={() => setCollapsed(true)}
+          className="flex size-7 shrink-0 items-center justify-center rounded-control text-ink-3 transition-colors duration-150 hover:bg-hover-2 hover:text-ink"
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-ink text-[13px] font-semibold text-surface">C</span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-medium leading-tight text-ink">Creamery Ops</span>
-            <span className="block truncate text-[11px] leading-tight text-ink-3">Support workspace</span>
-          </span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M7 15l5 5 5-5M7 9l5-5 5 5" /></svg>
-        </button>
-        <button type="button" aria-label="Collapse sidebar" className="flex size-7 shrink-0 items-center justify-center rounded-control text-ink-3 transition-colors duration-150 hover:bg-hover hover:text-ink">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
         </button>
       </div>
 
       {/* primary nav */}
       <GlideGroup>
-        <RailButton icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 11l9-8 9 8M5 9.5V21h14V9.5" /></svg>} label="Home" />
-        <RailButton icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" /></svg>} label="Chats" active />
-        <RailButton icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>} label="Search" />
+        {NAV_ITEMS.map((item) => (
+          <RailButton
+            key={item.key}
+            icon={<NavIcon>{item.icon}</NavIcon>}
+            label={item.label}
+            active={nav === item.key}
+            onClick={() => setNav(item.key)}
+          />
+        ))}
       </GlideGroup>
 
       {/* accent action — aligned with the rows above it */}
@@ -509,23 +606,40 @@ function Sidebar({ onPick, onNewChat }: { onPick: (id: ScenarioId, label: string
       </div>
 
       {/* promo card — pinned low, just above the footer */}
-      <div className="mt-3 overflow-hidden rounded-card bg-surface shadow-card">
-        <div className="flex items-center justify-between px-3 pt-3">
-          <span className="rounded-full bg-green-tint px-2 py-0.5 text-[10.5px] font-medium text-green">New</span>
-          <button type="button" aria-label="Dismiss" className="flex size-5 items-center justify-center rounded-[5px] text-ink-3 transition-colors duration-150 hover:bg-hover hover:text-ink">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
-          </button>
+      {promoOpen && (
+        <div className="mt-3 overflow-hidden rounded-card bg-surface shadow-card">
+          <div className="flex items-center justify-between px-3 pt-3">
+            <span className="rounded-full bg-green-tint px-2 py-0.5 text-[10.5px] font-medium text-green">New</span>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              onClick={() => setPromoOpen(false)}
+              className="flex size-5 items-center justify-center rounded-[5px] text-ink-3 transition-colors duration-150 hover:bg-hover hover:text-ink"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <p className="px-3 pt-2 text-[12.5px] font-medium leading-snug text-ink">Seasonal flavor planner &amp; supplier transfers</p>
+          <div className="mx-3 mt-2.5 flex flex-col gap-1.5 rounded-control bg-inset p-2 shadow-hairline">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <span className={`size-3.5 shrink-0 rounded-full ${i === 1 ? "bg-accent/70" : "bg-line-strong"}`} />
+                <span className="h-1.5 rounded-full bg-line-strong" style={{ width: `${[64, 44, 72][i]}%` }} />
+              </div>
+            ))}
+          </div>
+          <div className="p-3 pt-2.5">
+            <button
+              type="button"
+              onClick={() => onPick("edits", "Seasonal flavor planner")}
+              className="flex h-7 w-full items-center justify-center gap-1.5 rounded-control bg-surface text-[12px] font-medium text-ink shadow-btn transition-[background-color,transform] duration-150 hover:bg-hover active:scale-[0.97]"
+            >
+              Open planner
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </button>
+          </div>
         </div>
-        <p className="px-3 pt-2 text-[12.5px] font-medium leading-snug text-ink">Seasonal flavor planner &amp; supplier transfers</p>
-        <div className="m-3 mt-2.5 flex flex-col gap-1.5 rounded-control bg-inset p-2 shadow-hairline">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="flex items-center gap-1.5">
-              <span className={`size-3.5 shrink-0 rounded-full ${i === 1 ? "bg-accent/70" : "bg-line-strong"}`} />
-              <span className="h-1.5 rounded-full bg-line-strong" style={{ width: `${[64, 44, 72][i]}%` }} />
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* footer */}
       <div className="mt-2.5 border-t border-line pt-2">
@@ -538,9 +652,14 @@ function Sidebar({ onPick, onNewChat }: { onPick: (id: ScenarioId, label: string
             <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-tint text-[11px] font-semibold text-accent-ink">{NAME.charAt(0)}</span>
             <span className="truncate text-[13px] font-medium text-ink">{NAME} Levine</span>
           </span>
-          <button type="button" aria-label="Notifications" className="relative flex size-7 shrink-0 items-center justify-center rounded-control text-ink-3 transition-colors duration-150 hover:bg-hover hover:text-ink">
+          <button
+            type="button"
+            aria-label={unread ? "Notifications — unread" : "Notifications"}
+            onClick={() => setUnread(false)}
+            className="relative flex size-7 shrink-0 items-center justify-center rounded-control text-ink-3 transition-colors duration-150 hover:bg-hover-2 hover:text-ink"
+          >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" /></svg>
-            <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-accent" />
+            {unread && <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-accent" />}
           </button>
         </div>
       </div>
@@ -553,6 +672,18 @@ function Sidebar({ onPick, onNewChat }: { onPick: (id: ScenarioId, label: string
 type Msg = { id: number; role: "user"; text: string } | { id: number; role: "assistant"; scenarioId: ScenarioId };
 type Chat = { id: number; title: string | null; messages: Msg[] };
 
+/* the pane arrives on the same beat as the answer it belongs to */
+function PaneReveal({ beat, children }: { beat: number; children: ReactNode }) {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShow(true), beat);
+    return () => clearTimeout(t);
+  }, [beat]);
+
+  return show ? <>{children}</> : null;
+}
+
 export default function IceCreamHarness() {
   const [chats, setChats] = useState<Chat[]>([{ id: 1, title: null, messages: [] }]);
   const [activeId, setActiveId] = useState(1);
@@ -563,6 +694,17 @@ export default function IceCreamHarness() {
 
   const chat = chats.find((c) => c.id === activeId) ?? chats[0];
   const active = chat.messages.length > 0;
+
+  /* right-hand pane: the latest assistant message that carries one */
+  const [closedPaneId, setClosedPaneId] = useState(0);
+  const lastPaneMsg = [...chat.messages]
+    .reverse()
+    .find(
+      (m): m is Extract<Msg, { role: "assistant" }> =>
+        m.role === "assistant" && !!SCENARIOS[m.scenarioId].Pane,
+    );
+  const paneMsg = lastPaneMsg && lastPaneMsg.id !== closedPaneId ? lastPaneMsg : null;
+  const paneScenario = paneMsg ? SCENARIOS[paneMsg.scenarioId] : null;
 
   const appendExchange = (target: Chat, text: string, scenarioId: ScenarioId): Chat => ({
     ...target,
@@ -589,13 +731,7 @@ export default function IceCreamHarness() {
     setActiveId(id);
   };
 
-  /* reuse an existing empty chat instead of stacking blank tabs */
   const newChat = () => {
-    const empty = chats.find((c) => c.messages.length === 0);
-    if (empty) {
-      setActiveId(empty.id);
-      return;
-    }
     const id = (chatIdRef.current += 1);
     setChats((current) => [...current, { id, title: null, messages: [] }]);
     setActiveId(id);
@@ -641,28 +777,53 @@ export default function IceCreamHarness() {
           </div>
 
           {active ? (
-            <>
-              <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                <div className="mx-auto flex max-w-[820px] flex-col gap-8 px-4 py-8 sm:px-8 lg:px-12">
-                  {chat.messages.map((message) =>
-                    message.role === "user" ? (
-                      <UserBubble key={message.id} text={message.text} />
-                    ) : (
-                      <AssistantResponse key={message.id} scenarioId={message.scenarioId} />
-                    ),
-                  )}
+            <div className="flex min-h-0 flex-1">
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                  <div className="mx-auto flex max-w-[820px] flex-col gap-8 px-4 py-8 sm:px-8 lg:px-12">
+                    {chat.messages.map((message) =>
+                      message.role === "user" ? (
+                        <UserBubble key={message.id} text={message.text} />
+                      ) : (
+                        <AssistantResponse key={message.id} scenarioId={message.scenarioId} />
+                      ),
+                    )}
+                  </div>
+                </div>
+                <div className="shrink-0 border-t border-line bg-page px-4 py-3 sm:px-8 lg:px-12">
+                  <div className="mx-auto max-w-[820px]">
+                    <PromptBar
+                      demo={false}
+                      placeholder="Reply, or ask for another component…"
+                      onSend={(text) => send(text, matchScenario(text))}
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="shrink-0 border-t border-line bg-page px-4 py-3 sm:px-8 lg:px-12">
-                <div className="mx-auto max-w-[820px]">
-                  <PromptBar
-                    demo={false}
-                    placeholder="Reply, or ask for another component…"
-                    onSend={(text) => send(text, matchScenario(text))}
-                  />
-                </div>
-              </div>
-            </>
+
+              {/* artifact pane — tasks and other side-by-side work */}
+              {paneMsg && paneScenario?.Pane && (
+                <PaneReveal key={paneMsg.id} beat={paneScenario.beat}>
+                  <aside
+                    className="hidden w-[360px] shrink-0 flex-col border-l border-line bg-page lg:flex"
+                    style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}
+                  >
+                    <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-2.5">
+                      <span className="text-[13px] font-semibold text-ink">{paneScenario.paneTitle}</span>
+                      <button
+                        type="button"
+                        aria-label="Close pane"
+                        onClick={() => setClosedPaneId(paneMsg.id)}
+                        className="flex size-6 items-center justify-center rounded-[6px] text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-y-auto p-4">{paneScenario.Pane()}</div>
+                  </aside>
+                </PaneReveal>
+              )}
+            </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto">
               <EmptyState onSend={send} shuffle={() => setOffset((current) => (current + 3) % SUGGESTION_POOL.length)} offset={offset} />

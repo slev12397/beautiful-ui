@@ -144,7 +144,7 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
         return (
           <div
             key={row.key}
-            className={`self-stretch overflow-hidden transition-[border-radius] duration-300 ${
+            className={`self-stretch overflow-hidden transition-[border-radius,background-color] duration-300 hover:bg-inset ${
               list ? "border-b border-line last:border-0" : "bg-surface shadow-card"
             }`}
             style={{
@@ -156,7 +156,7 @@ export default function TaskRows({ variant = "Capsules" }: { variant?: string })
               type="button"
               aria-expanded={open}
               onClick={() => setManualOpen((current) => ({ ...current, [row.key]: !open }))}
-              className="flex h-11 w-full items-center gap-2.5 px-2.5 text-left transition-colors duration-100 hover:bg-inset"
+              className="flex h-11 w-full items-center gap-2.5 px-2.5 text-left"
             >
               <span className="flex size-6 shrink-0 items-center justify-center">
                 {row.badge}
