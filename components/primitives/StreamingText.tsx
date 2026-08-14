@@ -72,21 +72,37 @@ const ACTION_ICONS: React.ReactNode[] = [
   <path key="down" d="M17 14V2M9 18.12L10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88z" />,
 ];
 
-export default function StreamingText() {
+export default function StreamingText({
+  loop = true,
+  fill = false,
+  onDone,
+}: {
+  variant?: string;
+  /** restart the stream after a hold; turn off when embedding in a real thread */
+  loop?: boolean;
+  /** fill the parent width instead of the gallery's fixed measure */
+  fill?: boolean;
+  onDone?: () => void;
+}) {
   const [count, setCount] = useState(0);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const done = count >= TOKENS.length;
 
   useEffect(() => {
+    if (done && !loop) {
+      onDone?.();
+      return;
+    }
     const t = setTimeout(
       () => setCount((c) => (c >= TOKENS.length ? 0 : c + 1)),
       done ? HOLD_MS : WORD_MS,
     );
     return () => clearTimeout(t);
-  }, [count, done]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count, done, loop]);
 
   return (
-    <div className="min-h-[15.5rem] w-full max-w-95">
+    <div className={fill ? "w-full" : "min-h-[15.5rem] w-full max-w-95"}>
       <p className="text-[13px] leading-relaxed text-ink">
         {TOKENS.slice(0, count).map((token, i) =>
           token.cite ? (

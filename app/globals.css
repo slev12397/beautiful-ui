@@ -351,6 +351,40 @@ a:focus-visible .animated-underline::after {
   }
 }
 
+/* ── rainbow peek ─────────────────────────────────────────
+ * A soft spectrum glow that drifts very slowly beneath a hero
+ * element — blurred, mostly hidden, just peeking out below. */
+@keyframes rainbow-drift {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 200% 50%;
+  }
+}
+
+.rainbow-peek {
+  background: linear-gradient(
+    90deg,
+    #3d9aff,
+    #34c77b,
+    #ffd166,
+    #ff9f43,
+    #ff6fae,
+    #3d9aff
+  );
+  background-size: 200% 100%;
+  border-radius: 999px;
+  filter: blur(22px);
+  animation: rainbow-drift 28s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rainbow-peek {
+    animation: none;
+  }
+}
+
 /* ── records table ────────────────────────────────────────
  * The grid is deliberately more architectural than card-like:
  * one quiet surface, precise rules, and color reserved for

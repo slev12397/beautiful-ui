@@ -146,12 +146,15 @@ function parseToken(draft: string): { kind: "at" | "slash"; query: string; start
 export default function PromptBar({
   variant = "Rounded",
   demo = true,
+  tall = false,
   placeholder,
   onSend,
 }: {
   variant?: string;
   /** the self-running walkthrough; turn off when embedding in a real surface */
   demo?: boolean;
+  /** hero sizing: a multi-line input with controls on their own row */
+  tall?: boolean;
   placeholder?: string;
   onSend?: (text: string) => void;
 }) {
@@ -168,6 +171,7 @@ export default function PromptBar({
   const [auto, setAuto] = useState(demo);
   const [autoStep, setAutoStep] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const wide = expanded || tall;
   const [rowBox, setRowBox] = useState<{ top: number; height: number } | null>(null);
   const [engaged, setEngaged] = useState(false);
   const [modelBox, setModelBox] = useState<{ top: number; height: number } | null>(null);
@@ -499,7 +503,7 @@ export default function PromptBar({
       {/* ── composer ───────────────────────────────────── */}
       <div
         className={`relative isolate flex flex-col gap-1.5 overflow-hidden border border-line bg-surface p-1.5 shadow-card transition-[border-color,border-radius] duration-150 focus-within:border-line-strong ${
-          pill ? (attachments.length > 0 || expanded ? "rounded-[24px]" : "rounded-full") : "rounded-[14px]"
+          pill ? (attachments.length > 0 || wide ? "rounded-[24px]" : "rounded-full") : "rounded-[14px]"
         }`}
       >
         {/* rainbow glimm sweep — plays across the interior on model change.
@@ -549,7 +553,7 @@ export default function PromptBar({
         <div
           ref={controlsRef}
           className={`grid items-end gap-x-1 gap-y-1.5 ${
-            expanded
+            wide
               ? "grid-cols-[minmax(0,1fr)_auto_28px_28px]"
               : "grid-cols-[28px_minmax(0,1fr)_auto_28px_28px]"
           }`}
@@ -565,7 +569,7 @@ export default function PromptBar({
             }}
             className={`flex size-7 shrink-0 items-center justify-center justify-self-start text-ink-3 transition-[background-color,color,transform] duration-150 hover:bg-hover hover:text-ink active:scale-[0.94] ${
               pill ? "rounded-full" : "rounded-[8px]"
-            } ${plusOpen ? "bg-hover text-ink" : ""} ${expanded ? "col-start-1 row-start-2" : "col-start-1 row-start-1"}`}
+            } ${plusOpen ? "bg-hover text-ink" : ""} ${wide ? "col-start-1 row-start-2" : "col-start-1 row-start-1"}`}
           >
             <Icon size={16} strokeWidth={2}><path d="M12 5v14M5 12h14" /></Icon>
           </button>
@@ -605,8 +609,8 @@ export default function PromptBar({
             }}
             placeholder={listening ? "Listening…" : placeholder ?? "Write a message…"}
             aria-label="Prompt"
-            className={`min-h-7 min-w-0 w-full resize-none bg-transparent px-1 py-[5px] text-[13px] leading-[18px] text-ink outline-none [overflow-wrap:anywhere] placeholder:text-ink-3 ${
-              expanded ? "col-span-full col-start-1 row-start-1" : "col-start-2 row-start-1"
+            className={`${tall ? "min-h-[68px]" : "min-h-7"} min-w-0 w-full resize-none bg-transparent px-1 py-[5px] text-[13px] leading-[18px] text-ink outline-none [overflow-wrap:anywhere] placeholder:text-ink-3 ${
+              wide ? "col-span-full col-start-1 row-start-1" : "col-start-2 row-start-1"
             }`}
           />
 
@@ -622,7 +626,7 @@ export default function PromptBar({
             }}
             className={`flex h-7 shrink-0 items-center gap-1 px-1.5 text-[12px] font-medium text-ink-2 transition-colors duration-150 hover:bg-hover hover:text-ink ${
               pill ? "rounded-full" : "rounded-[8px]"
-            } ${expanded ? "col-start-2 row-start-2" : "col-start-3 row-start-1"}`}
+            } ${wide ? "col-start-2 row-start-2" : "col-start-3 row-start-1"}`}
           >
             {model.name}
             <span className="text-ink-3">
@@ -639,7 +643,7 @@ export default function PromptBar({
             className={`flex size-7 shrink-0 items-center justify-center transition-[background-color,color,transform] duration-150 active:scale-[0.94] ${
               pill ? "rounded-full" : "rounded-[8px]"
             } ${listening ? "bg-accent-tint text-accent-ink" : "text-ink-3 hover:bg-hover hover:text-ink"} ${
-              expanded ? "col-start-3 row-start-2" : "col-start-4 row-start-1"
+              wide ? "col-start-3 row-start-2" : "col-start-4 row-start-1"
             }`}
           >
             {listening ? (
@@ -665,7 +669,7 @@ export default function PromptBar({
             onClick={send}
             className={`flex size-7 shrink-0 items-center justify-center transition-[background-color,color,transform] duration-200 enabled:active:scale-[0.94] ${
               pill ? "rounded-full" : "rounded-[8px]"
-            } ${expanded ? "col-start-4 row-start-2" : "col-start-5 row-start-1"}`}
+            } ${wide ? "col-start-4 row-start-2" : "col-start-5 row-start-1"}`}
             style={{
               background: canSend ? "var(--ink)" : "var(--line-strong)",
               color: canSend ? "var(--surface)" : "var(--ink-2)",
