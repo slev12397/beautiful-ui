@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { DialRoot } from "dialkit";
+import "dialkit/styles.css";
 import "./globals.css";
 import { DevToolbar } from "@/components/site/DevToolbar";
 import { ThemeSync } from "@/components/site/ThemeSync";
@@ -33,6 +35,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${mono.variable} font-sans`}>
         <ThemeSync />
         {children}
+        <DialRoot position="top-right" defaultOpen />
         <DevToolbar />
       </body>
     </html>

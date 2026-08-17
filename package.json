@@ -9,9 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "dialkit": "^1.4.3",
     "glimm": "^0.3.0",
     "iconoir-react": "^7.11.1",
     "liveline": "^0.0.7",
+    "motion": "^13.1.0",
     "next": "^15.3.3",
     "posthog-js": "^1.417.2",
     "react": "^19.1.0",

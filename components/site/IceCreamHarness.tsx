@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useDialKit, type DialConfig } from "dialkit";
 import posthog from "posthog-js";
 import { Button } from "@/components/atoms/Button";
 import ApprovalCard from "@/components/primitives/ApprovalCard";
@@ -347,17 +348,98 @@ function UserBubble({ text }: { text: string }) {
 
 /* ── empty state ──────────────────────────────────────────── */
 
+/* ─────────────────────────────────────────────────────────
+ * HOME ENTRANCE STORYBOARD
+ *
+ * Read top-to-bottom. Each value is ms after mount.
+ *
+ *  170ms   “Hello Shane” rises 23px, blur 17px → 0
+ *  330ms   question follows with the same reveal
+ *  400ms   prompt bar resolves into place
+ *  550ms   recommendations finish the sequence
+ * ───────────────────────────────────────────────────────── */
+
+const HOME_REVEAL_TIMING = {
+  hello:           170, // greeting enters first
+  question:        330, // question follows closely
+  prompt:          400, // composer lands after the copy
+  recommendations: 550, // secondary actions finish the scene
+};
+
+const HOME_REVEAL = {
+  offsetY:  23, // px traveled upward
+  blur:     17, // px of initial blur
+  duration: 800, // ms for each element to settle
+  easing:   "cubic-bezier(0.16, 1, 0.3, 1)",
+};
+
+const HOME_REVEAL_DIALS = {
+  reveal: {
+    blur:    [HOME_REVEAL.blur, 0, 40, 1],
+    offsetY: [HOME_REVEAL.offsetY, 0, 60, 1],
+    duration: [HOME_REVEAL.duration, 200, 800, 10],
+  },
+  sequence: {
+    helloAt:          [HOME_REVEAL_TIMING.hello, 0, 300, 10],
+    questionAt:       [HOME_REVEAL_TIMING.question, 0, 500, 10],
+    promptAt:         [HOME_REVEAL_TIMING.prompt, 0, 700, 10],
+    recommendationsAt: [HOME_REVEAL_TIMING.recommendations, 0, 900, 10],
+  },
+  replay: { type: "action", label: "Replay entrance" },
+} satisfies DialConfig;
+
+function homeRevealStyle(
+  visible: boolean,
+  reveal: { blur: number; offsetY: number; duration: number },
+): CSSProperties {
+  return {
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translate3d(0, 0, 0)" : `translate3d(0, ${reveal.offsetY}px, 0)`,
+    filter: visible ? "blur(0px)" : `blur(${reveal.blur}px)`,
+    transition: ["opacity", "transform", "filter"]
+      .map((property) => `${property} ${reveal.duration}ms ${HOME_REVEAL.easing}`)
+      .join(", "),
+  };
+}
+
 function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: ScenarioId) => void; shuffle: () => void; offset: number }) {
   const shown = [0, 1, 2].map((i) => SUGGESTION_POOL[(offset + i) % SUGGESTION_POOL.length]);
+  const [stage, setStage] = useState(0);
+  const [replayTrigger, setReplayTrigger] = useState(0);
+  const revealParams = useDialKit("Home entrance", HOME_REVEAL_DIALS, {
+    id: "harness-home-entrance-v2",
+    persist: true,
+    onAction: (action) => {
+      if (action === "replay") setReplayTrigger((current) => current + 1);
+    },
+  });
+
+  useEffect(() => {
+    setStage(0);
+    const timers = [
+      setTimeout(() => setStage(1), revealParams.sequence.helloAt),
+      setTimeout(() => setStage(2), revealParams.sequence.questionAt),
+      setTimeout(() => setStage(3), revealParams.sequence.promptAt),
+      setTimeout(() => setStage(4), revealParams.sequence.recommendationsAt),
+    ];
+
+    return () => timers.forEach(clearTimeout);
+  }, [
+    replayTrigger,
+    revealParams.sequence.helloAt,
+    revealParams.sequence.questionAt,
+    revealParams.sequence.promptAt,
+    revealParams.sequence.recommendationsAt,
+  ]);
 
   return (
     <div className="mx-auto flex min-h-full max-w-[720px] flex-col justify-center px-4 py-10 sm:px-8">
-      <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-ink" style={{ animation: "fade-up 500ms cubic-bezier(0.23,1,0.32,1) both" }}>
-        <span className="block text-ink-3">Hi {NAME},</span>
-        How can I help you today?
+      <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-ink">
+        <span className="home-reveal block text-ink-3" style={homeRevealStyle(stage >= 1, revealParams.reveal)}>Hello {NAME}</span>
+        <span className="home-reveal block" style={homeRevealStyle(stage >= 2, revealParams.reveal)}>What can I help you with?</span>
       </h1>
 
-      <div className="relative mt-7" style={{ animation: "fade-up 500ms cubic-bezier(0.23,1,0.32,1) 120ms both" }}>
+      <div className="home-reveal relative mt-7" style={homeRevealStyle(stage >= 3, revealParams.reveal)}>
         <div className="relative">
           <PromptBar
             demo={false}
@@ -368,7 +450,7 @@ function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: Sc
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col" style={{ animation: "fade-up 500ms cubic-bezier(0.23,1,0.32,1) 180ms both" }}>
+      <div className="home-reveal mt-6 flex flex-col" style={homeRevealStyle(stage >= 4, revealParams.reveal)}>
         {shown.map((item) => (
           <button
             key={item.id}
@@ -413,7 +495,7 @@ function GlideGroup({ children }: { children: ReactNode }) {
   return (
     <GlideMenu
       rowSelector="[data-row]"
-      highlightClassName="inset-x-0 rounded-[7px] bg-hover-2"
+      highlightClassName="sidebar-glide-highlight rounded-[7px] bg-hover-2"
       className="group/glide flex flex-col gap-px"
     >
       {children}
@@ -423,7 +505,7 @@ function GlideGroup({ children }: { children: ReactNode }) {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center gap-1 px-2 pb-1 pt-1 text-[12.5px] font-medium text-ink-3">
+    <div className="sidebar-copy mx-2 flex items-center gap-1 px-2 pb-1 pt-1 text-[12.5px] font-medium text-ink-3">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
       {children}
     </div>
@@ -450,17 +532,17 @@ function RailButton({
       data-row
       type="button"
       onClick={onClick}
-      className={`relative z-10 flex w-full items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-left
-        transition-[background-color,color,transform] duration-150 active:scale-[0.98]
+      className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] text-left
+        transition-[width,background-color,color,transform] duration-150 active:scale-[0.98]
         ${active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""}`}
     >
-      <span className={`shrink-0 ${active ? "text-ink" : "text-ink-2"}`}>{icon}</span>
-      <span className={`min-w-0 flex-1 truncate text-[14px] ${active ? "text-ink" : "text-ink-2"}`}>
+      <span className={`flex size-9 shrink-0 items-center justify-center ${active ? "text-ink" : "text-ink-2"}`}>{icon}</span>
+      <span className={`sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] ${active ? "text-ink" : "text-ink-2"}`}>
         {label}
       </span>
-      {count && <span className="shrink-0 text-[12px] tabular-nums text-ink-3">{count}</span>}
+      {count && <span className="sidebar-copy mr-2 shrink-0 text-[12px] tabular-nums text-ink-3">{count}</span>}
       {badge && (
-        <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-accent-tint px-1 text-[10.5px] font-semibold tabular-nums text-accent-ink">
+        <span className="sidebar-copy mr-2 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-accent-tint px-1 text-[10.5px] font-semibold tabular-nums text-accent-ink">
           {badge}
         </span>
       )}
@@ -494,6 +576,24 @@ function NavIcon({ children }: { children: ReactNode }) {
   );
 }
 
+/* ─────────────────────────────────────────────────────────
+ * SIDEBAR MOTION STORYBOARD
+ *
+ *    0ms   collapse begins; rail icons remain fixed at x=26
+ *    0ms   labels slide 8px inward and fade behind the rail
+ *    0ms   transparent logo crossfades to the expand control
+ *  280ms   shell reaches 52px; persistent icon rail remains
+ * ───────────────────────────────────────────────────────── */
+
+const SIDEBAR_MOTION = {
+  expandedWidth:  264, // px with labels and secondary content
+  collapsedWidth:  52, // px fixed icon rail
+  duration:       280, // ms for the shell to settle
+  copyDuration:   180, // ms for labels to clear the rail
+  copyOffset:       8, // px labels travel inward
+  easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+};
+
 function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, label: string, prompt?: string) => void; onNewChat: () => void; activeTitle: string | null }) {
   const [collapsed, setCollapsed] = useState(false);
   const [nav, setNav] = useState("chats");
@@ -501,8 +601,6 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
   const [wsOpen, setWsOpen] = useState(false);
   const wsBtnRef = useRef<HTMLButtonElement>(null);
   const [wsPos, setWsPos] = useState({ top: 0, left: 0 });
-  /* when collapsed, hovering the rail slides the full nav out on top */
-  const [peek, setPeek] = useState(false);
 
   /* click anywhere else closes the workspace menu */
   useEffect(() => {
@@ -516,77 +614,27 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
 
   return (
     <aside
-      className="hidden shrink-0 overflow-hidden transition-[width] duration-300 lg:flex"
-      style={{ width: collapsed ? 52 : 264, transitionTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
+      data-sidebar-collapsed={collapsed}
+      className="hidden shrink-0 overflow-hidden transition-[width] lg:flex"
+      style={{
+        width: collapsed ? SIDEBAR_MOTION.collapsedWidth : SIDEBAR_MOTION.expandedWidth,
+        transitionDuration: `${SIDEBAR_MOTION.duration}ms`,
+        transitionTimingFunction: SIDEBAR_MOTION.easing,
+        "--sidebar-copy-duration": `${SIDEBAR_MOTION.copyDuration}ms`,
+        "--sidebar-copy-offset": `${SIDEBAR_MOTION.copyOffset}px`,
+        "--sidebar-easing": SIDEBAR_MOTION.easing,
+      } as CSSProperties}
     >
-      {collapsed && (
-        <div
-          className="flex w-[52px] shrink-0 flex-col items-center p-2"
-          style={{ animation: "fade-in 250ms ease-out both" }}
-          onMouseEnter={() => setPeek(true)}
-        >
-          <button
-            type="button"
-            aria-label="Expand sidebar"
-            onClick={() => setCollapsed(false)}
-            className="flex size-8 items-center justify-center rounded-[7px] text-ink-3 transition-colors duration-150 hover:bg-hover-2 hover:text-ink"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
-          </button>
-          <button
-            type="button"
-            aria-label="New chat"
-            onClick={onNewChat}
-            className="mt-2 flex size-8 items-center justify-center rounded-[7px] text-ink-3 transition-[background-color,color,transform] duration-150 hover:bg-hover-2 hover:text-ink active:scale-[0.94]"
-          >
-            <NavIcon>{ICON_COMPOSE}</NavIcon>
-          </button>
-          <div className="mt-1 flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                aria-label={item.label}
-                onClick={() => setNav(item.key)}
-                className={`flex size-8 items-center justify-center rounded-[7px] transition-colors duration-150 ${
-                  nav === item.key ? "bg-hover-2 text-ink" : "text-ink-3 hover:bg-hover-2 hover:text-ink"
-                }`}
-              >
-                <NavIcon>{item.icon}</NavIcon>
-              </button>
-            ))}
-          </div>
-          <span className="mt-auto flex size-7 items-center justify-center rounded-full bg-accent-tint text-[11px] font-semibold text-accent-ink">
-            {NAME.charAt(0)}
-          </span>
-        </div>
-      )}
-      <div
-        onMouseEnter={collapsed ? () => setPeek(true) : undefined}
-        onMouseLeave={collapsed ? () => setPeek(false) : undefined}
-        className={
-          collapsed
-            ? "fixed bottom-2.5 left-2.5 top-2.5 z-40 flex min-h-0 w-[264px] flex-col rounded-[14px] border border-line bg-page p-2.5 shadow-overlay"
-            : "flex min-h-0 w-[264px] shrink-0 flex-col px-2.5 pb-2.5"
-        }
-        style={
-          collapsed
-            ? {
-                transform: peek ? "translateX(0)" : "translateX(-8px)",
-                opacity: peek ? 1 : 0,
-                pointerEvents: peek ? "auto" : "none",
-                transition: "transform 220ms cubic-bezier(0.32,0.72,0,1), opacity 200ms ease-out",
-              }
-            : { animation: "fade-in 250ms ease-out both" }
-        }
-      >
-      {/* workspace switcher — Attio's clean logo switcher */}
-      <div className="mb-2.5 flex items-center gap-1 px-0.5">
-        <span data-ws className="relative min-w-0 flex-1">
+      <div className="flex min-h-0 w-[264px] shrink-0 flex-col pb-2.5">
+        {/* the logo and rail share one immutable 36px icon column */}
+        <div className="relative mb-2.5 h-10 shrink-0">
+          <span data-ws className="absolute inset-0">
           <button
             ref={wsBtnRef}
             type="button"
             aria-expanded={wsOpen}
+            aria-hidden={collapsed}
+            tabIndex={collapsed ? -1 : 0}
             onClick={() => {
               if (!wsOpen && wsBtnRef.current) {
                 const r = wsBtnRef.current.getBoundingClientRect();
@@ -594,13 +642,15 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
               }
               setWsOpen((current) => !current);
             }}
-            className="flex w-full min-w-0 items-center gap-2 rounded-[9px] p-1 pr-2 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]"
+            className="sidebar-workspace-control absolute left-2 top-0.5 flex h-9 w-[204px] items-center rounded-[9px] text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]"
           >
-            <span className="flex size-[30px] shrink-0 items-center justify-center rounded-[9px] bg-ink text-surface">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden><path d="M12 4v16M4 12h16M6.3 6.3l11.4 11.4M17.7 6.3 6.3 17.7" /></svg>
+            <span className="sidebar-logo flex size-9 shrink-0 items-center justify-center text-ink">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden><path d="M12 4v16M4 12h16M6.3 6.3l11.4 11.4M17.7 6.3 6.3 17.7" /></svg>
             </span>
-            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.015em] text-ink">{workspace.name}</span>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
+            <span className="sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.015em] text-ink">{workspace.name}</span>
+            <span className="sidebar-copy mr-2 flex shrink-0 text-ink-3">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
+            </span>
           </button>
           {wsOpen && (
             <div
@@ -656,17 +706,29 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
               </GlideMenu>
             </div>
           )}
-        </span>
+          </span>
         <button
           type="button"
-          aria-label={collapsed ? "Pin sidebar open" : "Collapse sidebar"}
+          aria-label="Collapse sidebar"
+          aria-hidden={collapsed}
+          tabIndex={collapsed ? -1 : 0}
           onClick={() => {
-            setCollapsed((current) => !current);
-            setPeek(false);
+            setCollapsed(true);
+            setWsOpen(false);
           }}
-          className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-ink-3 transition-colors duration-150 hover:bg-hover-2 hover:text-ink"
+          className="sidebar-collapse-control absolute right-2 top-1 flex size-8 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color] duration-150 hover:bg-hover-2 hover:text-ink"
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /></svg>
+        </button>
+        <button
+          type="button"
+          aria-label="Expand sidebar"
+          aria-hidden={!collapsed}
+          tabIndex={collapsed ? 0 : -1}
+          onClick={() => setCollapsed(false)}
+          className="sidebar-expand-control absolute left-2 top-0.5 flex size-9 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color] duration-150 hover:bg-hover-2 hover:text-ink"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /></svg>
         </button>
       </div>
 
@@ -702,16 +764,16 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
                 type="button"
                 onClick={() => onPick(item.id, item.label, item.prompt)}
                 title={item.label}
-                className={`relative z-10 flex w-full items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-left transition-[background-color,color,transform] duration-150 active:scale-[0.98] ${
+                className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] text-left transition-[width,background-color,color,transform] duration-150 active:scale-[0.98] ${
                   isActive ? "bg-hover-2 group-hover/glide:bg-transparent" : ""
                 }`}
               >
-                <span className={`shrink-0 ${isActive ? "text-ink" : "text-ink-3"}`}>
+                <span className={`flex size-9 shrink-0 items-center justify-center ${isActive ? "text-ink" : "text-ink-3"}`}>
                   <NavIcon>
                     <path d="M20 11.6c0 3.87-3.58 7-8 7-1.02 0-2-.17-2.9-.47L4 19.5l1.2-3.45C4.45 14.85 4 13.28 4 11.6c0-3.87 3.58-7 8-7s8 3.13 8 7Z" />
                   </NavIcon>
                 </span>
-                <span className={`min-w-0 flex-1 truncate text-[14px] ${isActive ? "text-ink" : "text-ink-2"}`}>{item.label}</span>
+                <span className={`sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] ${isActive ? "text-ink" : "text-ink-2"}`}>{item.label}</span>
               </button>
             );
           })}
@@ -719,7 +781,7 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
       </div>
 
       {/* upgrade — pinned low, like the reference */}
-      <div className="mt-3 border-t border-line pt-3">
+      <div className="sidebar-copy mx-2 mt-3 w-[248px] border-t border-line pt-3">
         <button
           type="button"
           onClick={onNewChat}
