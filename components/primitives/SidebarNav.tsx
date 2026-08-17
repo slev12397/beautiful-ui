@@ -15,16 +15,17 @@ const ITEMS = [
   { key: "analytics", label: "Inventory", section: "Objects" },
 ];
 
+/* Attio-style icons: rounded geometry, soft joins, rendered at 16. */
 function Icon({ kind }: { kind: string }) {
   const p: Record<string, React.ReactNode> = {
-    activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
-    tasks: <g><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></g>,
-    spaces: <g><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5M2 12l10 5 10-5" /></g>,
-    dashboard: <g><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></g>,
-    analytics: <g><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></g>,
+    activity: <g><path d="M4 11.4 12 5l8 6.4" /><path d="M6 10v8.2c0 .72.58 1.3 1.3 1.3h9.4c.72 0 1.3-.58 1.3-1.3V10" /></g>,
+    tasks: <g><rect x="4" y="4" width="16" height="16" rx="4.5" /><path d="m8.6 12 2.4 2.4L15.6 9.5" /></g>,
+    spaces: <g><path d="M12 3.2 4 7v10l8 3.8 8-3.8V7l-8-3.8Z" /><path d="M4 7l8 3.8L20 7M12 20.6V10.8" /></g>,
+    dashboard: <g><path d="M20 5H4a1.5 1.5 0 0 0-1.5 1.5V9h19V6.5A1.5 1.5 0 0 0 20 5Z" /><path d="M21.5 9v8.5A1.5 1.5 0 0 1 20 19H4a1.5 1.5 0 0 1-1.5-1.5V9M8.5 12.5h7" /></g>,
+    analytics: <g><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><path d="M8 15.5v-3M12 15.5v-6M16 15.5v-4" /></g>,
   };
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       {p[kind]}
     </svg>
   );
@@ -61,15 +62,15 @@ export default function SidebarNav() {
         className="mb-2 flex w-full items-center gap-2.5 rounded-control p-1.5 text-left
           transition-[background-color,transform] duration-100 hover:bg-hover active:scale-[0.96]"
       >
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-ink text-[13px] font-semibold text-surface">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]" style={{ background: "linear-gradient(155deg,#5aa2ff,#1f3fb0)" }}>
           C
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13px] font-medium leading-tight text-ink">Creamery Ops</span>
           <span className="block truncate text-[11px] leading-tight text-ink-3">Production Workspace</span>
         </span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
 
@@ -153,7 +154,7 @@ export default function SidebarNav() {
                     </span>
                     <span
                       className={`min-w-0 flex-1 truncate text-[13px] transition-colors duration-150
-                        ${isActive ? "font-medium text-ink" : "text-ink-2"}`}
+                        ${isActive ? "font-semibold text-ink" : "font-medium text-ink-2"}`}
                     >
                       {item.label}
                     </span>

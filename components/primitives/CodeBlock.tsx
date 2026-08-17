@@ -41,11 +41,10 @@ export default function CodeBlock() {
   const [copied, setCopied] = useState(false);
   const done = count >= LINES.length;
 
+  /* stream in once, then hold — replaying reads as noise */
   useEffect(() => {
-    const t = setTimeout(
-      () => setCount((c) => (c >= LINES.length ? 0 : c + 1)),
-      count === 0 ? 400 : done ? HOLD_MS : LINE_MS,
-    );
+    if (done) return;
+    const t = setTimeout(() => setCount((c) => c + 1), count === 0 ? 400 : LINE_MS);
     return () => clearTimeout(t);
   }, [count, done]);
 
@@ -57,7 +56,7 @@ export default function CodeBlock() {
   }, []);
 
   return (
-    <div className="w-full max-w-95 overflow-hidden rounded-card bg-surface shadow-card">
+    <div className="w-full max-w-95 overflow-hidden rounded-card bg-surface shadow-hairline">
       {/* header */}
       <div className="primitive-card-bar flex items-center justify-between border-b border-line">
         <span className="flex items-baseline gap-2">

@@ -181,7 +181,7 @@ export default function ChatExperience() {
 
                 <AssistantMessage eyebrow="Scoop · analysis complete">
                   <p className="max-w-[620px] text-[14px] leading-[1.65] text-ink">
-                    I pulled together the seasonal signal, supplier context, and the current maker records. Pistachio is the clearest expansion bet, but I&apos;d tighten the cone supply and update the launch set before committing.
+                    I pulled together the seasonal signal, supplier context, and the current maker records. Pistachio is the clearest expansion bet, but I’d tighten the cone supply and update the launch set before committing.
                   </p>
 
                   <div className="mt-5 rounded-card bg-canvas/70 p-3 shadow-hairline sm:p-4">
@@ -235,7 +235,7 @@ export default function ChatExperience() {
 
                 <AssistantMessage eyebrow="Scoop · preparing the change" className="mt-12">
                   <div className="mb-4 flex items-center justify-between gap-4">
-                    <p className="max-w-[480px] text-[13px] leading-relaxed text-ink-2">I&apos;ll stage the new flavor records, filter the makers that are ready, and leave the proposed edits for review.</p>
+                    <p className="max-w-[480px] text-[13px] leading-relaxed text-ink-2">I’ll stage the new flavor records, filter the makers that are ready, and leave the proposed edits for review.</p>
                     <span className="hidden rounded-full bg-accent-tint px-2 py-0.5 text-[10.5px] font-medium text-accent-ink sm:block">Draft</span>
                   </div>
                   <div className="flex flex-col gap-6">
@@ -251,7 +251,7 @@ export default function ChatExperience() {
                 </AssistantMessage>
 
                 <AssistantMessage eyebrow="Scoop · maker records" className="mt-12">
-                  <p className="mb-5 max-w-[600px] text-[13px] leading-relaxed text-ink-2">Here&apos;s the working set. The filters and full records table are connected so you can narrow the launch set without leaving the thread.</p>
+                  <p className="mb-5 max-w-[600px] text-[13px] leading-relaxed text-ink-2">Here’s the working set. The filters and full records table are connected so you can narrow the launch set without leaving the thread.</p>
                   <div className="flex flex-col gap-7">
                     <div>
                       <SectionHeading number="06" title="Launch filter" detail="electric tags" />
@@ -265,7 +265,7 @@ export default function ChatExperience() {
                 </AssistantMessage>
 
                 <AssistantMessage eyebrow="Scoop · batch plan" className="mt-12">
-                  <p className="mb-4 max-w-[600px] text-[13px] leading-relaxed text-ink-2">Once the records are approved, this is the small batch function I&apos;ll use to stage the pistachio run.</p>
+                  <p className="mb-4 max-w-[600px] text-[13px] leading-relaxed text-ink-2">Once the records are approved, this is the small batch function I’ll use to stage the pistachio run.</p>
                   <CodeBlock />
                 </AssistantMessage>
 

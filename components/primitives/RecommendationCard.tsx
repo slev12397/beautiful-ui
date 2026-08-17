@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button, type ButtonVariant } from "@/components/atoms/Button";
 
 /* ─────────────────────────────────────────────────────────
  * RECOMMENDATION CARD
@@ -17,7 +18,7 @@ type Option = {
   tone: string;
   label: string;
   cta: string;
-  ctaStyle: string;
+  ctaVariant: ButtonVariant;
 };
 
 const OPTIONS: Option[] = [
@@ -36,7 +37,7 @@ const OPTIONS: Option[] = [
     tone: "var(--green)",
     label: "High confidence",
     cta: "Accept",
-    ctaStyle: "bg-accent text-white",
+    ctaVariant: "accent",
   },
   {
     key: "review",
@@ -52,7 +53,7 @@ const OPTIONS: Option[] = [
     tone: "var(--orange)",
     label: "Needs review",
     cta: "Configure",
-    ctaStyle: "bg-ink text-canvas",
+    ctaVariant: "primary",
   },
   {
     key: "none",
@@ -66,7 +67,7 @@ const OPTIONS: Option[] = [
     tone: "var(--ink-3)",
     label: "No signal",
     cta: "Accept full restock",
-    ctaStyle: "bg-ink text-canvas",
+    ctaVariant: "primary",
   },
 ];
 
@@ -128,7 +129,6 @@ export default function RecommendationCard() {
                 onClick={() => {
                   setSelected(i);
                   setAccepted(false);
-                  setOpen(false);
                 }}
                 className="flex w-full items-center gap-2.5 rounded-control px-1.5 py-1.5
                   text-left transition-colors duration-100 hover:bg-hover"
@@ -149,26 +149,23 @@ export default function RecommendationCard() {
         </span>
 
         <span className="-mr-0.5 flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             aria-expanded={open}
             onClick={() => setOpen((current) => !current)}
-            className={`h-7 rounded-control px-2.5 text-[12.5px] font-medium shadow-btn
-              transition-[background-color,transform] duration-100 active:scale-[0.96]
-              ${open ? "bg-hover text-ink" : "bg-surface text-ink hover:bg-hover"}`}
+            className="px-2.5 text-[12.5px]"
           >
             Alternatives
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant={accepted ? "success" : active.ctaVariant}
+            size="sm"
             onClick={() => setAccepted(true)}
-            className={`h-7 rounded-control px-3 text-[12.5px] font-medium
-              shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_0_0_1px_rgba(16,24,40,0.12),0_1px_2px_rgba(16,24,40,0.1)]
-              transition-[background-color,transform] duration-150 active:scale-[0.96]
-              ${accepted ? "bg-green text-white" : active.ctaStyle}`}
+            className="text-[12.5px]"
           >
             {accepted ? "Accepted" : active.cta}
-          </button>
+          </Button>
         </span>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 /* ─────────────────────────────────────────────────────────
  * TOOL CHIPS
@@ -58,10 +59,55 @@ const DIFFS = [
   { file: "menu.ts", add: 8, del: 2 },
 ];
 
+/* hovering a file chip opens its diff — green added, red removed */
+type DiffLine = { text: string; tone: "add" | "del" | "ctx" };
+const DIFF_LINES: Record<string, DiffLine[]> = {
+  "flavors.css": [
+    { text: ".scoop-card {", tone: "ctx" },
+    { text: "  gap: 14px;", tone: "del" },
+    { text: "  gap: 12px;", tone: "add" },
+    { text: "  container-type: inline-size;", tone: "add" },
+    { text: "}", tone: "ctx" },
+  ],
+  "ChurnSchedule.tsx": [
+    { text: "const slots = coldSlots(week);", tone: "ctx" },
+    { text: "const windows = slots;", tone: "del" },
+    { text: "const windows = slots.filter(", tone: "add" },
+    { text: "  (s) => s.temp <= -12,", tone: "add" },
+    { text: ");", tone: "add" },
+  ],
+  "menu.ts": [
+    { text: "export const hero = \"mint-chip\";", tone: "del" },
+    { text: "export const hero = \"pistachio\";", tone: "add" },
+  ],
+};
+
 export default function ToolChips() {
   const [step, setStep] = useState(0);
   const [open, setOpen] = useState(true);
   const [openRows, setOpenRows] = useState<Set<string>>(new Set());
+  /* Rendered in a body portal so animated/translated reply wrappers cannot
+   * redefine the fixed-position coordinate system. */
+  const [preview, setPreview] = useState<{
+    file: string;
+    x: number;
+    top?: number;
+    bottom?: number;
+  } | null>(null);
+  const openPreview = (file: string) => (event: React.SyntheticEvent) => {
+    const rect = (event.currentTarget as Element).closest("[data-diffchip]")!.getBoundingClientRect();
+    const previewHeight = 38 + (DIFF_LINES[file]?.length ?? 0) * 19;
+    const fitsBelow = rect.bottom + 6 + previewHeight <= window.innerHeight - 12;
+    setPreview({
+      file,
+      x: Math.max(12, Math.min(rect.left, window.innerWidth - 300)),
+      ...(fitsBelow
+        ? { top: rect.bottom + 6 }
+        : { bottom: window.innerHeight - rect.top + 6 }),
+    });
+  };
+  const closePreview = (file: string) => () =>
+    setPreview((current) => (current?.file === file ? null : current));
   const total = ROWS.length + 1; // rows, then diff chips
 
   useEffect(() => {
@@ -125,9 +171,8 @@ export default function ToolChips() {
                 </span>
                 <span className="shrink-0 text-[12.5px] font-medium text-ink">{row.label}</span>
                 <span
-                  className={`inline-flex h-5.5 min-w-0 flex-1 cursor-pointer items-center truncate rounded-chip bg-hover-2 px-1.5
-                    text-[11.5px] text-[#43464c] shadow-hairline transition-colors duration-100 hover:bg-line-strong
-                    dark:bg-field dark:text-ink-2 dark:hover:bg-hover
+                  className={`inline-flex h-5.5 min-w-0 flex-1 cursor-pointer items-center truncate rounded-chip bg-field px-1.5
+                    text-[11.5px] text-ink-2 shadow-hairline transition-colors duration-100 hover:bg-hover-2
                     ${row.mono ? "font-mono" : ""}`}
                 >
                   {row.chip}
@@ -163,14 +208,27 @@ export default function ToolChips() {
           {DIFFS.map((d, i) => (
             <span
               key={d.file}
-              className="inline-flex h-7 max-w-full cursor-pointer items-center gap-1.5 rounded-chip
-                bg-surface px-2 font-mono text-[11.5px] text-ink shadow-btn
-                transition-colors duration-100 hover:bg-hover"
-              style={{ animation: `pop-in 250ms cubic-bezier(0.23,1,0.32,1) ${i * 80}ms both` }}
+              data-diffchip
+              className="relative"
+              onMouseEnter={openPreview(d.file)}
+              onMouseLeave={closePreview(d.file)}
             >
-              <span className="min-w-0 truncate">{d.file}</span>
-              <span className="shrink-0 text-green tabular-nums">+{d.add}</span>
-              {d.del > 0 && <span className="shrink-0 text-red tabular-nums">−{d.del}</span>}
+              <button
+                type="button"
+                aria-expanded={preview?.file === d.file}
+                aria-label={`Show diff for ${d.file}`}
+                onFocus={openPreview(d.file)}
+                onBlur={closePreview(d.file)}
+                className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-chip
+                  bg-surface px-2 font-mono text-[11.5px] text-ink shadow-btn
+                  transition-colors duration-100 hover:bg-hover"
+                style={{ animation: `pop-in 250ms cubic-bezier(0.23,1,0.32,1) ${i * 80}ms both` }}
+              >
+                <span className="min-w-0 truncate">{d.file}</span>
+                <span className="shrink-0 text-green tabular-nums">+{d.add}</span>
+                {d.del > 0 && <span className="shrink-0 text-red tabular-nums">−{d.del}</span>}
+              </button>
+
             </span>
           ))}
           <button
@@ -186,6 +244,46 @@ export default function ToolChips() {
       )}
         </div>
       </div>
+      {preview && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed z-50 w-72 overflow-hidden rounded-[10px] bg-surface shadow-overlay"
+          style={{
+            left: preview.x,
+            top: preview.top,
+            bottom: preview.bottom,
+            animation: "pop-in 160ms cubic-bezier(0.23,1,0.32,1) both",
+            transformOrigin: preview.top === undefined ? "bottom left" : "top left",
+          }}
+        >
+          <div className="flex items-center justify-between border-b border-line px-2.5 py-1.5 font-mono text-[11px]">
+            <span className="min-w-0 truncate text-ink-2">{preview.file}</span>
+            <span className="shrink-0 tabular-nums">
+              <span className="text-green">+{DIFFS.find((diff) => diff.file === preview.file)?.add}</span>
+              {(DIFFS.find((diff) => diff.file === preview.file)?.del ?? 0) > 0 && (
+                <span className="text-red"> −{DIFFS.find((diff) => diff.file === preview.file)?.del}</span>
+              )}
+            </span>
+          </div>
+          <div className="py-1 font-mono text-[11px] leading-[1.8]">
+            {(DIFF_LINES[preview.file] ?? []).map((line, index) => (
+              <div
+                key={index}
+                className={`flex gap-2 px-2.5 whitespace-pre ${
+                  line.tone === "add"
+                    ? "bg-green-tint text-green"
+                    : line.tone === "del"
+                      ? "bg-red-tint text-red"
+                      : "text-ink-2"
+                }`}
+              >
+                <span className="w-3 shrink-0 select-none">{line.tone === "add" ? "+" : line.tone === "del" ? "−" : " "}</span>
+                <span className="min-w-0 truncate">{line.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }

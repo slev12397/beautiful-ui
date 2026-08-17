@@ -265,7 +265,7 @@ export default function SelectionActions() {
               resolve to a 14px radius, preserving the concentric curve. */}
           <div
             ref={barRef}
-            className="flex h-9 w-fit max-w-[calc(100vw-48px)] items-center justify-center gap-0.5 overflow-hidden rounded-full bg-surface p-1 font-sans font-normal text-ink antialiased shadow-overlay"
+            className="flex h-9 w-fit max-w-[calc(100vw-48px)] items-center justify-center gap-0.5 overflow-hidden rounded-full bg-surface p-1 font-sans font-normal text-ink shadow-overlay"
             style={{
               width:
                 mode === "idle" && hasPrompt && typingWidth

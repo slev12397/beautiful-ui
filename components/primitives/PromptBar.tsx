@@ -176,6 +176,17 @@ export default function PromptBar({
   const [engaged, setEngaged] = useState(false);
   const [modelBox, setModelBox] = useState<{ top: number; height: number } | null>(null);
   const [modelHovered, setModelHovered] = useState<number | null>(null);
+  const [modelMenuLeft, setModelMenuLeft] = useState(0);
+
+  /* anchor the model menu to the picker button, wherever the layout puts it */
+  useLayoutEffect(() => {
+    if (!modelOpen) return;
+    const button = modelRef.current;
+    const parent = button?.offsetParent as HTMLElement | null;
+    if (!button || !parent) return;
+    setModelMenuLeft(Math.max(0, Math.min(button.offsetLeft, parent.clientWidth - 176 - 4)));
+  }, [modelOpen]);
+  const composerAnchorRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
@@ -224,6 +235,15 @@ export default function PromptBar({
     const target = modelRowRefs.current[modelHovered ?? modelIndex];
     if (target) setModelBox({ top: target.offsetTop, height: target.offsetHeight });
   }, [modelOpen, modelHovered, modelIndex]);
+
+  /* The menu is outside the clipped composer, so align it to the model
+   * trigger by measurement instead of pinning it to the far-right edge. */
+  useLayoutEffect(() => {
+    if (!modelOpen || !composerAnchorRef.current || !modelRef.current) return;
+    const anchorRect = composerAnchorRef.current.getBoundingClientRect();
+    const triggerRect = modelRef.current.getBoundingClientRect();
+    setModelMenuLeft(Math.max(0, Math.min(triggerRect.left - anchorRect.left, anchorRect.width - 176)));
+  }, [modelOpen, wide, model.name]);
 
   useEffect(() => {
     if (!modelOpen) setModelHovered(null);
@@ -274,13 +294,13 @@ export default function PromptBar({
     const sweep = playSweep(shader, {
       palette: RAINBOW,
       direction: "ltr",
-      sweepMs: 950,
-      outroMs: 130,
+      sweepMs: 570,
+      outroMs: 80,
       peakAlpha: 1.3,
       bandTight: 10,
       brightness: 1.4,
       swellAmount: 1,
-      waveSpeed: 1.3,
+      waveSpeed: 1.8,
       easing: "easeOutExpo",
     });
     sweep.done.finally(() => {
@@ -345,6 +365,19 @@ export default function PromptBar({
     input.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
   }, [draft, expanded]);
 
+  /* clicking anywhere outside the composer closes the open menus */
+  useEffect(() => {
+    if (!modelOpen && !plusOpen) return;
+    const close = (event: PointerEvent) => {
+      if (!(event.target as Element).closest("[data-promptbar]")) {
+        setModelOpen(false);
+        setPlusOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [modelOpen, plusOpen]);
+
   const closeMenus = () => {
     setPlusOpen(false);
     setModelOpen(false);
@@ -376,12 +409,13 @@ export default function PromptBar({
 
   return (
     <div
+      data-promptbar
       className={demo ? "flex min-h-[384px] w-full max-w-105 flex-col justify-end pb-8" : "w-full"}
       onPointerDownCapture={takeOver}
       onKeyDownCapture={takeOver}
     >
       {/* composer is the anchor — menus grow up from its top edge */}
-      <div className="relative">
+      <div ref={composerAnchorRef} className="relative">
       {/* ── @ / slash menu ─────────────────────────────── */}
       {menu && (
         <div
@@ -460,8 +494,8 @@ export default function PromptBar({
       {modelOpen && (
         <div
           onMouseLeave={() => setModelHovered(null)}
-          className="absolute right-0 bottom-full z-10 mb-2 w-44 rounded-[10px] bg-surface p-1 shadow-raised"
-          style={{ animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom right" }}
+          className="absolute bottom-full z-10 mb-2 w-44 rounded-[10px] bg-surface p-1 shadow-raised"
+          style={{ left: modelMenuLeft, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom left" }}
         >
           {/* single gliding highlight — floats to the hovered / selected row */}
           <span
@@ -539,8 +573,8 @@ export default function PromptBar({
                   type="button"
                   aria-label={`Remove ${file}`}
                   onClick={() => setAttachments((current) => current.filter((_, j) => j !== i))}
-                  className={`flex size-4 items-center justify-center text-ink-3 transition-colors duration-100 hover:bg-line/70 hover:text-ink ${
-                    pill ? "rounded-full" : "rounded-[4px]"
+                  className={`-my-1 flex size-6 items-center justify-center text-ink-3 transition-colors duration-100 hover:bg-line/70 hover:text-ink ${
+                    pill ? "rounded-full" : "rounded-[5px]"
                   }`}
                 >
                   <Icon size={10} strokeWidth={2.5}><path d="M18 6L6 18M6 6l12 12" /></Icon>
@@ -554,7 +588,7 @@ export default function PromptBar({
           ref={controlsRef}
           className={`grid items-end gap-x-1 gap-y-1.5 ${
             wide
-              ? "grid-cols-[minmax(0,1fr)_auto_28px_28px]"
+              ? "grid-cols-[28px_auto_minmax(0,1fr)_28px_28px]"
               : "grid-cols-[28px_minmax(0,1fr)_auto_28px_28px]"
           }`}
         >
@@ -626,7 +660,7 @@ export default function PromptBar({
             }}
             className={`flex h-7 shrink-0 items-center gap-1 px-1.5 text-[12px] font-medium text-ink-2 transition-colors duration-150 hover:bg-hover hover:text-ink ${
               pill ? "rounded-full" : "rounded-[8px]"
-            } ${wide ? "col-start-2 row-start-2" : "col-start-3 row-start-1"}`}
+            } ${wide ? "col-start-2 row-start-2 justify-self-start" : "col-start-3 row-start-1"}`}
           >
             {model.name}
             <span className="text-ink-3">
@@ -642,9 +676,7 @@ export default function PromptBar({
             onClick={() => setListening((current) => !current)}
             className={`flex size-7 shrink-0 items-center justify-center transition-[background-color,color,transform] duration-150 active:scale-[0.94] ${
               pill ? "rounded-full" : "rounded-[8px]"
-            } ${listening ? "bg-accent-tint text-accent-ink" : "text-ink-3 hover:bg-hover hover:text-ink"} ${
-              wide ? "col-start-3 row-start-2" : "col-start-4 row-start-1"
-            }`}
+            } ${listening ? "bg-accent-tint text-accent-ink" : "text-ink-3 hover:bg-hover hover:text-ink"} ${wide ? "col-start-4 row-start-2" : "col-start-4 row-start-1"}`}
           >
             {listening ? (
               <span className="flex h-3.5 items-center gap-[2.5px]">
@@ -669,7 +701,7 @@ export default function PromptBar({
             onClick={send}
             className={`flex size-7 shrink-0 items-center justify-center transition-[background-color,color,transform] duration-200 enabled:active:scale-[0.94] ${
               pill ? "rounded-full" : "rounded-[8px]"
-            } ${wide ? "col-start-4 row-start-2" : "col-start-5 row-start-1"}`}
+            } ${wide ? "col-start-5 row-start-2" : "col-start-5 row-start-1"}`}
             style={{
               background: canSend ? "var(--ink)" : "var(--line-strong)",
               color: canSend ? "var(--surface)" : "var(--ink-2)",

@@ -90,7 +90,7 @@ function Dot({ tone }: { tone: string }) {
 
 const TONES = ["bg-accent", "bg-orange", "bg-green"];
 
-export default function ThinkingState({ variant = "Steps" }: { variant?: string }) {
+export default function ThinkingState({ variant = "Steps", onSettled }: { variant?: string; onSettled?: () => void }) {
   const stage = useSequence(STAGES);
   const [manualExpanded, setManualExpanded] = useState<boolean | null>(null);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
@@ -105,8 +105,23 @@ export default function ThinkingState({ variant = "Steps" }: { variant?: string 
     if (traceRef.current) setLineHeight(traceRef.current.offsetHeight);
   }, [visible, expanded, variant, stage]);
 
+  /* let embedders sequence content after the trace settles */
+  const settledRef = useRef(false);
+  useEffect(() => {
+    if (working || settledRef.current) return;
+    settledRef.current = true;
+    onSettled?.();
+  }, [working, onSettled]);
+
   return (
-    <div key={variant} className="flex min-h-[176px] w-full max-w-95 flex-col">
+    <div
+      key={variant}
+      className="flex w-full max-w-95 flex-col"
+      style={{
+        minHeight: working || expanded ? 176 : undefined,
+        transition: "min-height 400ms cubic-bezier(0.23,1,0.32,1)",
+      }}
+    >
       {/* header — shared across variants */}
       <button
         type="button"
@@ -118,26 +133,28 @@ export default function ThinkingState({ variant = "Steps" }: { variant?: string 
         <svg width="16" height="16" viewBox="0 0 24 24" fill={working ? "var(--ink-2)" : "var(--ink-3)"}>
           <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
         </svg>
-        {working ? (
-          <span
-            className="bg-clip-text text-[13px] font-medium whitespace-nowrap text-transparent"
-            style={{
-              backgroundImage:
-                "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
-              backgroundSize: "200% 100%",
-              animation: "shimmer-text 1.4s linear infinite",
-            }}
-          >
-            {v.active}
-          </span>
-        ) : (
-          <span
-            className="text-[13px] font-medium whitespace-nowrap text-ink-2"
-            style={{ animation: "fade-in 350ms ease-out both" }}
-          >
-            {v.done}
-          </span>
-        )}
+        <span role="status" className="contents">
+          {working ? (
+            <span
+              className="bg-clip-text text-[13px] font-medium whitespace-nowrap text-transparent"
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
+                backgroundSize: "200% 100%",
+                animation: "shimmer-text 1.4s linear infinite",
+              }}
+            >
+              {v.active}
+            </span>
+          ) : (
+            <span
+              className="text-[13px] font-medium whitespace-nowrap text-ink-2"
+              style={{ animation: "fade-in 350ms ease-out both" }}
+            >
+              {v.done}
+            </span>
+          )}
+        </span>
         <svg
           width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
           className="transition-transform duration-300"

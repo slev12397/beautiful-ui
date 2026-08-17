@@ -13,11 +13,13 @@ const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
 const formatPercent = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
 const formatMoney = (v: number) => `$${Math.round(v).toLocaleString("en-US")}`;
-const SNAPSHOT_END = Math.floor(Date.now() / 1000);
-
+/* anchor the snapshot to *call* time (inside each card's mount-time memo) —
+ * a module-load constant goes stale, and once the points age past the chart
+ * window the canvas renders empty */
 function makePoints(values: number[], gap = 6): LivelinePoint[] {
+  const end = Math.floor(Date.now() / 1000);
   return values.map((value, index) => ({
-    time: SNAPSHOT_END - (values.length - 1 - index) * gap,
+    time: end - (values.length - 1 - index) * gap,
     value,
   }));
 }
@@ -388,7 +390,7 @@ const PAGES = [
     key: "allocation",
     prose: (
       <>
-        You&apos;re heavily invested in <Entity name="Vanilla" tone="bg-orange" /> — it&apos;s{" "}
+        You’re heavily invested in <Entity name="Vanilla" tone="bg-orange" /> — it’s{" "}
         <span className="font-medium text-ink">72.5%</span> of your case.
       </>
     ),

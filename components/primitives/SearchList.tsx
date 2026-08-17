@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import GlideMenu from "@/components/primitives/GlideMenu";
 
 /* ─────────────────────────────────────────────────────────
  * SEARCH — command search with live filtering.
@@ -45,7 +46,7 @@ export default function SearchList() {
               aria-label="Clear search"
               type="button"
               onClick={() => setQuery("")}
-              className="flex size-5.5 items-center justify-center rounded-full text-ink-3
+              className="flex size-6 items-center justify-center rounded-full text-ink-3
                 transition-colors duration-100 hover:bg-line/70 hover:text-ink"
               style={{ animation: "fade-in 150ms ease-out both" }}
             >
@@ -70,18 +71,20 @@ export default function SearchList() {
           </div>
         ) : (
           <div className="p-1">
-            {results.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setQuery(item)}
-                className="flex h-8 w-full items-center rounded-[6px] px-2 text-left text-[13px]
-                  text-ink transition-colors duration-100 hover:bg-hover"
-                style={{ animation: "fade-in 200ms ease-out both" }}
-              >
-                {item}
-              </button>
-            ))}
+            <GlideMenu className="flex flex-col gap-px" highlightClassName="inset-x-0 rounded-[6px] bg-hover">
+              {results.map((item) => (
+                <button
+                  key={item}
+                  data-menu-row
+                  type="button"
+                  onClick={() => setQuery(item)}
+                  className="relative z-10 flex h-8 w-full items-center rounded-[6px] px-2 text-left text-[13px] text-ink"
+                  style={{ animation: "fade-in 200ms ease-out both" }}
+                >
+                  {item}
+                </button>
+              ))}
+            </GlideMenu>
           </div>
         )}
       </div>

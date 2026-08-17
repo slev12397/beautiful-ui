@@ -12,7 +12,7 @@ export const META: Meta[] = [
     title: "Loading State",
     caption: "Pixel-grid loader with shimmer and elapsed time.",
     file: "LoadingState.tsx",
-    variants: ["Drive", "Dots", "Orbit"],
+    variants: ["Drive", "Dots", "Orbit", "Surfer"],
   },
   {
     id: "thinking-state",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import GlideMenu from "@/components/primitives/GlideMenu";
 
 /* ─────────────────────────────────────────────────────────
  * FINE-TUNE CARD — compact interactive inspector.
@@ -221,21 +222,24 @@ export default function FineTuneCard() {
                 transformOrigin: "bottom right",
               }}
             >
-              {["Seasonal", "Classic", "Limited"].map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => {
-                    setTypeValue(item);
-                    setMenuOpen(false);
-                  }}
-                  className="flex h-6.5 w-full items-center rounded-[6px] px-2 text-left text-[12.5px] text-ink
-                    transition-colors duration-150 hover:bg-field"
-                  style={{ background: item === typeValue ? "var(--field)" : "transparent" }}
-                >
-                  {item}
-                </button>
-              ))}
+              <GlideMenu className="flex flex-col gap-px" highlightClassName="inset-x-0 rounded-[6px] bg-field">
+                {["Seasonal", "Classic", "Limited"].map((item) => (
+                  <button
+                    key={item}
+                    data-menu-row
+                    type="button"
+                    onClick={() => {
+                      setTypeValue(item);
+                      setMenuOpen(false);
+                    }}
+                    className={`relative z-10 flex h-6.5 w-full items-center rounded-[6px] px-2 text-left text-[12.5px] text-ink ${
+                      item === typeValue ? "bg-field group-hover/glide-menu:bg-transparent" : ""
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </GlideMenu>
             </div>
           )}
         </div>

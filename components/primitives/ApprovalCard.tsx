@@ -27,7 +27,14 @@ const QUESTIONS = [
   },
 ];
 
-export default function ApprovalCard() {
+export default function ApprovalCard({
+  onSubmitted,
+  resettable = true,
+}: {
+  onSubmitted?: () => void;
+  resettable?: boolean;
+  variant?: string;
+} = {}) {
   const [qi, setQi] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number[]>>({});
   const [custom, setCustom] = useState<Record<number, string>>({});
@@ -52,8 +59,10 @@ export default function ApprovalCard() {
       setCustom((current) => ({ ...current, [qi]: "" }));
       // single-choice auto-advances
       window.setTimeout(() => {
-        if (qi === QUESTIONS.length - 1) setSent(true);
-        else setQi((current) => Math.min(QUESTIONS.length - 1, current + 1));
+        if (qi === QUESTIONS.length - 1) {
+          setSent(true);
+          onSubmitted?.();
+        } else setQi((current) => Math.min(QUESTIONS.length - 1, current + 1));
       }, 480);
     }
   };
@@ -74,25 +83,29 @@ export default function ApprovalCard() {
     );
   }
 
+  // Once answered, the whole card fires off into a small confirmation badge.
+  if (sent) {
+    return (
+      <div className="flex w-full max-w-80 items-center gap-3" style={{ animation: "pop-in 260ms cubic-bezier(0.23,1,0.32,1) both" }}>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-tint py-1 pr-2.5 pl-1 text-[12.5px] font-medium text-green">
+          <span className="flex size-4.5 items-center justify-center rounded-full bg-green text-white">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+          </span>
+          Answers sent
+        </span>
+        {resettable && (
+          <button type="button" onClick={reset} className="text-[12px] font-medium text-ink-3 transition-colors duration-150 hover:text-ink">
+            Start over
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[196px] w-full max-w-80 flex-col items-stretch">
       <div className="w-full self-start overflow-hidden rounded-card bg-surface shadow-card">
-        {sent ? (
-          <div className="flex h-37 flex-col items-center justify-center gap-2">
-            <span
-              className="flex size-6 items-center justify-center rounded-full bg-green text-white"
-              style={{ animation: "pop-in 300ms cubic-bezier(0.23,1,0.32,1) both" }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-            </span>
-            <span className="text-[13px] font-medium text-ink" style={{ animation: "fade-up 350ms cubic-bezier(0.23,1,0.32,1) 100ms both" }}>
-              Answers sent
-            </span>
-            <button type="button" onClick={reset} className="text-[12px] font-medium text-accent-ink hover:underline">
-              Start over
-            </button>
-          </div>
-        ) : (
+        {(
           <div key={qi} className="primitive-card-pad" style={{ animation: "fade-up 350ms cubic-bezier(0.23,1,0.32,1) both" }}>
             <div className="flex items-start justify-between gap-3">
               <span className="text-[13px] font-medium text-ink">{question.q}</span>
@@ -174,7 +187,7 @@ export default function ApprovalCard() {
                   aria-current={i === qi && !sent ? "step" : undefined}
                   disabled={sent}
                   onClick={() => setQi(i)}
-                  className="rounded-full transition-all duration-300 disabled:cursor-default"
+                  className="rounded-full transition-[width,height,background-color,border-color,border-width] duration-300 disabled:cursor-default"
                   style={
                     i === qi && !sent
                       ? { width: 9, height: 9, border: "2.5px solid var(--ink)" }
@@ -200,7 +213,14 @@ export default function ApprovalCard() {
               type="button"
               aria-label={last ? "Send answers" : "Next question"}
               disabled={!hasAnswer}
-              onClick={() => last ? setSent(true) : setQi((current) => current + 1)}
+              onClick={() => {
+                if (last) {
+                  setSent(true);
+                  onSubmitted?.();
+                } else {
+                  setQi((current) => current + 1);
+                }
+              }}
               className="-mr-0.5 flex size-7 items-center justify-center rounded-[8px] transition-[background-color,color,transform] duration-200 enabled:active:scale-[0.96]"
               style={{
                 background: hasAnswer ? "var(--ink)" : "var(--field)",

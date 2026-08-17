@@ -19,7 +19,12 @@ export function ThemeToggle() {
   function apply(next: boolean) {
     if (next === dark) return;
     setDark(next);
-    document.documentElement.classList.toggle("dark", next);
+    /* freeze all transitions while every token flips, so the theme change
+     * is one clean swap instead of hundreds of mismatched color fades */
+    const root = document.documentElement;
+    root.classList.add("theme-switching");
+    root.classList.toggle("dark", next);
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("theme-switching")));
     try {
       localStorage.setItem("bui-theme", next ? "dark" : "light");
     } catch {}

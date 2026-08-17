@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* shadow-plugin (flornkm) — smooth, layered shadow stacks. The unprefixed
+ * entry maps them onto Tailwind's --shadow-xs…2xl scale; our semantic tokens
+ * below build on those values so the whole app picks up the smooth shadows. */
+@import "shadow-plugin/unprefixed";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -11,101 +15,103 @@
 
 :root {
   /* surfaces — cool, blue-tinted neutrals (Attio-style) */
-  --page: #fafafb;
-  --canvas: #f1f2f3;
-  --surface: #ffffff;
-  --inset: #f7f8f9;
-  --hover: #f4f5f6;
-  --hover-2: #e7e9eb;
+  --page: oklch(0.985 0.001 286.376);
+  --canvas: oklch(0.961 0.002 247.84);
+  --surface: oklch(1 0 0);
+  --inset: oklch(0.979 0.002 247.839);
+  --hover: oklch(0.97 0.002 247.839);
+  --hover-2: oklch(0.933 0.003 247.86);
 
   /* ink ramp */
-  --ink: #1f2124;
-  --ink-2: #62656b;
-  --ink-3: #9a9da3;
+  --ink: oklch(0.247 0.006 258.361);
+  --ink-2: oklch(0.506 0.01 264.477);
+  --ink-3: oklch(0.695 0.009 264.505);
 
   /* borders — solid and crisp, not alpha */
-  --line: #ecedef;
-  --line-strong: #e0e2e5;
-  --field: #f2f2f3;
-  --stripe: rgba(73, 73, 73, 0.075);
-  --stripe-bg: #f5f5f5;
+  --line: oklch(0.946 0.003 264.542);
+  --line-strong: oklch(0.912 0.005 258.326);
+  --field: oklch(0.961 0.001 286.375);
+  --stripe: oklch(0.405 0 0 / 0.075);
+  --stripe-bg: oklch(0.97 0 0);
 
   /* accent */
-  --accent: #0285ff;
-  --accent-ink: #0170dd;
-  --accent-tint: #e9f3ff;
+  --accent: oklch(0.626 0.205 254.947);
+  --accent-ink: oklch(0.556 0.187 255.617);
+  --accent-tint: oklch(0.96 0.019 252.878);
 
   /* semantic */
-  --green: #189a4d;
-  --green-tint: #e8f5ed;
-  --orange: #ef720c;
-  --orange-tint: #fdf1e5;
-  --red: #e3474c;
-  --red-tint: #fcecec;
+  --green: oklch(0.603 0.155 150.883);
+  --green-tint: oklch(0.958 0.017 159.118);
+  --orange: oklch(0.689 0.179 49.902);
+  --orange-tint: oklch(0.964 0.021 67.581);
+  --red: oklch(0.621 0.192 23.042);
+  --red-tint: oklch(0.956 0.017 17.462);
 
   /* chart overlays — neutral system colors with enough contrast on either theme */
-  --tooltip-bg: #25272b;
-  --tooltip-fg: #f6f7f8;
-  --tooltip-muted: #a5a8ad;
-  --tooltip-border: #3a3c40;
+  --tooltip-bg: oklch(0.272 0.008 264.435);
+  --tooltip-fg: oklch(0.976 0.002 247.839);
+  --tooltip-muted: oklch(0.731 0.008 260.731);
+  --tooltip-border: oklch(0.356 0.007 264.474);
 
-  /* shadows — tight, cool, restrained */
+  /* shadows — our solid hairline ring + shadow-plugin's smooth layered stacks
+   * (--shadow-xs…lg come from shadow-plugin/unprefixed) so every surface reads
+   * consistently across the app. */
   --shadow-hairline: 0 0 0 1px var(--line);
-  --shadow-btn: 0 0 0 1px var(--line-strong), 0 1px 2px rgba(16, 24, 40, 0.05);
-  --shadow-card:
-    0 0 0 1px var(--line), 0 1px 2px rgba(16, 24, 40, 0.04),
-    0 2px 6px rgba(16, 24, 40, 0.03);
-  --shadow-raised:
-    0 0 0 1px var(--line), 0 2px 10px rgba(0, 0, 0, 0.045);
-  --shadow-overlay:
-    0 0 0 1px var(--line), 0 8px 28px rgba(0, 0, 0, 0.065);
-  --shadow-inset-field: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+  --shadow-btn: 0 0 0 1px var(--line-strong), var(--shadow-xs);
+  --shadow-card: 0 0 0 1px var(--line), var(--shadow-sm);
+  --shadow-raised: 0 0 0 1px var(--line), var(--shadow-md);
+  --shadow-overlay: 0 0 0 1px var(--line), var(--shadow-lg);
+  --shadow-inset-field: inset 0 1px 2px oklch(0 0 0 / 0.12);
 }
 
 .dark {
-  --page: #17181a;
-  --canvas: #1c1d1f;
-  --surface: #232427;
-  --inset: #1f2022;
-  --hover: #2a2b2e;
-  --hover-2: #313236;
+  --page: oklch(0.209 0.004 264.477);
+  --canvas: oklch(0.231 0.004 264.487);
+  --surface: oklch(0.26 0.006 271.191);
+  --inset: oklch(0.243 0.004 264.492);
+  --hover: oklch(0.289 0.006 271.22);
+  --hover-2: oklch(0.318 0.007 274.747);
 
-  --ink: #f2f3f4;
-  --ink-2: #a5a8ad;
-  --ink-3: #6c6f75;
+  --ink: oklch(0.964 0.002 247.839);
+  --ink-2: oklch(0.731 0.008 260.731);
+  --ink-3: oklch(0.541 0.01 264.484);
 
-  --line: #2e3033;
-  --line-strong: #3a3c40;
-  --field: #2b2c2f;
-  --stripe: rgba(255, 255, 255, 0.055);
-  --stripe-bg: #1b1c1e;
+  --line: oklch(0.308 0.006 258.354);
+  --line-strong: oklch(0.356 0.007 264.474);
+  --field: oklch(0.293 0.006 271.223);
+  --stripe: oklch(1 0 0 / 0.055);
+  --stripe-bg: oklch(0.226 0.004 264.485);
 
-  --accent: #3d9aff;
-  --accent-ink: #7ec0ff;
-  --accent-tint: rgba(61, 154, 255, 0.16);
+  --accent: oklch(0.68 0.173 253.301);
+  --accent-ink: oklch(0.788 0.113 248.33);
+  --accent-tint: oklch(0.68 0.173 253.301 / 0.16);
 
-  --green: #3dbb72;
-  --green-tint: rgba(61, 187, 114, 0.14);
-  --orange: #f68f3c;
-  --orange-tint: rgba(246, 143, 60, 0.14);
-  --red: #ee5c61;
-  --red-tint: rgba(238, 92, 97, 0.14);
+  --green: oklch(0.705 0.154 153.814);
+  --green-tint: oklch(0.705 0.154 153.814 / 0.14);
+  --orange: oklch(0.746 0.156 55.642);
+  --orange-tint: oklch(0.746 0.156 55.642 / 0.14);
+  --red: oklch(0.666 0.18 21.433);
+  --red-tint: oklch(0.666 0.18 21.433 / 0.14);
 
-  --tooltip-bg: #111214;
-  --tooltip-fg: #f2f3f4;
-  --tooltip-muted: #a5a8ad;
-  --tooltip-border: #2e3033;
+  --tooltip-bg: oklch(0.182 0.004 264.459);
+  --tooltip-fg: oklch(0.964 0.002 247.839);
+  --tooltip-muted: oklch(0.731 0.008 260.731);
+  --tooltip-border: oklch(0.308 0.006 258.354);
 
   --shadow-hairline: 0 0 0 1px var(--line);
-  --shadow-btn: 0 0 0 1px var(--line-strong), 0 1px 2px rgba(0, 0, 0, 0.3);
+  /* Elevation rings go to a subtle *light* hairline in dark mode: the ring
+   * paints over the surface behind the element, so a low-alpha white edge
+   * dissolves into the shadow as one continuous stroke (per smooth-shadow-ring),
+   * graduated by how far the surface floats. */
+  --shadow-btn: 0 0 0 1px oklch(1 0 0 / 0.1), 0 1px 2px oklch(0 0 0 / 0.3);
   --shadow-card:
-    0 0 0 1px var(--line), 0 1px 2px rgba(0, 0, 0, 0.2),
-    0 2px 6px rgba(0, 0, 0, 0.2);
+    0 0 0 1px oklch(1 0 0 / 0.11), 0 1px 2px oklch(0 0 0 / 0.2),
+    0 2px 6px oklch(0 0 0 / 0.2);
   --shadow-raised:
-    0 0 0 1px var(--line), 0 2px 10px rgba(0, 0, 0, 0.22);
+    0 0 0 1px oklch(1 0 0 / 0.13), 0 2px 10px oklch(0 0 0 / 0.22);
   --shadow-overlay:
-    0 0 0 1px var(--line-strong), 0 8px 28px rgba(0, 0, 0, 0.34);
-  --shadow-inset-field: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    0 0 0 1px oklch(1 0 0 / 0.15), 0 8px 28px oklch(0 0 0 / 0.34);
+  --shadow-inset-field: inset 0 1px 2px oklch(0 0 0 / 0.4);
 }
 
 @theme inline {
@@ -187,6 +193,50 @@ body {
   color: var(--ink);
 }
 
+/* ── interface hygiene (interfaces.dev cheat sheet) ────── */
+
+/* headings balance; descriptions avoid orphans (skip long-form — we have none) */
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* underlines clear descenders */
+a {
+  text-underline-position: from-font;
+  text-decoration-skip-ink: auto;
+}
+
+/* theme switches swap every token at once — freeze transitions so the flip
+ * is one clean repaint instead of hundreds of mismatched color fades */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+}
+
+/* touch: :hover sticks after a tap, so neutralize row/header hovers there */
+@media (hover: none) {
+  .records-row:hover > .records-cell {
+    background: transparent;
+  }
+
+  .records-row:hover > td.is-colsel {
+    background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+  }
+
+  .records-header-button:hover {
+    background: transparent;
+    color: var(--ink-2);
+  }
+}
+
 /* Keep the component nav scrollable but hide its scrollbar. */
 .component-nav-scroll {
   scrollbar-width: none; /* Firefox */
@@ -200,14 +250,14 @@ body {
   .component-nav-scroll {
     -webkit-mask-image: linear-gradient(
       to bottom,
-      #000 0,
-      #000 calc(100% - 6rem),
+      oklch(0 0 0) 0,
+      oklch(0 0 0) calc(100% - 6rem),
       transparent 100%
     );
     mask-image: linear-gradient(
       to bottom,
-      #000 0,
-      #000 calc(100% - 6rem),
+      oklch(0 0 0) 0,
+      oklch(0 0 0) calc(100% - 6rem),
       transparent 100%
     );
   }
@@ -255,6 +305,7 @@ a {
   cursor: pointer;
 }
 
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -292,11 +343,11 @@ a:focus-visible .animated-underline::after {
 }
 
 .source-avatar {
-  box-shadow: 0 0 0 1px rgba(16, 24, 40, 0.1);
+  box-shadow: 0 0 0 1px oklch(0.21 0.034 263.436 / 0.1);
 }
 
 .dark .source-avatar {
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 1px oklch(1 0 0 / 0.08);
 }
 
 /* ── primitive spacing system ─────────────────────────────
@@ -364,19 +415,20 @@ a:focus-visible .animated-underline::after {
 }
 
 .rainbow-peek {
+  pointer-events: none;
   background: linear-gradient(
     90deg,
-    #3d9aff,
-    #34c77b,
-    #ffd166,
-    #ff9f43,
-    #ff6fae,
-    #3d9aff
+    oklch(0.68 0.173 253.301),
+    oklch(0.736 0.164 155.382),
+    oklch(0.88 0.135 86.062),
+    oklch(0.785 0.154 60.688),
+    oklch(0.734 0.186 355.315),
+    oklch(0.68 0.173 253.301)
   );
   background-size: 200% 100%;
   border-radius: 999px;
   filter: blur(22px);
-  animation: rainbow-drift 28s linear infinite;
+  animation: rainbow-drift 14s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -399,7 +451,26 @@ a:focus-visible .animated-underline::after {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.06);
+}
+
+/* fill mode: the shell stretches to fill its container and drops its own
+ * border/radius/shadow so it reads as part of the surrounding card rather
+ * than a container-in-a-container. The grid body flexes to fill height. */
+.records-shell.is-fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.records-shell.is-fill .records-scroll {
+  max-height: none;
+  flex: 1;
 }
 
 .records-toolbar {
@@ -445,7 +516,7 @@ a:focus-visible .animated-underline::after {
   border-radius: var(--radius-control);
   padding: 0 10px;
   font-size: 12px;
-  font-weight: 550;
+  font-weight: 500;
   white-space: nowrap;
   transition: background-color 140ms var(--ease-out-strong), color 140ms var(--ease-out-strong), transform 140ms var(--ease-out-strong), box-shadow 140ms var(--ease-out-strong);
 }
@@ -482,7 +553,7 @@ a:focus-visible .animated-underline::after {
 .records-primary-button {
   margin-left: 3px;
   background: var(--accent);
-  color: #fff;
+  color: oklch(1 0 0);
   box-shadow: none;
 }
 
@@ -538,7 +609,7 @@ a:focus-visible .animated-underline::after {
   padding: 5px 8px 6px;
   color: var(--ink-3);
   font-size: 10.5px;
-  font-weight: 650;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -566,7 +637,7 @@ a:focus-visible .animated-underline::after {
   width: 13px;
   color: var(--accent-ink);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   text-align: center;
 }
 
@@ -589,7 +660,8 @@ a:focus-visible .animated-underline::after {
   border-collapse: separate;
   border-spacing: 0;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   table-layout: fixed;
 }
 
@@ -615,15 +687,46 @@ a:focus-visible .animated-underline::after {
   position: sticky;
   z-index: 5;
   top: 0;
-  height: 42px;
+  height: 35px;
   background: var(--surface);
   color: var(--ink-2);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 500;
 }
 
 .records-header-cell {
   padding: 0;
+}
+
+.records-resize-handle {
+  position: absolute;
+  z-index: 12;
+  top: 0;
+  right: -6px;
+  width: 12px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.records-resize-handle::after {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 5px;
+  width: 2px;
+  border-radius: 99px;
+  background: var(--accent);
+  content: "";
+  opacity: 0;
+  transform: scaleY(0.65);
+  transition: opacity 120ms ease-out, transform 150ms var(--ease-out-strong);
+}
+
+.records-resize-handle:hover::after,
+.records-resize-handle.is-resizing::after {
+  opacity: 1;
+  transform: scaleY(1);
 }
 
 .records-header-cell.records-sticky-cell {
@@ -633,7 +736,7 @@ a:focus-visible .animated-underline::after {
 .records-header-button,
 .records-company-header {
   width: 100%;
-  height: 42px;
+  height: 35px;
   gap: 8px;
   padding: 0 12px;
 }
@@ -723,16 +826,16 @@ a:focus-visible .animated-underline::after {
   height: 18px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #c7cdd3;
+  border: 1px solid oklch(0.845 0.011 247.953);
   border-radius: 6px;
-  color: #4d555e;
-  background: #ffffff;
+  color: oklch(0.446 0.018 251.343);
+  background: oklch(1 0 0);
   transition: border-color 140ms ease-out, background-color 140ms ease-out, box-shadow 140ms ease-out, transform 140ms var(--ease-out-strong);
 }
 
 .records-checkbox:hover .records-checkbox-box {
-  border-color: #aeb6bf;
-  background: #f2f4f5;
+  border-color: oklch(0.773 0.016 251.194);
+  background: oklch(0.966 0.003 228.784);
 }
 
 .records-checkbox:active .records-checkbox-box {
@@ -746,7 +849,7 @@ a:focus-visible .animated-underline::after {
 
 .records-checkbox-box.is-active {
   border-color: var(--accent);
-  color: #fff;
+  color: oklch(1 0 0);
   background: var(--accent);
   box-shadow: none;
 }
@@ -755,33 +858,33 @@ a:focus-visible .animated-underline::after {
   width: 8px;
   height: 1.5px;
   border-radius: 99px;
-  background: #4d555e;
+  background: oklch(1 0 0);
 }
 
 .dark .records-checkbox-box {
-  border-color: #4f565f;
-  color: #e0e4e8;
-  background: #343a41;
+  border-color: oklch(0.45 0.017 254.711);
+  color: oklch(0.917 0.007 247.901);
+  background: oklch(0.346 0.015 252.294);
 }
 
 .dark .records-checkbox:hover .records-checkbox-box {
-  border-color: #626a74;
-  background: #3f464e;
+  border-color: oklch(0.521 0.019 254);
+  background: oklch(0.391 0.016 251.761);
 }
 
 .dark .records-checkbox-box.is-active {
   border-color: var(--accent);
-  color: #fff;
+  color: oklch(1 0 0);
   background: var(--accent);
 }
 
 .dark .records-checkbox-dash {
-  background: #e0e4e8;
+  background: oklch(1 0 0);
 }
 
 .records-cell {
-  height: 42px;
-  padding: 0 12px;
+  height: 35px;
+  padding: 0 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -792,7 +895,7 @@ a:focus-visible .animated-underline::after {
   left: 0;
   z-index: 2;
   background: var(--surface);
-  box-shadow: 5px 0 8px -10px rgba(0, 0, 0, 0.4);
+  box-shadow: 5px 0 8px -10px oklch(0 0 0 / 0.4);
 }
 
 .records-company-cell {
@@ -815,6 +918,88 @@ a:focus-visible .animated-underline::after {
   background: color-mix(in srgb, var(--accent) 7%, var(--surface));
 }
 
+/* ── spreadsheet gutter ──────────────────────────────────
+ * Row numbers at rest; the checkbox takes their place on
+ * hover or once the row is selected (Airtable pattern). */
+.records-rownum {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.records-row .records-checkbox {
+  display: none;
+}
+
+.records-row:hover .records-rownum,
+.records-row.is-selected .records-rownum {
+  display: none;
+}
+
+.records-row:hover .records-checkbox,
+.records-row.is-selected .records-checkbox {
+  display: inline-flex;
+}
+
+/* ── selected column — the property being configured ───── */
+.records-table th.is-colsel {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+th.is-colsel .records-header-button,
+th.is-colsel .records-company-header,
+th.is-colsel .records-header-icon {
+  color: var(--accent-ink);
+}
+
+.records-table td.is-colsel {
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+}
+
+.records-row:hover > td.is-colsel {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.records-row.is-selected > td.is-colsel {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+/* ── AI column calculating state ─────────────────────────── */
+.records-calc {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.records-pulse {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: records-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes records-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .records-company-mark {
   display: inline-flex;
   width: 20px;
@@ -827,14 +1012,14 @@ a:focus-visible .animated-underline::after {
   color: var(--ink-2);
   background: var(--field);
   font-size: 10px;
-  font-weight: 650;
+  font-weight: 500;
 }
 
 .records-company-name {
   min-width: 0;
   overflow: hidden;
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -868,7 +1053,7 @@ a:focus-visible .animated-underline::after {
   padding: 0 7px;
   color: color-mix(in srgb, var(--tag-color) 82%, var(--ink));
   background: color-mix(in srgb, var(--tag-color) 13%, var(--surface));
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -931,6 +1116,17 @@ a:focus-visible .animated-underline::after {
   transition: color 120ms ease-out, text-decoration-color 120ms ease-out;
 }
 
+.records-link-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.records-link svg {
+  flex-shrink: 0;
+}
+
 .records-link:hover,
 .records-link:focus-visible {
   color: var(--ink);
@@ -941,7 +1137,7 @@ a:focus-visible .animated-underline::after {
   position: sticky;
   z-index: 4;
   bottom: 0;
-  height: 38px;
+  height: 35px;
   background: var(--inset);
   color: var(--ink-2);
   font-size: 11.5px;
@@ -954,7 +1150,7 @@ a:focus-visible .animated-underline::after {
 
 .records-calculation-label {
   color: var(--ink-2);
-  font-weight: 550;
+  font-weight: 500;
 }
 
 .records-calculation-number {
@@ -982,7 +1178,7 @@ a:focus-visible .animated-underline::after {
 
 .records-calculation-row-secondary td {
   position: sticky;
-  bottom: 38px;
+  bottom: 35px;
   background: color-mix(in srgb, var(--inset) 70%, var(--surface));
 }
 
@@ -993,7 +1189,7 @@ a:focus-visible .animated-underline::after {
 
 .records-footer {
   display: flex;
-  min-height: 38px;
+  min-height: 35px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -1004,7 +1200,7 @@ a:focus-visible .animated-underline::after {
 
 .records-footer strong {
   color: var(--ink-2);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .records-footer-hint {
@@ -1122,21 +1318,21 @@ a:focus-visible .animated-underline::after {
 }
 
 .filter-status-todo {
-  color: color-mix(in srgb, #f09a2f 92%, var(--ink));
-  background: color-mix(in srgb, #f09a2f 20%, var(--surface));
-  border-color: color-mix(in srgb, #f09a2f 34%, var(--surface));
+  color: color-mix(in srgb, oklch(0.757 0.153 66.401) 92%, var(--ink));
+  background: color-mix(in srgb, oklch(0.757 0.153 66.401) 20%, var(--surface));
+  border-color: color-mix(in srgb, oklch(0.757 0.153 66.401) 34%, var(--surface));
 }
 
 .filter-status-progress {
-  color: color-mix(in srgb, #16a6c7 92%, var(--ink));
-  background: color-mix(in srgb, #16a6c7 20%, var(--surface));
-  border-color: color-mix(in srgb, #16a6c7 34%, var(--surface));
+  color: color-mix(in srgb, oklch(0.671 0.118 219.351) 92%, var(--ink));
+  background: color-mix(in srgb, oklch(0.671 0.118 219.351) 20%, var(--surface));
+  border-color: color-mix(in srgb, oklch(0.671 0.118 219.351) 34%, var(--surface));
 }
 
 .filter-status-done {
-  color: color-mix(in srgb, #25a878 92%, var(--ink));
-  background: color-mix(in srgb, #25a878 20%, var(--surface));
-  border-color: color-mix(in srgb, #25a878 34%, var(--surface));
+  color: color-mix(in srgb, oklch(0.652 0.131 162.865) 92%, var(--ink));
+  background: color-mix(in srgb, oklch(0.652 0.131 162.865) 20%, var(--surface));
+  border-color: color-mix(in srgb, oklch(0.652 0.131 162.865) 34%, var(--surface));
 }
 
 @keyframes fade-in {
@@ -1177,8 +1373,8 @@ a:focus-visible .animated-underline::after {
  * blinks once the string settles. */
 .stream-tail {
   filter: blur(1.6px);
-  -webkit-mask-image: linear-gradient(to right, #000 20%, rgba(0, 0, 0, 0.2));
-  mask-image: linear-gradient(to right, #000 20%, rgba(0, 0, 0, 0.2));
+  -webkit-mask-image: linear-gradient(to right, oklch(0 0 0) 20%, oklch(0 0 0 / 0.2));
+  mask-image: linear-gradient(to right, oklch(0 0 0) 20%, oklch(0 0 0 / 0.2));
 }
 
 .stream-caret {

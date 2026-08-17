@@ -53,7 +53,7 @@ export function EmailCapture() {
               <path d="M20 6L9 17l-5-5" />
             </svg>
           </span>
-          You&apos;re on the list — talk soon.
+          You’re on the list — talk soon.
         </div>
       ) : (
         <form onSubmit={submit} className="mt-5 flex max-w-md flex-col gap-1.5" noValidate>

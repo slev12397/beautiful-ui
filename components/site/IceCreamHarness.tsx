@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Button } from "@/components/atoms/Button";
 import ApprovalCard from "@/components/primitives/ApprovalCard";
-import CodeBlock from "@/components/primitives/CodeBlock";
 import ContextCards from "@/components/primitives/ContextCards";
 import DiffTable from "@/components/primitives/DiffTable";
+import GlideMenu from "@/components/primitives/GlideMenu";
 import InsightCards from "@/components/primitives/InsightCards";
 import LoadingState from "@/components/primitives/LoadingState";
 import PromptBar from "@/components/primitives/PromptBar";
@@ -28,10 +29,6 @@ const NAME = "Shane";
 
 /* ── shared bits ──────────────────────────────────────────── */
 
-function Prose({ children }: { children: ReactNode }) {
-  return <p className="max-w-[620px] text-[13.5px] leading-[1.65] text-ink-2">{children}</p>;
-}
-
 /* the charts land only after the streamed text has finished */
 function WorkloadAnswer() {
   const [showCards, setShowCards] = useState(false);
@@ -50,6 +47,105 @@ function WorkloadAnswer() {
   );
 }
 
+/* a lightweight word-by-word reveal, reusing the streaming keyframe */
+function StreamLine({
+  text,
+  tone = "ink",
+  onDone,
+}: {
+  text: string;
+  tone?: "ink" | "ink-2";
+  onDone?: () => void;
+}) {
+  const words = text.split(" ");
+  const [n, setN] = useState(0);
+  const streaming = n < words.length;
+  useEffect(() => {
+    if (!streaming) return;
+    const t = setTimeout(() => setN((c) => c + 1), 34);
+    return () => clearTimeout(t);
+  }, [n, streaming]);
+  useEffect(() => {
+    if (!streaming) onDone?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streaming]);
+  return (
+    <p className={`max-w-[620px] text-[13.5px] leading-[1.65] ${tone === "ink" ? "text-ink" : "text-ink-2"}`}>
+      {words.slice(0, n).map((word, i) => (
+        <span
+          key={i}
+          className="inline [will-change:filter,opacity]"
+          style={{ animation: "stream-in 380ms cubic-bezier(0.22,0.61,0.25,1) both" }}
+        >
+          {word}{" "}
+        </span>
+      ))}
+      {streaming && <span className="stream-caret is-streaming" />}
+    </p>
+  );
+}
+
+/* a consistent reply: the intro streams in, then the artifact reveals below it
+ * once the text settles — so nothing pops in before the sentence lands. */
+function Reply({ intro, children }: { intro: string; children?: ReactNode }) {
+  const [ready, setReady] = useState(false);
+  return (
+    <>
+      <StreamLine text={intro} tone="ink-2" onDone={() => setReady(true)} />
+      {ready && children != null && (
+        <div className="mt-5" style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}>
+          {children}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* the offboarding flow: answer the questions, the card collapses to a small
+ * badge, then the agent thinks again and streams a short confirmation. */
+function OffboardingAnswer() {
+  const [stage, setStage] = useState<"form" | "thinking" | "done">("form");
+
+  useEffect(() => {
+    if (stage !== "thinking") return;
+    const t = setTimeout(() => setStage("done"), 1100);
+    return () => clearTimeout(t);
+  }, [stage]);
+
+  return (
+    <>
+      <Reply intro="Before I archive the vendor, confirm a few details. Single questions advance on their own; multi-selects wait for the arrow.">
+        <ApprovalCard resettable={false} onSubmitted={() => setStage("thinking")} />
+      </Reply>
+      {stage === "thinking" && (
+        <div className="mt-4 flex min-h-6 items-center" style={{ animation: "fade-in 200ms ease-out both" }}>
+          <LoadingState label="Archiving vendor" variant="Dots" />
+        </div>
+      )}
+      {stage === "done" && (
+        <div className="mt-4" style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}>
+          <StreamLine text="Done — I archived Fjord Dairy, moved its 3 open orders to Northwind Creamery, and flagged the cold-chain certificate for renewal. Nothing else in the workflow references the vendor." />
+        </div>
+      )}
+    </>
+  );
+}
+
+/* the answer streams only after the search trace settles */
+function FindTicketAnswer() {
+  const [settled, setSettled] = useState(false);
+  return (
+    <>
+      <ThinkingState variant="Search" onSettled={() => setSettled(true)} />
+      {settled && (
+        <div className="mt-1" style={{ animation: "fade-in 200ms ease-out both" }}>
+          <StreamLine tone="ink-2" text="Found it — the flavor page redesign ticket, plus the two docs it references. The retrieved chunks are in the side panel." />
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ── scenarios ────────────────────────────────────────────────
  * Each maps a user prompt to an agent reply built from primitives.
  * `beat` is how long the agent "thinks" before the answer resolves
@@ -60,9 +156,16 @@ type Scenario = {
   prompt: string;
   beat: number;
   Answer: () => ReactNode;
+  /** optional one-off waiting treatment for a scenario */
+  loadingVariant?: "Surfer";
+  /** render the answer across the full chat window instead of the reading column */
+  fullBleed?: boolean;
   /** optional artifact for the right-hand pane */
   paneTitle?: string;
   Pane?: () => ReactNode;
+  /** spreadsheet workspace: the main pane is a live table, the chat docks to the right */
+  Workspace?: () => ReactNode;
+  workspaceTitle?: string;
 };
 
 const SCENARIOS: Record<string, Scenario> = {
@@ -79,15 +182,9 @@ const SCENARIOS: Record<string, Scenario> = {
       </>
     ),
     Answer: () => (
-      <>
-        <Prose>
-          Three things are time-sensitive. I put the checklist in the side panel, ordered by how soon
-          they&apos;ll bite — and there&apos;s one call worth making first.
-        </Prose>
-        <div className="mt-5">
-          <RecommendationCard />
-        </div>
-      </>
+      <Reply intro="Three things are time-sensitive. I put the checklist in the side panel, ordered by how soon they’ll bite — and there’s one call worth making first.">
+        <RecommendationCard />
+      </Reply>
     ),
   },
   workload: {
@@ -98,86 +195,56 @@ const SCENARIOS: Record<string, Scenario> = {
   offboarding: {
     prompt: "I need your approval before I off-board a supplier.",
     beat: 850,
-    Answer: () => (
-      <>
-        <Prose>
-          Before I archive the vendor, confirm a few details. Single questions advance on their own; multi-selects
-          wait for the arrow.
-        </Prose>
-        <div className="mt-5">
-          <ApprovalCard />
-        </div>
-      </>
-    ),
+    Answer: () => <OffboardingAnswer />,
   },
   "find-ticket": {
     prompt: "There was a ticket about redesigning the flavor page — can you find it?",
     beat: 500,
     paneTitle: "Context",
     Pane: () => <ContextCards />,
-    Answer: () => (
-      <>
-        <ThinkingState variant="Search" />
-        <Prose>
-          Found it — the flavor page redesign ticket, plus the two docs it references. The retrieved
-          chunks are in the side panel.
-        </Prose>
-      </>
-    ),
+    Answer: () => <FindTicketAnswer />,
   },
   suppliers: {
     prompt: "Show me our supplier records.",
-    beat: 1000,
+    beat: 700,
+    workspaceTitle: "Suppliers",
+    Workspace: () => <RecordsTable fill />,
     Answer: () => (
-      <>
-        <Prose>
-          Here&apos;s the working set. The filters and full grid are connected, so you can narrow the launch list
-          without leaving the thread.
-        </Prose>
-        <div className="mt-5 overflow-x-auto pb-1">
-          <RecordsTable />
-        </div>
-      </>
+      <StreamLine tone="ink-2" text="The grid’s on the left. Ask me to filter, enrich, or add a column — I’ll update the table live and show my work here." />
     ),
   },
   restock: {
     prompt: "Draft the batch restock function.",
     beat: 500,
     Answer: () => (
-      <>
-        <Prose>I planned it out and wrote the function I&apos;ll use to stage the run. Nothing runs until you say so.</Prose>
-        <div className="mt-5">
-          <ToolChips />
-        </div>
-        <div className="mt-6">
-          <CodeBlock />
-        </div>
-      </>
+      <Reply intro="I planned it out and staged the edits. Hover a file chip to preview its diff — nothing runs until you say so.">
+        <ToolChips />
+      </Reply>
     ),
   },
   edits: {
     prompt: "Propose edits to the flavor list.",
     beat: 1000,
     Answer: () => (
-      <>
-        <Prose>I staged the changes as a reviewable draft — nothing is applied yet. Sweep through and approve what looks right.</Prose>
-        <div className="mt-5">
-          <DiffTable />
-        </div>
-      </>
+      <Reply intro="I staged the changes as a reviewable draft — nothing is applied yet. Sweep through and approve what looks right.">
+        <DiffTable />
+      </Reply>
     ),
   },
   rewrite: {
     prompt: "Help me tighten this launch note.",
     beat: 700,
     Answer: () => (
-      <>
-        <Prose>Select any passage and hand it to me. I highlighted a line below — pick an action or describe the edit.</Prose>
-        <div className="mt-5">
-          <SelectionActions />
-        </div>
-      </>
+      <Reply intro="Select any passage and hand it to me. I highlighted a line below — pick an action or describe the edit.">
+        <SelectionActions />
+      </Reply>
     ),
+  },
+  surfer: {
+    prompt: "Can you audit the launch plan—and put Subway Surfers underneath so my attention span stays on payroll?",
+    beat: 18000,
+    loadingVariant: "Surfer",
+    Answer: () => <Reply intro="All done. Thanks for locking in with me." />,
   },
 };
 
@@ -230,7 +297,7 @@ const SUGGESTION_POOL: { id: ScenarioId; label: string }[] = [
   { id: "rewrite", label: "Tighten this launch note" },
 ];
 
-const RECENTS: { id: ScenarioId; label: string }[] = [
+const RECENTS: { id: ScenarioId; label: string; prompt?: string }[] = [
   { id: "todos", label: "Urgent to-dos this morning" },
   { id: "find-ticket", label: "Flavor page ticket" },
   { id: "suppliers", label: "Supplier records" },
@@ -238,6 +305,7 @@ const RECENTS: { id: ScenarioId; label: string }[] = [
   { id: "offboarding", label: "Off-board a supplier" },
   { id: "restock", label: "Batch restock function" },
   { id: "edits", label: "Propose flavor edits" },
+  { id: "surfer", label: "Subway surfing", prompt: SCENARIOS.surfer.prompt },
 ];
 
 /* ── the agent reply — thinks, then builds the answer ─────── */
@@ -254,10 +322,14 @@ function AssistantResponse({ scenarioId, className = "" }: { scenarioId: Scenari
   return (
     <article className={`min-w-0 ${className}`} style={{ animation: "fade-up 450ms cubic-bezier(0.23,1,0.32,1) both" }}>
       {answered ? (
-        scenario.Answer()
+        <div style={{ animation: "fade-in 260ms ease both" }}>{scenario.Answer()}</div>
       ) : (
         <div className="flex min-h-6 items-center" style={{ animation: "fade-in 200ms ease-out both" }}>
-          <LoadingState label="Thinking" variant="Dots" />
+          {scenario.loadingVariant === "Surfer" ? (
+            <LoadingState variant="Surfer" />
+          ) : (
+            <LoadingState label="Thinking" variant="Dots" />
+          )}
         </div>
       )}
     </article>
@@ -336,45 +408,24 @@ function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: Sc
 /* rows share the SidebarNav language: one gliding hover highlight
  * per group, 13px labels, icons that darken with state */
 function GlideGroup({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [box, setBox] = useState<{ top: number; height: number } | null>(null);
-  const [hovering, setHovering] = useState(false);
-
   return (
-    <div
-      ref={ref}
-      onMouseOver={(event) => {
-        const row = (event.target as Element).closest("[data-row]");
-        const container = ref.current;
-        if (!row || !container) return;
-        const containerRect = container.getBoundingClientRect();
-        const rowRect = row.getBoundingClientRect();
-        setBox({ top: rowRect.top - containerRect.top, height: rowRect.height });
-        setHovering(true);
-      }}
-      onMouseLeave={() => setHovering(false)}
-      className="group/glide relative flex flex-col gap-px"
+    <GlideMenu
+      rowSelector="[data-row]"
+      highlightClassName="inset-x-0 rounded-[7px] bg-hover-2"
+      className="group/glide flex flex-col gap-px"
     >
-      {/* hover-2 (plain hover is invisible on canvas); on leave it fades
-        * out in place rather than gliding back */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 rounded-[7px] bg-hover-2"
-        style={{
-          top: box?.top ?? 0,
-          height: box?.height ?? 0,
-          opacity: box && hovering ? 1 : 0,
-          transition:
-            "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
-        }}
-      />
       {children}
-    </div>
+    </GlideMenu>
   );
 }
 
 function SectionLabel({ children }: { children: ReactNode }) {
-  return <div className="px-2 pb-1 pt-1 text-[11.5px] font-medium text-ink-3">{children}</div>;
+  return (
+    <div className="flex items-center gap-1 px-2 pb-1 pt-1 text-[12.5px] font-medium text-ink-3">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
+      {children}
+    </div>
+  );
 }
 
 function RailButton({
@@ -382,12 +433,14 @@ function RailButton({
   label,
   active = false,
   badge,
+  count,
   onClick,
 }: {
   icon: ReactNode;
   label: string;
   active?: boolean;
   badge?: string;
+  count?: string;
   onClick?: () => void;
 }) {
   return (
@@ -395,14 +448,15 @@ function RailButton({
       data-row
       type="button"
       onClick={onClick}
-      className={`relative z-10 flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left
+      className={`relative z-10 flex w-full items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-left
         transition-[background-color,color,transform] duration-150 active:scale-[0.98]
         ${active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""}`}
     >
-      <span className={active ? "text-ink" : "text-ink-3"}>{icon}</span>
-      <span className={`min-w-0 flex-1 truncate text-[13px] ${active ? "font-medium text-ink" : "text-ink-2"}`}>
+      <span className={`shrink-0 ${active ? "text-ink" : "text-ink-2"}`}>{icon}</span>
+      <span className={`min-w-0 flex-1 truncate text-[14px] ${active ? "text-ink" : "text-ink-2"}`}>
         {label}
       </span>
+      {count && <span className="shrink-0 text-[12px] tabular-nums text-ink-3">{count}</span>}
       {badge && (
         <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-accent-tint px-1 text-[10.5px] font-semibold tabular-nums text-accent-ink">
           {badge}
@@ -418,27 +472,35 @@ const WORKSPACES = [
   { key: "cone", name: "Cone King HQ", sub: "Wholesale workspace", monogram: "K" },
 ];
 
-const NAV_ITEMS = [
-  { key: "home", label: "Home", icon: <path d="M3 11l9-8 9 8M5 9.5V21h14V9.5" /> },
-  { key: "chats", label: "Chats", icon: <path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" /> },
-  { key: "search", label: "Search", icon: <g><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></g> },
+/* Attio-style icons: rounded geometry, soft joins, drawn on a 24 grid
+ * and rendered at 16 — rounder and cleaner than the old 13px set. */
+const ICON_COMPOSE = (
+  <g><path d="M13 5H8a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-5" /><path d="M16.5 4.5a2.05 2.05 0 0 1 3 3L13 14l-3.6 1 1-3.6Z" /></g>
+);
+
+const NAV_ITEMS: { key: string; label: string; icon: ReactNode; count?: string }[] = [
+  { key: "home", label: "Home", icon: <g><path d="M4 11.4 12 5l8 6.4" /><path d="M6 10v8.2c0 .72.58 1.3 1.3 1.3h9.4c.72 0 1.3-.58 1.3-1.3V10" /></g> },
+  { key: "library", label: "Library", icon: <g><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2 2 2 0 0 1 2-2h4.5A1.5 1.5 0 0 1 20 5.5v12.5a1 1 0 0 1-1 1h-5a2 2 0 0 0-2 2 2 2 0 0 0-2-2H5a1 1 0 0 1-1-1Z" /><path d="M12 6v14" /></g> },
+  { key: "invite", label: "Invite users", icon: <g><path d="M14.5 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20" /><circle cx="8.75" cy="7.5" r="3.5" /><path d="M18.5 8.5v5M21 11h-5" /></g>, count: "3/10" },
 ];
 
 function NavIcon({ children }: { children: ReactNode }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       {children}
     </svg>
   );
 }
 
-function Sidebar({ onPick, onNewChat }: { onPick: (id: ScenarioId, label: string) => void; onNewChat: () => void }) {
+function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, label: string, prompt?: string) => void; onNewChat: () => void; activeTitle: string | null }) {
   const [collapsed, setCollapsed] = useState(false);
   const [nav, setNav] = useState("chats");
   const [workspace, setWorkspace] = useState(WORKSPACES[0]);
   const [wsOpen, setWsOpen] = useState(false);
-  const [unread, setUnread] = useState(true);
-  const [promoOpen, setPromoOpen] = useState(true);
+  const wsBtnRef = useRef<HTMLButtonElement>(null);
+  const [wsPos, setWsPos] = useState({ top: 0, left: 0 });
+  /* when collapsed, hovering the rail slides the full nav out on top */
+  const [peek, setPeek] = useState(false);
 
   /* click anywhere else closes the workspace menu */
   useEffect(() => {
@@ -452,11 +514,15 @@ function Sidebar({ onPick, onNewChat }: { onPick: (id: ScenarioId, label: string
 
   return (
     <aside
-      className="hidden shrink-0 overflow-hidden border-r border-line bg-canvas/35 transition-[width] duration-300 lg:flex"
+      className="hidden shrink-0 overflow-hidden transition-[width] duration-300 lg:flex"
       style={{ width: collapsed ? 52 : 264, transitionTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
     >
-      {collapsed ? (
-        <div className="flex w-[52px] shrink-0 flex-col items-center p-2" style={{ animation: "fade-in 250ms ease-out both" }}>
+      {collapsed && (
+        <div
+          className="flex w-[52px] shrink-0 flex-col items-center p-2"
+          style={{ animation: "fade-in 250ms ease-out both" }}
+          onMouseEnter={() => setPeek(true)}
+        >
           <button
             type="button"
             aria-label="Expand sidebar"
@@ -471,7 +537,7 @@ function Sidebar({ onPick, onNewChat }: { onPick: (id: ScenarioId, label: string
             onClick={onNewChat}
             className="mt-2 flex size-8 items-center justify-center rounded-[7px] text-ink-3 transition-[background-color,color,transform] duration-150 hover:bg-hover-2 hover:text-ink active:scale-[0.94]"
           >
-            <NavIcon><g><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z" /></g></NavIcon>
+            <NavIcon>{ICON_COMPOSE}</NavIcon>
           </button>
           <div className="mt-1 flex flex-col gap-1">
             {NAV_ITEMS.map((item) => (
@@ -492,63 +558,120 @@ function Sidebar({ onPick, onNewChat }: { onPick: (id: ScenarioId, label: string
             {NAME.charAt(0)}
           </span>
         </div>
-      ) : (
-        <div className="flex min-h-0 w-[264px] shrink-0 flex-col p-2.5" style={{ animation: "fade-in 250ms ease-out both" }}>
-      {/* workspace switcher */}
-      <div className="mb-2 flex items-center gap-1">
+      )}
+      <div
+        onMouseEnter={collapsed ? () => setPeek(true) : undefined}
+        onMouseLeave={collapsed ? () => setPeek(false) : undefined}
+        className={
+          collapsed
+            ? "fixed bottom-2.5 left-2.5 top-2.5 z-40 flex min-h-0 w-[264px] flex-col rounded-[14px] border border-line bg-page p-2.5 shadow-overlay"
+            : "flex min-h-0 w-[264px] shrink-0 flex-col px-2.5 pb-2.5"
+        }
+        style={
+          collapsed
+            ? {
+                transform: peek ? "translateX(0)" : "translateX(-8px)",
+                opacity: peek ? 1 : 0,
+                pointerEvents: peek ? "auto" : "none",
+                transition: "transform 220ms cubic-bezier(0.32,0.72,0,1), opacity 200ms ease-out",
+              }
+            : { animation: "fade-in 250ms ease-out both" }
+        }
+      >
+      {/* workspace switcher — Attio's clean logo switcher */}
+      <div className="mb-2.5 flex items-center gap-1 px-0.5">
         <span data-ws className="relative min-w-0 flex-1">
           <button
+            ref={wsBtnRef}
             type="button"
             aria-expanded={wsOpen}
-            onClick={() => setWsOpen((current) => !current)}
-            className="flex w-full min-w-0 items-center gap-2.5 rounded-control p-1.5 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.98]"
+            onClick={() => {
+              if (!wsOpen && wsBtnRef.current) {
+                const r = wsBtnRef.current.getBoundingClientRect();
+                setWsPos({ top: r.bottom + 6, left: r.left });
+              }
+              setWsOpen((current) => !current);
+            }}
+            className="flex w-full min-w-0 items-center gap-2 rounded-[9px] p-1 pr-2 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]"
           >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-ink text-[13px] font-semibold text-surface">{workspace.monogram}</span>
-            <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
-              <span className="block truncate text-[13px] font-medium leading-none text-ink">{workspace.name}</span>
-              <span className="block truncate text-[11px] leading-none text-ink-3">{workspace.sub}</span>
+            <span className="flex size-[30px] shrink-0 items-center justify-center rounded-[9px] bg-ink text-surface">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden><path d="M12 4v16M4 12h16M6.3 6.3l11.4 11.4M17.7 6.3 6.3 17.7" /></svg>
             </span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M7 15l5 5 5-5M7 9l5-5 5 5" /></svg>
+            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.015em] text-ink">{workspace.name}</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
           </button>
           {wsOpen && (
             <div
-              className="absolute left-0 top-full z-20 mt-1 w-56 rounded-[10px] bg-surface p-1 shadow-raised"
-              style={{ animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top left" }}
+              className="fixed z-50 w-64 rounded-[14px] bg-surface p-1.5 shadow-overlay"
+              style={{ top: wsPos.top, left: wsPos.left, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top left" }}
             >
+              <GlideMenu className="flex flex-col gap-px" highlightClassName="inset-x-0 rounded-[8px] bg-hover-2">
               {WORKSPACES.map((item) => (
                 <button
                   key={item.key}
+                  data-menu-row
                   type="button"
                   onClick={() => {
                     setWorkspace(item);
                     setWsOpen(false);
                   }}
-                  className="flex h-9 w-full cursor-pointer items-center gap-2 rounded-[6px] px-2 text-left transition-colors duration-100 hover:bg-hover"
+                  className="relative z-10 flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
                 >
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-[6px] bg-ink text-[11px] font-semibold text-surface">{item.monogram}</span>
-                  <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink">{item.name}</span>
-                  <span className={`shrink-0 text-ink ${item.key === workspace.key ? "" : "invisible"}`}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6L9 17l-5-5" /></svg>
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-[7px] bg-ink text-[11px] font-semibold text-surface">{item.monogram}</span>
+                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-ink">{item.name}</span>
+                  <span className={`shrink-0 text-accent ${item.key === workspace.key ? "" : "invisible"}`}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6L9 17l-5-5" /></svg>
                   </span>
                 </button>
               ))}
+              <div className="my-1 h-px bg-line" />
+              {[
+                { label: "New workspace", icon: <path d="M12 5v14M5 12h14" /> },
+                { label: "Workspace settings", icon: <g><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></g> },
+                { label: "Invite team members", icon: <g><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></g> },
+              ].map((row) => (
+                <button
+                  key={row.label}
+                  data-menu-row
+                  type="button"
+                  onClick={() => setWsOpen(false)}
+                  className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
+                >
+                  <span className="shrink-0 text-ink-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{row.icon}</svg></span>
+                  <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{row.label}</span>
+                </button>
+              ))}
+              <div className="my-1 h-px bg-line" />
+              <button
+                data-menu-row
+                type="button"
+                onClick={() => setWsOpen(false)}
+                className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
+              >
+                <span className="shrink-0 text-ink-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><g><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5M21 12H9" /></g></svg></span>
+                <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">Sign out</span>
+              </button>
+              </GlideMenu>
             </div>
           )}
         </span>
         <button
           type="button"
-          aria-label="Collapse sidebar"
-          onClick={() => setCollapsed(true)}
-          className="flex size-7 shrink-0 items-center justify-center rounded-control text-ink-3 transition-colors duration-150 hover:bg-hover-2 hover:text-ink"
+          aria-label={collapsed ? "Pin sidebar open" : "Collapse sidebar"}
+          onClick={() => {
+            setCollapsed((current) => !current);
+            setPeek(false);
+          }}
+          className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-ink-3 transition-colors duration-150 hover:bg-hover-2 hover:text-ink"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /></svg>
         </button>
       </div>
 
       {/* primary nav — New chat leads, like every chat product */}
       <GlideGroup>
         <RailButton
-          icon={<NavIcon><g><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z" /></g></NavIcon>}
+          icon={<NavIcon>{ICON_COMPOSE}</NavIcon>}
           label="New chat"
           onClick={onNewChat}
         />
@@ -557,84 +680,68 @@ function Sidebar({ onPick, onNewChat }: { onPick: (id: ScenarioId, label: string
             key={item.key}
             icon={<NavIcon>{item.icon}</NavIcon>}
             label={item.label}
+            count={item.count}
             active={nav === item.key}
             onClick={() => setNav(item.key)}
           />
         ))}
       </GlideGroup>
 
-      {/* recents */}
+      {/* chats */}
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
-        <SectionLabel>Recents</SectionLabel>
+        <SectionLabel>Chats</SectionLabel>
         <GlideGroup>
-          {RECENTS.map((item) => (
-            <button
-              key={item.label}
-              data-row
-              type="button"
-              onClick={() => onPick(item.id, item.label)}
-              className="relative z-10 flex w-full items-center rounded-[7px] px-2 py-1.5 text-left transition-[color,transform] duration-150 active:scale-[0.98]"
-            >
-              <span className="min-w-0 truncate text-[13px] text-ink-2">{item.label}</span>
-            </button>
-          ))}
+          {RECENTS.map((item) => {
+            const isActive = item.label === activeTitle;
+            return (
+              <button
+                key={item.label}
+                data-row
+                type="button"
+                onClick={() => onPick(item.id, item.label, item.prompt)}
+                title={item.label}
+                className={`relative z-10 flex w-full items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-left transition-[background-color,color,transform] duration-150 active:scale-[0.98] ${
+                  isActive ? "bg-hover-2 group-hover/glide:bg-transparent" : ""
+                }`}
+              >
+                <span className={`shrink-0 ${isActive ? "text-ink" : "text-ink-3"}`}>
+                  <NavIcon>
+                    <path d="M20 11.6c0 3.87-3.58 7-8 7-1.02 0-2-.17-2.9-.47L4 19.5l1.2-3.45C4.45 14.85 4 13.28 4 11.6c0-3.87 3.58-7 8-7s8 3.13 8 7Z" />
+                  </NavIcon>
+                </span>
+                <span className={`min-w-0 flex-1 truncate text-[14px] ${isActive ? "text-ink" : "text-ink-2"}`}>{item.label}</span>
+              </button>
+            );
+          })}
         </GlideGroup>
       </div>
 
-      {/* promo card — pinned low, just above the footer */}
-      {promoOpen && (
-        <div className="mt-3 overflow-hidden rounded-card bg-surface shadow-card">
-          <div className="flex items-center justify-between px-3 pt-3">
-            <span className="rounded-full bg-green-tint px-2 py-0.5 text-[10.5px] font-medium text-green">New</span>
-            <button
-              type="button"
-              aria-label="Dismiss"
-              onClick={() => setPromoOpen(false)}
-              className="flex size-5 items-center justify-center rounded-[5px] text-ink-3 transition-colors duration-150 hover:bg-hover hover:text-ink"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
-            </button>
-          </div>
-          <p className="px-3 pt-2 text-[12.5px] font-medium leading-snug text-ink">Seasonal flavor planner &amp; supplier transfers</p>
-          <div className="mx-3 mt-2.5 flex flex-col gap-1.5 rounded-control bg-inset p-2 shadow-hairline">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <span className={`size-3.5 shrink-0 rounded-full ${i === 1 ? "bg-accent/70" : "bg-line-strong"}`} />
-                <span className="h-1.5 rounded-full bg-line-strong" style={{ width: `${[64, 44, 72][i]}%` }} />
-              </div>
-            ))}
-          </div>
-          <div className="p-3 pt-2.5">
-            <button
-              type="button"
-              onClick={() => onPick("edits", "Seasonal flavor planner")}
-              className="flex h-7 w-full items-center justify-center gap-1.5 rounded-control bg-surface text-[12px] font-medium text-ink shadow-btn transition-[background-color,transform] duration-150 hover:bg-hover active:scale-[0.97]"
-            >
-              Open planner
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </button>
-          </div>
-        </div>
-      )}
-
-          {/* footer */}
-          <div className="mt-2.5 flex items-center justify-between border-t border-line px-2 pt-2.5">
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-tint text-[11px] font-semibold text-accent-ink">{NAME.charAt(0)}</span>
-              <span className="truncate text-[13px] font-medium text-ink">{NAME} Levine</span>
+      {/* usage meters + upgrade — pinned low, like the reference */}
+      <div className="mt-3 border-t border-line pt-3">
+        <div className="px-0.5">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[11.5px] font-medium text-ink-3">Monthly tokens</span>
+            <span className="text-[11.5px] tabular-nums text-ink-3">
+              <span className="font-semibold text-ink">560k</span> / 1M
             </span>
-            <button
-              type="button"
-              aria-label={unread ? "Notifications — unread" : "Notifications"}
-              onClick={() => setUnread(false)}
-              className="relative flex size-7 shrink-0 items-center justify-center rounded-control text-ink-3 transition-colors duration-150 hover:bg-hover-2 hover:text-ink"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" /></svg>
-              {unread && <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-accent" />}
-            </button>
+          </div>
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-line-strong">
+            <div
+              className="h-full rounded-full"
+              style={{ width: "56%", background: "linear-gradient(90deg in oklab, oklch(0.788 0.113 248.33), oklch(0.626 0.205 254.947))" }}
+            />
           </div>
         </div>
-      )}
+        <button
+          type="button"
+          onClick={onNewChat}
+          className="mt-3 flex h-8 w-full items-center justify-center gap-1.5 rounded-full bg-hover-2 text-[12.5px] font-medium text-ink transition-[background-color,transform] duration-150 hover:bg-line-strong active:scale-[0.98]"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M13 2 4.5 13H11l-1 9 8.5-11H12l1-9Z" /></svg>
+          Upgrade
+        </button>
+      </div>
+      </div>
     </aside>
   );
 }
@@ -645,7 +752,10 @@ type Msg = { id: number; role: "user"; text: string } | { id: number; role: "ass
 type Chat = { id: number; title: string | null; messages: Msg[] };
 
 /* the pane arrives on the same beat as the answer it belongs to */
-function PaneReveal({ beat, children }: { beat: number; children: ReactNode }) {
+/* The pane shell reserves its space as soon as the message is sent, so the
+ * column never reflows mid-thought. Only the body swaps — a quiet loader while
+ * the agent works, then the artifact fades up in place. */
+function PaneBody({ beat, children }: { beat: number; children: ReactNode }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -653,13 +763,143 @@ function PaneReveal({ beat, children }: { beat: number; children: ReactNode }) {
     return () => clearTimeout(t);
   }, [beat]);
 
-  return show ? <>{children}</> : null;
+  if (!show) {
+    return (
+      <div className="flex h-full items-center justify-center pb-10">
+        <LoadingState label="Gathering" variant="Dots" />
+      </div>
+    );
+  }
+
+  return <div style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}>{children}</div>;
+}
+
+/* ── spreadsheet views + property inspector ───────────────────
+ * The bottom bar lists views; selecting one swaps the right pane
+ * from the assistant chat to a Property configuration inspector.
+ */
+const SPREADSHEET_VIEWS = [
+  { name: "Main", color: "var(--ink-3)", count: 60 },
+  { name: "Gelato", color: "oklch(0.627 0.23 296.668)", count: 17 },
+  { name: "Wholesale", color: "oklch(0.611 0.21 263.944)", count: 12 },
+  { name: "Dairy-free", color: "oklch(0.671 0.118 219.351)", count: 9 },
+];
+
+function ConfigSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={onToggle}
+      className="relative h-4.5 w-7.5 shrink-0 rounded-full transition-colors duration-150"
+      style={{ background: on ? "var(--accent)" : "var(--line-strong)" }}
+    >
+      <span
+        className="absolute top-0.5 left-0.5 size-3.5 rounded-full bg-white shadow-btn transition-transform duration-150"
+        style={{ transform: on ? "translateX(12px)" : "translateX(0)", transitionTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
+      />
+    </button>
+  );
+}
+
+function PropertyConfig({ view, onClose }: { view: string; onClose: () => void }) {
+  const [grounding, setGrounding] = useState(false);
+  return (
+    <div className="flex min-h-0 flex-1 flex-col" style={{ animation: "fade-in 160ms ease-out both" }}>
+      <div className="flex h-11 shrink-0 items-center justify-between border-b border-line px-3 sm:pl-4">
+        <span className="text-[13px] font-semibold text-ink">Property configuration</span>
+        <div className="flex items-center gap-0.5 text-ink-3">
+          <button type="button" aria-label="Previous" className="flex size-6 items-center justify-center rounded-[6px] transition-colors duration-100 hover:bg-hover hover:text-ink">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 6l-6 6 6 6" /></svg>
+          </button>
+          <button type="button" aria-label="Next" className="flex size-6 items-center justify-center rounded-[6px] transition-colors duration-100 hover:bg-hover hover:text-ink">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M9 6l6 6-6 6" /></svg>
+          </button>
+          <button
+            type="button"
+            aria-label="Back to chat"
+            onClick={onClose}
+            className="flex size-6 items-center justify-center rounded-[6px] transition-colors duration-100 hover:bg-hover hover:text-ink"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        <div className="text-[14px] font-semibold text-ink">{view} suppliers</div>
+
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] text-ink-3">Type</span>
+            <span className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 6h16M4 12h10M4 18h7" /></svg>
+              View filter
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] text-ink-3">Model</span>
+            <span className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--accent)" aria-hidden><path d="M12 3l1.7 5.1a2 2 0 0 0 1.2 1.2L20 11l-5.1 1.7a2 2 0 0 0-1.2 1.2L12 19l-1.7-5.1a2 2 0 0 0-1.2-1.2L4 11l5.1-1.7a2 2 0 0 0 1.2-1.2z" /></svg>
+              Sprinkles 5
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] text-ink-3">Grounding</span>
+            <ConfigSwitch on={grounding} onToggle={() => setGrounding((v) => !v)} />
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-[10px] bg-inset p-3 text-[13px] leading-relaxed text-ink-2 shadow-hairline">
+          Only surface <span className="rounded-[5px] bg-accent-tint px-1.5 py-0.5 text-[12px] font-medium text-accent-ink">{view}</span> suppliers with a strong, recent connection — nothing else.
+        </div>
+
+        <button
+          type="button"
+          className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-[9px] text-[12.5px] font-medium text-ink shadow-btn transition-[background-color,transform] duration-150 hover:bg-hover active:scale-[0.98]"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" /></svg>
+          Recompute stale fields
+        </button>
+
+        <div className="mt-6 flex flex-col gap-1">
+          {[
+            { label: "Use webhooks to integrate with other tools", icon: <path d="M13 2 4.5 13H11l-1 9 8.5-11H12l1-9Z" /> },
+            { label: "Configure a Zapier integration", icon: <path d="M13 2 4.5 13H11l-1 9 8.5-11H12l1-9Z" /> },
+          ].map((row) => (
+            <button
+              key={row.label}
+              type="button"
+              className="-mx-1.5 flex items-center gap-2.5 rounded-[8px] px-1.5 py-2 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-hover"
+            >
+              <span className="text-accent"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>{row.icon}</svg></span>
+              {row.label}
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          className="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-[9px] bg-red-tint text-[12.5px] font-medium text-red transition-[filter,transform] duration-150 hover:brightness-95 active:scale-[0.98]"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" /></svg>
+          Delete property
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function IceCreamHarness() {
   const [chats, setChats] = useState<Chat[]>([{ id: 1, title: null, messages: [] }]);
   const [activeId, setActiveId] = useState(1);
   const [offset, setOffset] = useState(0);
+  /* spreadsheet: which view/property is open in the right inspector (null = chat) */
+  const [propView, setPropView] = useState<string | null>(null);
+  /* ⌘F command search */
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const chatIdRef = useRef(1);
   const msgIdRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -678,6 +918,15 @@ export default function IceCreamHarness() {
   const paneMsg = lastPaneMsg && lastPaneMsg.id !== closedPaneId ? lastPaneMsg : null;
   const paneScenario = paneMsg ? SCENARIOS[paneMsg.scenarioId] : null;
 
+  /* spreadsheet workspace: table becomes the main pane, chat docks to the right */
+  const workspaceMsg = [...chat.messages]
+    .reverse()
+    .find(
+      (m): m is Extract<Msg, { role: "assistant" }> =>
+        m.role === "assistant" && !!SCENARIOS[m.scenarioId].Workspace,
+    );
+  const workspaceScenario = workspaceMsg ? SCENARIOS[workspaceMsg.scenarioId] : null;
+
   const appendExchange = (target: Chat, text: string, scenarioId: ScenarioId): Chat => ({
     ...target,
     title: target.title ?? (text.length > 30 ? `${text.slice(0, 30).trimEnd()}…` : text),
@@ -695,19 +944,35 @@ export default function IceCreamHarness() {
   /* reopening an existing chat replays it; otherwise recents open in a
    * fresh chat unless the current one is empty */
   const [replay, setReplay] = useState<Record<number, number>>({});
-  const pickRecent = (scenarioId: ScenarioId, label: string) => {
+  const pickRecent = (scenarioId: ScenarioId, label: string, prompt = label) => {
     const existing = chats.find((c) => c.title === label);
     if (existing) {
+      if (prompt !== label) {
+        setChats((current) =>
+          current.map((c) =>
+            c.id === existing.id
+              ? {
+                  ...c,
+                  messages: c.messages.map((message) =>
+                    message.role === "user" && message.text === label ? { ...message, text: prompt } : message,
+                  ),
+                }
+              : c,
+          ),
+        );
+      }
       setActiveId(existing.id);
       setReplay((current) => ({ ...current, [existing.id]: (current[existing.id] ?? 0) + 1 }));
       return;
     }
     if (chat.messages.length === 0) {
-      send(label, scenarioId);
+      setChats((current) =>
+        current.map((c) => (c.id === chat.id ? appendExchange({ ...c, title: label }, prompt, scenarioId) : c)),
+      );
       return;
     }
     const id = (chatIdRef.current += 1);
-    setChats((current) => [...current, appendExchange({ id, title: null, messages: [] }, label, scenarioId)]);
+    setChats((current) => [...current, appendExchange({ id, title: label, messages: [] }, prompt, scenarioId)]);
     setActiveId(id);
   };
 
@@ -717,102 +982,330 @@ export default function IceCreamHarness() {
     setActiveId(id);
   };
 
+  const closeChat = (id: number) => {
+    const remaining = chats.filter((c) => c.id !== id);
+    if (remaining.length === 0) {
+      const nid = (chatIdRef.current += 1);
+      setChats([{ id: nid, title: null, messages: [] }]);
+      setActiveId(nid);
+      return;
+    }
+    setChats(remaining);
+    if (id === activeId) setActiveId(remaining[remaining.length - 1].id);
+  };
+
   useEffect(() => {
     if (!active) return;
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [chat.messages, active]);
 
-  return (
-    <main className="h-[100dvh] bg-page text-ink">
-      <div className="flex h-full overflow-hidden bg-page">
-        <Sidebar onPick={pickRecent} onNewChat={newChat} />
+  /* switching threads returns the inspector to the chat */
+  useEffect(() => setPropView(null), [activeId]);
 
-        <section className="flex min-w-0 flex-1 flex-col bg-page">
-          {/* chat tabs — same header language as the Chat primitive */}
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-3 py-1.5 sm:px-4">
-            <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
-              {chats.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  aria-pressed={c.id === activeId}
-                  onClick={() => setActiveId(c.id)}
-                  className={`max-w-44 shrink-0 truncate rounded-[6px] px-2 py-[3px] text-[13px] text-ink transition-[background-color,opacity] duration-100 ${
-                    c.id === activeId ? "bg-field" : "opacity-50 hover:opacity-75"
-                  }`}
-                >
-                  {c.title ?? "New chat"}
-                </button>
-              ))}
-            </div>
+  /* ⌘F / ⌘K opens the command search; Esc and outside clicks close it */
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && (event.key === "f" || event.key === "k")) {
+        event.preventDefault();
+        setSearchQuery("");
+        setSearchOpen((current) => !current);
+      }
+      if (event.key === "Escape") setSearchOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const close = (event: PointerEvent) => {
+      if (!(event.target as Element).closest("[data-search]")) setSearchOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [searchOpen]);
+
+  /* the tab bar rides the top of the main pane in both layouts */
+  const tabBar = (
+    <div className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b border-line px-2">
+      {chats.map((c) => (
+        <div
+          key={c.id}
+          className={`group/tab flex h-7 shrink-0 items-center gap-0.5 rounded-[7px] pl-2.5 pr-1 text-[12.5px] font-medium transition-colors duration-100 ${
+            c.id === activeId ? "bg-hover-2 text-ink" : "text-ink-2 hover:bg-hover hover:text-ink"
+          }`}
+        >
+          <button type="button" aria-pressed={c.id === activeId} onClick={() => setActiveId(c.id)} title={c.title ?? "New chat"} className="min-w-0">
+            <span className="block max-w-40 truncate">{c.title ?? "New chat"}</span>
+          </button>
+          <button
+            type="button"
+            aria-label="Close tab"
+            onClick={() => closeChat(c.id)}
+            className={`-my-1 flex size-6 shrink-0 items-center justify-center rounded-[5px] text-ink-3 transition-[opacity,background-color,color] duration-100 hover:bg-hover-2 hover:text-ink ${
+              c.id === activeId ? "opacity-100" : "opacity-0 group-hover/tab:opacity-100"
+            }`}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        aria-label="New chat"
+        onClick={newChat}
+        className="ml-0.5 flex size-7 shrink-0 items-center justify-center rounded-[7px] text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
+      </button>
+    </div>
+  );
+
+  /* the message thread + composer — reused as the main column (wide) or the
+   * docked assistant panel in spreadsheet mode (narrow) */
+  const renderThread = (narrow: boolean) => (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className={`flex flex-col gap-8 py-8 ${narrow ? "px-4" : "px-4 sm:px-8 lg:px-12"}`}>
+          {chat.messages.map((message) => {
+            const full = !narrow && message.role === "assistant" && SCENARIOS[message.scenarioId].fullBleed;
+            return (
+              <div key={message.id} className={narrow || full ? "w-full" : "mx-auto w-full max-w-[720px]"}>
+                {message.role === "user" ? (
+                  <UserBubble text={message.text} />
+                ) : (
+                  <AssistantResponse key={`${message.id}-${replay[chat.id] ?? 0}`} scenarioId={message.scenarioId} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className={`shrink-0 bg-page ${narrow ? "p-3" : "px-4 pt-3 pb-6 sm:px-8 lg:px-12"}`}>
+        <div className={narrow ? "" : "mx-auto max-w-[720px]"}>
+          <PromptBar
+            demo={false}
+            tall
+            placeholder="Reply"
+            onSend={(text) => send(text, matchScenario(text))}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <main className="flex h-[100dvh] gap-2.5 bg-canvas p-2.5 text-ink">
+      <Sidebar onPick={pickRecent} onNewChat={newChat} activeTitle={chat.title} />
+
+      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+        {/* top bar — outside the white container, on the canvas */}
+        <div className="relative flex h-9 shrink-0 items-center justify-between gap-3 pl-1">
+          <div className="flex min-w-0 items-center gap-1.5 text-[13px]">
+            <span className="shrink-0 text-ink-3">Chats</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0"><path d="M9 6l6 6-6 6" /></svg>
+            <span className="min-w-0 truncate font-semibold text-ink">{chat.title ?? "New chat"}</span>
             <button
               type="button"
-              aria-label="New chat"
-              onClick={newChat}
-              className="flex size-6 shrink-0 items-center justify-center rounded-[6px] text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink-2"
+              aria-label="Chat options"
+              className="ml-0.5 flex size-6 shrink-0 items-center justify-center rounded-[6px] text-ink-3 transition-colors duration-100 hover:bg-hover-2 hover:text-ink"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
             </button>
           </div>
 
-          {active ? (
-            <div className="flex min-h-0 flex-1">
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                  <div className="mx-auto flex max-w-[820px] flex-col gap-8 px-4 py-8 sm:px-8 lg:px-12">
-                    {chat.messages.map((message) =>
-                      message.role === "user" ? (
-                        <UserBubble key={message.id} text={message.text} />
-                      ) : (
-                        <AssistantResponse
-                          key={`${message.id}-${replay[chat.id] ?? 0}`}
-                          scenarioId={message.scenarioId}
-                        />
-                      ),
-                    )}
-                  </div>
+          <div data-search className="absolute left-1/2 top-1/2 z-50 hidden w-[400px] -translate-x-1/2 -translate-y-1/2 lg:block">
+            <button
+              type="button"
+              aria-expanded={searchOpen}
+              onClick={() => {
+                setSearchQuery("");
+                setSearchOpen((current) => !current);
+              }}
+              className={`flex w-full items-center gap-2 rounded-[14px] bg-surface py-1.5 pr-1.5 pl-3 text-left shadow-hairline transition-[background-color,box-shadow] duration-150 hover:bg-surface hover:shadow-btn ${searchOpen ? "invisible" : ""}`}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-3.6-3.6" /></svg>
+              <span className="min-w-0 flex-1 truncate text-[13px] text-ink-3">Search</span>
+              <kbd className="flex h-5 items-center rounded-[8px] bg-inset px-1.5 text-[11px] text-ink-3 shadow-hairline">⌘F</kbd>
+            </button>
+
+            {searchOpen && (
+              <div
+                className="absolute inset-x-0 top-0 z-50 overflow-hidden rounded-[14px] bg-surface shadow-overlay"
+                style={{ animation: "pop-in 160ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top center" }}
+              >
+                <div className="flex h-10 items-center gap-2 border-b border-line px-3">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" aria-hidden className="shrink-0"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+                  <input
+                    autoFocus
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Search chats and actions…"
+                    aria-label="Search chats and actions"
+                    className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+                  />
+                  <kbd className="flex h-5 items-center rounded-[5px] bg-inset px-1.5 text-[10.5px] text-ink-3 shadow-hairline">esc</kbd>
                 </div>
-                <div className="shrink-0 border-t border-line bg-page px-4 pt-3 pb-6 sm:px-8 lg:px-12">
-                  <div className="mx-auto max-w-[820px]">
-                    <PromptBar
-                      demo={false}
-                      placeholder="Reply, or ask for another component…"
-                      onSend={(text) => send(text, matchScenario(text))}
-                    />
-                  </div>
+                <div className="p-1.5">
+                  {(() => {
+                    const q = searchQuery.trim().toLowerCase();
+                    const results = RECENTS.filter((item) => item.label.toLowerCase().includes(q)).slice(0, 6);
+                    if (results.length === 0) {
+                      return (
+                        <div className="px-2.5 py-2.5">
+                          <div className="text-[12.5px] text-ink-3">Nothing matches “{searchQuery}” yet — try a shorter keyword.</div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSearchOpen(false);
+                              newChat();
+                            }}
+                            className="-mx-1 mt-1.5 flex h-7 items-center gap-1.5 rounded-[7px] px-1 text-[12.5px] font-medium text-accent-ink transition-colors duration-100 hover:bg-accent-tint"
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
+                            Start a new chat
+                          </button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <GlideMenu className="flex flex-col gap-px">
+                        {results.map((item) => (
+                          <button
+                            key={item.label}
+                            data-menu-row
+                            type="button"
+                            onClick={() => {
+                              setSearchOpen(false);
+                              pickRecent(item.id, item.label, item.prompt);
+                            }}
+                            className="relative z-10 flex h-9 w-full items-center gap-2.5 rounded-[8px] px-2 text-left"
+                          >
+                            <span className="shrink-0 text-ink-3">
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 11.6c0 3.87-3.58 7-8 7-1.02 0-2-.17-2.9-.47L4 19.5l1.2-3.45C4.45 14.85 4 13.28 4 11.6c0-3.87 3.58-7 8-7s8 3.13 8 7Z" /></svg>
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{item.label}</span>
+                            <span className="shrink-0 text-[11.5px] text-ink-3">Chat</span>
+                          </button>
+                        ))}
+                      </GlideMenu>
+                    );
+                  })()}
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* artifact pane — tasks and other side-by-side work */}
-              {paneMsg && paneScenario?.Pane && (
-                <PaneReveal key={`${paneMsg.id}-${replay[chat.id] ?? 0}`} beat={paneScenario.beat}>
-                  <aside
-                    className="hidden w-[360px] shrink-0 flex-col border-l border-line bg-page lg:flex"
-                    style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}
-                  >
-                    <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-2.5">
-                      <span className="text-[13px] font-semibold text-ink">{paneScenario.paneTitle}</span>
-                      <button
-                        type="button"
-                        aria-label="Close pane"
-                        onClick={() => setClosedPaneId(paneMsg.id)}
-                        className="flex size-6 items-center justify-center rounded-[6px] text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
-                      </button>
+          <Button variant="primary" size="sm" className="shrink-0 px-4 text-[12.5px]">
+            Share
+          </Button>
+        </div>
+
+        {/* panels row — main pane + docked side pane */}
+        <div className="flex min-h-0 flex-1 gap-2.5">
+          {workspaceScenario ? (
+            <>
+              {/* main pane — the live spreadsheet */}
+              <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[14px] border border-line bg-page">
+                {tabBar}
+                <div className="flex min-h-0 flex-1 flex-col">{workspaceScenario.Workspace?.()}</div>
+                {/* views — selecting one opens its property inspector on the right */}
+                <div className="flex h-10 shrink-0 items-center gap-1 overflow-x-auto border-t border-line px-2">
+                  <button type="button" className="flex h-7 shrink-0 items-center gap-1.5 rounded-[7px] px-2.5 text-[12.5px] font-medium text-ink-2 transition-colors duration-100 hover:bg-hover hover:text-ink">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 6h16M7 12h10M10 18h4" /></svg>
+                    Sort &amp; filter
+                  </button>
+                  <span className="mx-1 h-4 w-px shrink-0 bg-line" />
+                  {SPREADSHEET_VIEWS.map((v) => (
+                    <button
+                      key={v.name}
+                      type="button"
+                      aria-pressed={propView === v.name}
+                      onClick={() => setPropView((current) => (current === v.name ? null : v.name))}
+                      className={`flex h-7 shrink-0 items-center gap-1.5 rounded-[7px] px-2.5 text-[12.5px] font-medium transition-colors duration-100 ${
+                        propView === v.name ? "bg-hover-2 text-ink" : "text-ink-2 hover:bg-hover hover:text-ink"
+                      }`}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={v.color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0"><rect x="3.5" y="3.5" width="17" height="17" rx="3" /><path d="M3.5 9.5h17M9.5 9.5v11" /></svg>
+                      {v.name}
+                      <span className="text-[11px] tabular-nums text-ink-3">{v.count}</span>
+                    </button>
+                  ))}
+                  <button type="button" className="ml-0.5 flex h-7 shrink-0 items-center gap-1.5 rounded-[7px] px-2 text-[12.5px] font-medium text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
+                    New view
+                  </button>
+                </div>
+              </section>
+
+              {/* right inspector — assistant chat, or a property configurator when a view is selected */}
+              <aside
+                className="hidden w-[400px] shrink-0 flex-col overflow-hidden rounded-[14px] border border-line bg-page lg:flex"
+                style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}
+              >
+                {propView ? (
+                  <PropertyConfig view={propView} onClose={() => setPropView(null)} />
+                ) : (
+                  <>
+                    <div className="flex h-11 shrink-0 items-center border-b border-line px-4">
+                      <span className="text-[13px] font-semibold text-ink">Chat</span>
                     </div>
-                    <div className="min-h-0 flex-1 overflow-y-auto p-4">{paneScenario.Pane()}</div>
-                  </aside>
-                </PaneReveal>
-              )}
-            </div>
+                    {renderThread(true)}
+                  </>
+                )}
+              </aside>
+            </>
           ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <EmptyState onSend={send} shuffle={() => setOffset((current) => (current + 3) % SUGGESTION_POOL.length)} offset={offset} />
-            </div>
+            <>
+              <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[14px] border border-line bg-page">
+                {tabBar}
+                {active ? (
+                  renderThread(false)
+                ) : (
+                  <div className="min-h-0 flex-1 overflow-y-auto">
+                    <EmptyState onSend={send} shuffle={() => setOffset((current) => (current + 3) % SUGGESTION_POOL.length)} offset={offset} />
+                  </div>
+                )}
+              </section>
+
+              {/* artifact pane — its own rounded container */}
+              {active && paneMsg && paneScenario?.Pane && (
+                  <aside
+                    key={`${paneMsg.id}-${replay[chat.id] ?? 0}`}
+                    className="hidden w-[360px] shrink-0 flex-col overflow-hidden rounded-[14px] border border-line bg-page lg:flex"
+                    style={{ animation: "fade-in 300ms ease both" }}
+                  >
+                    <div className="flex h-11 shrink-0 items-center justify-between border-b border-line px-3 sm:pl-4">
+                      <span className="text-[13px] font-semibold text-ink">{paneScenario.paneTitle}</span>
+                      <div className="flex items-center gap-0.5 text-ink-3">
+                        <button type="button" aria-label="Previous" className="flex size-6 items-center justify-center rounded-[6px] transition-colors duration-100 hover:bg-hover hover:text-ink">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 6l-6 6 6 6" /></svg>
+                        </button>
+                        <button type="button" aria-label="Next" className="flex size-6 items-center justify-center rounded-[6px] transition-colors duration-100 hover:bg-hover hover:text-ink">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M9 6l6 6-6 6" /></svg>
+                        </button>
+                        <button type="button" aria-label="Pane options" className="flex size-6 items-center justify-center rounded-[6px] transition-colors duration-100 hover:bg-hover hover:text-ink">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Close pane"
+                          onClick={() => setClosedPaneId(paneMsg.id)}
+                          className="flex size-6 items-center justify-center rounded-[6px] transition-colors duration-100 hover:bg-hover hover:text-ink"
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                      <PaneBody beat={paneScenario.beat}>{paneScenario.Pane()}</PaneBody>
+                    </div>
+                  </aside>
+              )}
+            </>
           )}
-        </section>
+        </div>
       </div>
     </main>
   );
