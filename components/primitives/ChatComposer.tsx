@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import posthog from "posthog-js";
 
 /* ─────────────────────────────────────────────────────────
  * CHAT — interactive panel with tabs, replies, and composer.
@@ -66,6 +67,7 @@ export default function ChatComposer() {
   const send = () => {
     if (!canSend) return;
     setSubmitted(draft.trim());
+    posthog.capture("chat_composer_prompt_sent");
     setDraft("");
     setPhase("sent");
   };

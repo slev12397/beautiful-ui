@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import posthog from "posthog-js";
 import { Button } from "@/components/atoms/Button";
 import ApprovalCard from "@/components/primitives/ApprovalCard";
 import ContextCards from "@/components/primitives/ContextCards";
@@ -289,18 +290,18 @@ function SuggestionIcon({ kind }: { kind: string }) {
 }
 
 const SUGGESTION_POOL: { id: ScenarioId; label: string }[] = [
+  { id: "suppliers", label: "Show me our supplier records" },
   { id: "todos", label: "What urgent to-dos need my attention this morning?" },
   { id: "workload", label: "Prep a summary of my workload" },
   { id: "find-ticket", label: "Find the ticket about the flavor page redesign" },
-  { id: "suppliers", label: "Show me our supplier records" },
   { id: "restock", label: "Draft the batch restock function" },
   { id: "rewrite", label: "Tighten this launch note" },
 ];
 
 const RECENTS: { id: ScenarioId; label: string; prompt?: string }[] = [
+  { id: "suppliers", label: "Supplier records" },
   { id: "todos", label: "Urgent to-dos this morning" },
   { id: "find-ticket", label: "Flavor page ticket" },
-  { id: "suppliers", label: "Supplier records" },
   { id: "workload", label: "Workload summary" },
   { id: "offboarding", label: "Off-board a supplier" },
   { id: "restock", label: "Batch restock function" },
@@ -374,7 +375,10 @@ function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: Sc
           <button
             key={item.id}
             type="button"
-            onClick={() => onSend(item.label, item.id)}
+            onClick={() => {
+              posthog.capture("harness_suggestion_selected");
+              onSend(item.label, item.id);
+            }}
             className="-mx-2 flex items-center gap-3 rounded-control px-2 py-2.5 text-left text-[14px] text-ink transition-colors duration-150 hover:bg-hover"
           >
             <span className="text-ink-3">
@@ -938,6 +942,7 @@ export default function IceCreamHarness() {
   });
 
   const send = (text: string, scenarioId: ScenarioId) => {
+    posthog.capture("harness_prompt_sent");
     setChats((current) => current.map((c) => (c.id === chat.id ? appendExchange(c, text, scenarioId) : c)));
   };
 
@@ -945,6 +950,7 @@ export default function IceCreamHarness() {
    * fresh chat unless the current one is empty */
   const [replay, setReplay] = useState<Record<number, number>>({});
   const pickRecent = (scenarioId: ScenarioId, label: string, prompt = label) => {
+    posthog.capture("harness_recent_chat_opened");
     const existing = chats.find((c) => c.title === label);
     if (existing) {
       if (prompt !== label) {

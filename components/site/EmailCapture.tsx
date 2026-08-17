@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import posthog from "posthog-js";
 
 /* ─────────────────────────────────────────────────────────
  * EMAIL CAPTURE — end-of-scroll signup for updates + new
@@ -27,6 +28,7 @@ export function EmailCapture() {
         body: JSON.stringify({ email: email.trim() }),
       });
       if (!res.ok) throw new Error("bad status");
+      posthog.capture("newsletter_signup_completed");
       setStatus("done");
     } catch {
       setStatus("error");
