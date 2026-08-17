@@ -358,8 +358,6 @@ function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: Sc
       </h1>
 
       <div className="relative mt-7" style={{ animation: "fade-up 500ms cubic-bezier(0.23,1,0.32,1) 120ms both" }}>
-        {/* a slow spectrum glow peeking out below the composer */}
-        <div aria-hidden className="rainbow-peek absolute inset-x-8 -bottom-2 h-10 opacity-45" />
         <div className="relative">
           <PromptBar
             demo={false}
@@ -720,28 +718,13 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
         </GlideGroup>
       </div>
 
-      {/* usage meters + upgrade — pinned low, like the reference */}
+      {/* upgrade — pinned low, like the reference */}
       <div className="mt-3 border-t border-line pt-3">
-        <div className="px-0.5">
-          <div className="flex items-baseline justify-between">
-            <span className="text-[11.5px] font-medium text-ink-3">Monthly tokens</span>
-            <span className="text-[11.5px] tabular-nums text-ink-3">
-              <span className="font-semibold text-ink">560k</span> / 1M
-            </span>
-          </div>
-          <div className="mt-2 h-1 overflow-hidden rounded-full bg-line-strong">
-            <div
-              className="h-full rounded-full"
-              style={{ width: "56%", background: "linear-gradient(90deg in oklab, oklch(0.788 0.113 248.33), oklch(0.626 0.205 254.947))" }}
-            />
-          </div>
-        </div>
         <button
           type="button"
           onClick={onNewChat}
-          className="mt-3 flex h-8 w-full items-center justify-center gap-1.5 rounded-full bg-hover-2 text-[12.5px] font-medium text-ink transition-[background-color,transform] duration-150 hover:bg-line-strong active:scale-[0.98]"
+          className="flex h-8 w-full items-center justify-center rounded-control bg-hover-2 text-[12.5px] font-medium text-ink transition-[background-color,transform] duration-150 hover:bg-line-strong active:scale-[0.98]"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M13 2 4.5 13H11l-1 9 8.5-11H12l1-9Z" /></svg>
           Upgrade
         </button>
       </div>
