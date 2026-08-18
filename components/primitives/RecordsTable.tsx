@@ -31,19 +31,34 @@ const STRENGTH: Record<Strength, { label: string; color: string; rank: number }>
   none: { label: "No communication", color: "var(--ink-3)", rank: 0 },
 };
 
-const TAG_COLORS: Record<string, string> = {
-  B2B: "oklch(0.757 0.153 66.401)",
-  B2C: "oklch(0.727 0.164 123.871)",
-  Cafe: "oklch(0.68 0.169 17.038)",
-  Catering: "oklch(0.611 0.176 343.996)",
-  "Dairy-free": "oklch(0.671 0.118 219.351)",
-  Gelato: "oklch(0.627 0.23 296.668)",
-  Imports: "oklch(0.611 0.21 263.944)",
-  Local: "oklch(0.652 0.131 162.865)",
-  Seasonal: "oklch(0.757 0.153 66.401)",
-  Sorbet: "oklch(0.671 0.118 219.351)",
-  Vegan: "oklch(0.727 0.164 123.871)",
-  Wholesale: "oklch(0.611 0.21 263.944)",
+type TagColor = { background: string; foreground: string };
+
+const TAG_PALETTE: Record<string, TagColor> = {
+  amber: { background: "oklch(0.966 0.053 94.426)", foreground: "oklch(0.478 0.109 63.047)" },
+  lime: { background: "oklch(0.972 0.062 113.355)", foreground: "oklch(0.472 0.113 120.549)" },
+  yellow: { background: "oklch(0.969 0.065 101.823)", foreground: "oklch(0.467 0.098 101.215)" },
+  purple: { background: "oklch(0.963 0.021 301.149)", foreground: "oklch(0.466 0.187 292.974)" },
+  orange: { background: "oklch(0.959 0.025 59.919)", foreground: "oklch(0.491 0.14 44.908)" },
+  cyan: { background: "oklch(0.96 0.029 218.179)", foreground: "oklch(0.496 0.09 222.317)" },
+  red: { background: "oklch(0.956 0.022 14.063)", foreground: "oklch(0.514 0.185 26.719)" },
+  magenta: { background: "oklch(0.965 0.03 324.137)", foreground: "oklch(0.506 0.221 323.155)" },
+  green: { background: "oklch(0.967 0.034 161.445)", foreground: "oklch(0.521 0.115 161.078)" },
+  pink: { background: "oklch(0.959 0.021 351.895)", foreground: "oklch(0.516 0.192 3.003)" },
+};
+
+const TAG_COLORS: Record<string, TagColor> = {
+  B2B: TAG_PALETTE.amber,
+  B2C: TAG_PALETTE.lime,
+  Cafe: TAG_PALETTE.red,
+  Catering: TAG_PALETTE.magenta,
+  "Dairy-free": TAG_PALETTE.cyan,
+  Gelato: TAG_PALETTE.purple,
+  Imports: TAG_PALETTE.orange,
+  Local: TAG_PALETTE.green,
+  Seasonal: TAG_PALETTE.yellow,
+  Sorbet: TAG_PALETTE.pink,
+  Vegan: TAG_PALETTE.lime,
+  Wholesale: TAG_PALETTE.amber,
 };
 
 type Row = {
@@ -185,10 +200,12 @@ function Checkbox({ checked, mixed = false, onChange, label }: { checked: boolea
 }
 
 function Tag({ name }: { name: string }) {
-  const color = TAG_COLORS[name] ?? "oklch(0.614 0.014 255.546)";
+  const color = TAG_COLORS[name] ?? { background: "var(--inset)", foreground: "var(--ink-2)" };
   return (
-    <span className="records-tag" style={{ "--tag-color": color } as React.CSSProperties}>
-      <span className="records-tag-dot" style={{ background: color }} />
+    <span
+      className="records-tag"
+      style={{ "--tag-background": color.background, "--tag-foreground": color.foreground } as React.CSSProperties}
+    >
       {name}
     </span>
   );

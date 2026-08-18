@@ -177,15 +177,7 @@ export default function PromptBar({
   const [modelBox, setModelBox] = useState<{ top: number; height: number } | null>(null);
   const [modelHovered, setModelHovered] = useState<number | null>(null);
   const [modelMenuLeft, setModelMenuLeft] = useState(0);
-
-  /* anchor the model menu to the picker button, wherever the layout puts it */
-  useLayoutEffect(() => {
-    if (!modelOpen) return;
-    const button = modelRef.current;
-    const parent = button?.offsetParent as HTMLElement | null;
-    if (!button || !parent) return;
-    setModelMenuLeft(Math.max(0, Math.min(button.offsetLeft, parent.clientWidth - 176 - 4)));
-  }, [modelOpen]);
+  const [modelMenuBottom, setModelMenuBottom] = useState(0);
   const composerAnchorRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -243,6 +235,7 @@ export default function PromptBar({
     const anchorRect = composerAnchorRef.current.getBoundingClientRect();
     const triggerRect = modelRef.current.getBoundingClientRect();
     setModelMenuLeft(Math.max(0, Math.min(triggerRect.left - anchorRect.left, anchorRect.width - 176)));
+    setModelMenuBottom(anchorRect.bottom - triggerRect.top + 8);
   }, [modelOpen, wide, model.name]);
 
   useEffect(() => {
@@ -494,8 +487,8 @@ export default function PromptBar({
       {modelOpen && (
         <div
           onMouseLeave={() => setModelHovered(null)}
-          className="absolute bottom-full z-10 mb-2 w-44 rounded-[10px] bg-surface p-1 shadow-raised"
-          style={{ left: modelMenuLeft, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom left" }}
+          className="absolute z-10 w-44 rounded-[10px] bg-surface p-1 shadow-raised"
+          style={{ left: modelMenuLeft, bottom: modelMenuBottom, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom left" }}
         >
           {/* single gliding highlight — floats to the hovered / selected row */}
           <span
@@ -536,8 +529,10 @@ export default function PromptBar({
 
       {/* ── composer ───────────────────────────────────── */}
       <div
-        className={`relative isolate flex flex-col gap-1.5 overflow-hidden border border-line bg-surface p-1.5 shadow-card transition-[border-color,border-radius] duration-150 focus-within:border-line-strong ${
-          pill ? (attachments.length > 0 || wide ? "rounded-[24px]" : "rounded-full") : "rounded-[14px]"
+        className={`relative isolate flex flex-col overflow-hidden border border-line bg-surface shadow-card transition-[border-color,border-radius] duration-150 focus-within:border-line-strong ${
+          tall ? "gap-2.5 p-3.5" : "gap-1.5 p-1.5"
+        } ${
+          pill ? (attachments.length > 0 || wide ? "rounded-[24px]" : "rounded-full") : tall ? "rounded-[22px]" : "rounded-[14px]"
         }`}
       >
         {/* rainbow glimm sweep — plays across the interior on model change.
@@ -643,7 +638,7 @@ export default function PromptBar({
             }}
             placeholder={listening ? "Listening…" : placeholder ?? "Write a message…"}
             aria-label="Prompt"
-            className={`${tall ? "min-h-[68px]" : "min-h-7"} min-w-0 w-full resize-none bg-transparent px-1 py-[5px] text-[13px] leading-[18px] text-ink outline-none [overflow-wrap:anywhere] placeholder:text-ink-3 ${
+            className={`${tall ? "min-h-[68px] px-2 py-2 text-[14px] leading-5" : "min-h-7 px-1 py-[5px] text-[13px] leading-[18px]"} min-w-0 w-full resize-none bg-transparent text-ink outline-none [overflow-wrap:anywhere] placeholder:text-ink-3 ${
               wide ? "col-span-full col-start-1 row-start-1" : "col-start-2 row-start-1"
             }`}
           />

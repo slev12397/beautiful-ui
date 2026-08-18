@@ -1,16 +1,22 @@
 import { NextResponse } from "next/server";
 
-/* Appends a signup to Airtable. Keep the token server-side only.
+/* Saves each signup as a Resend Contact. Keep the API key server-side only.
  * Set these in Vercel → Project → Settings → Environment Variables:
- *   AIRTABLE_TOKEN     — a personal access token with data.records:write
- *   AIRTABLE_BASE_ID   — the base id (starts with "app…")
- *   AIRTABLE_TABLE     — the table name (defaults to "Signups")
- * The table needs a single-line-text field named "Email". */
+ *   RESEND_API_KEY — a full-access key (sending-only keys cannot manage contacts)
+ * Contacts are global in Resend and can be organized into Segments later. */
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const RESEND_API = "https://api.resend.com";
+
+function resendHeaders(apiKey: string) {
+  return {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  };
+}
 
 export async function POST(request: Request) {
   let email = "";
@@ -25,36 +31,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  const token = process.env.AIRTABLE_TOKEN;
-  const baseId = process.env.AIRTABLE_BASE_ID;
-  const table = process.env.AIRTABLE_TABLE ?? "Signups";
+  const apiKey = process.env.RESEND_API_KEY;
 
-  if (!token || !baseId) {
-    // Not configured yet — accept the signup gracefully so the UI still works.
-    console.warn("[subscribe] Airtable env not set; skipping write for", email);
-    return NextResponse.json({ ok: true, stored: false });
+  if (!apiKey) {
+    console.error("[subscribe] RESEND_API_KEY is not configured");
+    return NextResponse.json({ error: "Storage unavailable" }, { status: 503 });
   }
 
-  const res = await fetch(
-    `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`,
+  const createResponse = await fetch(`${RESEND_API}/contacts`, {
+    method: "POST",
+    headers: resendHeaders(apiKey),
+    body: JSON.stringify({ email, unsubscribed: false }),
+  });
+
+  if (createResponse.ok) {
+    return NextResponse.json({ ok: true, stored: true });
+  }
+
+  /* Creating the same address again may return an error. Confirm the contact
+   * exists before surfacing a failure so repeat submissions stay idempotent,
+   * without accidentally re-subscribing a contact who opted out. */
+  const existingResponse = await fetch(
+    `${RESEND_API}/contacts/${encodeURIComponent(email)}`,
     {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        records: [{ fields: { Email: email } }],
-        typecast: true,
-      }),
+      headers: resendHeaders(apiKey),
+      cache: "no-store",
     },
   );
 
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    console.error("[subscribe] Airtable error", res.status, detail);
-    return NextResponse.json({ error: "Storage failed" }, { status: 502 });
+  if (existingResponse.ok) {
+    return NextResponse.json({ ok: true, stored: true, existing: true });
   }
 
-  return NextResponse.json({ ok: true, stored: true });
+  const detail = await createResponse.text().catch(() => "");
+  console.error("[subscribe] Resend error", createResponse.status, detail);
+  return NextResponse.json({ error: "Storage failed" }, { status: 502 });
 }

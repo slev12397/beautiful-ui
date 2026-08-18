@@ -5,8 +5,8 @@ import posthog from "posthog-js";
 
 /* ─────────────────────────────────────────────────────────
  * EMAIL CAPTURE — end-of-scroll signup for updates + new
- * components. Posts to /api/subscribe, which appends the
- * email to Airtable (token stays server-side).
+ * components. Posts to /api/subscribe, which saves the
+ * email as a Resend Contact (API key stays server-side).
  * ───────────────────────────────────────────────────────── */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

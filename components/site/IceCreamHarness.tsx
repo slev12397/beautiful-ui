@@ -1,9 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { IconArrowBoxLeft } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconArrowBoxLeft";
+import { IconCheckmark1Small } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconCheckmark1Small";
+import { IconChevronDownSmall } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconChevronDownSmall";
+import { IconEditBig } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconEditBig";
+import { IconHome } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconHome";
+import { IconLibrary } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconLibrary";
+import { IconMagnifyingGlass } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconMagnifyingGlass";
+import { IconPlusMedium } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconPlusMedium";
+import { IconPopsicle2 } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconPopsicle2";
+import { IconSettingsGear1 } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconSettingsGear1";
+import { IconSidebarLeftArrow } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconSidebarLeftArrow";
+import { IconUserAdd } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconUserAdd";
 import { useDialKit, type DialConfig } from "dialkit";
 import posthog from "posthog-js";
-import { Button } from "@/components/atoms/Button";
 import ApprovalCard from "@/components/primitives/ApprovalCard";
 import ContextCards from "@/components/primitives/ContextCards";
 import DiffTable from "@/components/primitives/DiffTable";
@@ -413,7 +424,6 @@ function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: Sc
       if (action === "replay") setReplayTrigger((current) => current + 1);
     },
   });
-
   useEffect(() => {
     setStage(0);
     const timers = [
@@ -434,7 +444,7 @@ function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: Sc
 
   return (
     <div className="mx-auto flex min-h-full max-w-[720px] flex-col justify-center px-4 py-10 sm:px-8">
-      <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-ink">
+      <h1 className="text-[26px] font-normal tracking-[-0.02em] text-ink">
         <span className="home-reveal block text-ink-3" style={homeRevealStyle(stage >= 1, revealParams.reveal)}>Hello {NAME}</span>
         <span className="home-reveal block" style={homeRevealStyle(stage >= 2, revealParams.reveal)}>What can I help you with?</span>
       </h1>
@@ -503,11 +513,14 @@ function GlideGroup({ children }: { children: ReactNode }) {
   );
 }
 
-function SectionLabel({ children }: { children: ReactNode }) {
+function SectionLabel({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="sidebar-copy mx-2 flex items-center gap-1 px-2 pb-1 pt-1 text-[12.5px] font-medium text-ink-3">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
-      {children}
+    <div className="sidebar-copy mx-2 flex h-8 items-center justify-between px-2 text-[12.5px] font-medium text-ink-3">
+      <span className="flex items-center gap-1">
+        <IconChevronDownSmall size={13} />
+        {children}
+      </span>
+      {action}
     </div>
   );
 }
@@ -532,17 +545,17 @@ function RailButton({
       data-row
       type="button"
       onClick={onClick}
-      className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] text-left
+      className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left
         transition-[width,background-color,color,transform] duration-150 active:scale-[0.98]
         ${active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""}`}
     >
-      <span className={`flex size-9 shrink-0 items-center justify-center ${active ? "text-ink" : "text-ink-2"}`}>{icon}</span>
-      <span className={`sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] ${active ? "text-ink" : "text-ink-2"}`}>
+      <span className={`flex size-5 shrink-0 items-center justify-center ${active ? "text-ink" : "text-ink-2"}`}>{icon}</span>
+      <span className={`sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium ${active ? "text-ink" : "text-ink-2"}`}>
         {label}
       </span>
-      {count && <span className="sidebar-copy mr-2 shrink-0 text-[12px] tabular-nums text-ink-3">{count}</span>}
+      {count && <span className="sidebar-copy mr-2 shrink-0 text-[12px] font-medium tabular-nums text-ink-3">{count}</span>}
       {badge && (
-        <span className="sidebar-copy mr-2 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-accent-tint px-1 text-[10.5px] font-semibold tabular-nums text-accent-ink">
+        <span className="sidebar-copy mr-2 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-accent-tint px-1 text-[10.5px] font-medium tabular-nums text-accent-ink">
           {badge}
         </span>
       )}
@@ -552,29 +565,13 @@ function RailButton({
 
 const WORKSPACES = [
   { key: "creamery", name: "Creamery Ops", sub: "Support workspace", monogram: "C" },
-  { key: "gelato", name: "Gelato Lab", sub: "R&D workspace", monogram: "G" },
-  { key: "cone", name: "Cone King HQ", sub: "Wholesale workspace", monogram: "K" },
 ];
-
-/* Attio-style icons: rounded geometry, soft joins, drawn on a 24 grid
- * and rendered at 16 — rounder and cleaner than the old 13px set. */
-const ICON_COMPOSE = (
-  <g><path d="M13 5H8a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-5" /><path d="M16.5 4.5a2.05 2.05 0 0 1 3 3L13 14l-3.6 1 1-3.6Z" /></g>
-);
 
 const NAV_ITEMS: { key: string; label: string; icon: ReactNode; count?: string }[] = [
-  { key: "home", label: "Home", icon: <g><path d="M4 11.4 12 5l8 6.4" /><path d="M6 10v8.2c0 .72.58 1.3 1.3 1.3h9.4c.72 0 1.3-.58 1.3-1.3V10" /></g> },
-  { key: "library", label: "Library", icon: <g><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2 2 2 0 0 1 2-2h4.5A1.5 1.5 0 0 1 20 5.5v12.5a1 1 0 0 1-1 1h-5a2 2 0 0 0-2 2 2 2 0 0 0-2-2H5a1 1 0 0 1-1-1Z" /><path d="M12 6v14" /></g> },
-  { key: "invite", label: "Invite users", icon: <g><path d="M14.5 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20" /><circle cx="8.75" cy="7.5" r="3.5" /><path d="M18.5 8.5v5M21 11h-5" /></g>, count: "3/10" },
+  { key: "home", label: "Home", icon: <IconHome size={18} /> },
+  { key: "library", label: "Library", icon: <IconLibrary size={18} /> },
+  { key: "invite", label: "Invite users", icon: <IconUserAdd size={18} />, count: "3/10" },
 ];
-
-function NavIcon({ children }: { children: ReactNode }) {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      {children}
-    </svg>
-  );
-}
 
 /* ─────────────────────────────────────────────────────────
  * SIDEBAR MOTION STORYBOARD
@@ -586,7 +583,7 @@ function NavIcon({ children }: { children: ReactNode }) {
  * ───────────────────────────────────────────────────────── */
 
 const SIDEBAR_MOTION = {
-  expandedWidth:  264, // px with labels and secondary content
+  expandedWidth:  224, // px with labels and secondary content
   collapsedWidth:  52, // px fixed icon rail
   duration:       280, // ms for the shell to settle
   copyDuration:   180, // ms for labels to clear the rail
@@ -601,8 +598,12 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
   const [wsOpen, setWsOpen] = useState(false);
   const wsBtnRef = useRef<HTMLButtonElement>(null);
   const [wsPos, setWsPos] = useState({ top: 0, left: 0 });
+  const [chatSearchOpen, setChatSearchOpen] = useState(false);
+  const [chatSearch, setChatSearch] = useState("");
+  const chatSearchRef = useRef<HTMLInputElement>(null);
 
-  /* click anywhere else closes the workspace menu */
+  const visibleRecents = RECENTS.filter((item) => item.label.toLowerCase().includes(chatSearch.trim().toLowerCase()));
+
   useEffect(() => {
     if (!wsOpen) return;
     const close = (event: PointerEvent) => {
@@ -611,6 +612,10 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
   }, [wsOpen]);
+
+  useEffect(() => {
+    if (chatSearchOpen) chatSearchRef.current?.focus();
+  }, [chatSearchOpen]);
 
   return (
     <aside
@@ -625,87 +630,87 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
         "--sidebar-easing": SIDEBAR_MOTION.easing,
       } as CSSProperties}
     >
-      <div className="flex min-h-0 w-[264px] shrink-0 flex-col pb-2.5">
+      <div className="flex min-h-0 w-[224px] shrink-0 flex-col pb-2.5">
         {/* the logo and rail share one immutable 36px icon column */}
         <div className="relative mb-2.5 h-10 shrink-0">
           <span data-ws className="absolute inset-0">
-          <button
-            ref={wsBtnRef}
-            type="button"
-            aria-expanded={wsOpen}
-            aria-hidden={collapsed}
-            tabIndex={collapsed ? -1 : 0}
-            onClick={() => {
-              if (!wsOpen && wsBtnRef.current) {
-                const r = wsBtnRef.current.getBoundingClientRect();
-                setWsPos({ top: r.bottom + 6, left: r.left });
-              }
-              setWsOpen((current) => !current);
-            }}
-            className="sidebar-workspace-control absolute left-2 top-0.5 flex h-9 w-[204px] items-center rounded-[9px] text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]"
-          >
-            <span className="sidebar-logo flex size-9 shrink-0 items-center justify-center text-ink">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden><path d="M12 4v16M4 12h16M6.3 6.3l11.4 11.4M17.7 6.3 6.3 17.7" /></svg>
-            </span>
-            <span className="sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.015em] text-ink">{workspace.name}</span>
-            <span className="sidebar-copy mr-2 flex shrink-0 text-ink-3">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
-            </span>
-          </button>
-          {wsOpen && (
-            <div
-              className="fixed z-50 w-64 rounded-[14px] bg-surface p-1.5 shadow-overlay"
-              style={{ top: wsPos.top, left: wsPos.left, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top left" }}
+            <button
+              ref={wsBtnRef}
+              type="button"
+              aria-expanded={wsOpen}
+              aria-hidden={collapsed}
+              tabIndex={collapsed ? -1 : 0}
+              onClick={() => {
+                if (!wsOpen && wsBtnRef.current) {
+                  const rect = wsBtnRef.current.getBoundingClientRect();
+                  setWsPos({ top: rect.bottom + 6, left: rect.left });
+                }
+                setWsOpen((current) => !current);
+              }}
+              className="sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]"
             >
-              <GlideMenu className="flex flex-col gap-px" highlightClassName="inset-x-0 rounded-[8px] bg-hover-2">
-              {WORKSPACES.map((item) => (
-                <button
-                  key={item.key}
-                  data-menu-row
-                  type="button"
-                  onClick={() => {
-                    setWorkspace(item);
-                    setWsOpen(false);
-                  }}
-                  className="relative z-10 flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
-                >
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-[7px] bg-ink text-[11px] font-semibold text-surface">{item.monogram}</span>
-                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-ink">{item.name}</span>
-                  <span className={`shrink-0 text-accent ${item.key === workspace.key ? "" : "invisible"}`}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6L9 17l-5-5" /></svg>
-                  </span>
-                </button>
-              ))}
-              <div className="my-1 h-px bg-line" />
-              {[
-                { label: "New workspace", icon: <path d="M12 5v14M5 12h14" /> },
-                { label: "Workspace settings", icon: <g><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></g> },
-                { label: "Invite team members", icon: <g><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></g> },
-              ].map((row) => (
-                <button
-                  key={row.label}
-                  data-menu-row
-                  type="button"
-                  onClick={() => setWsOpen(false)}
-                  className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
-                >
-                  <span className="shrink-0 text-ink-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{row.icon}</svg></span>
-                  <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{row.label}</span>
-                </button>
-              ))}
-              <div className="my-1 h-px bg-line" />
-              <button
-                data-menu-row
-                type="button"
-                onClick={() => setWsOpen(false)}
-                className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
+              <span className="sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink">
+                <IconPopsicle2 size={18} />
+              </span>
+              <span className="sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2">{workspace.name}</span>
+              <span className="sidebar-copy ml-1 flex shrink-0 text-ink-3">
+                <IconChevronDownSmall size={16} />
+              </span>
+            </button>
+            {wsOpen && (
+              <div
+                className="fixed z-50 w-64 rounded-[14px] bg-surface p-1.5 shadow-overlay"
+                style={{ top: wsPos.top, left: wsPos.left, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top left" }}
               >
-                <span className="shrink-0 text-ink-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><g><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5M21 12H9" /></g></svg></span>
-                <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">Sign out</span>
-              </button>
-              </GlideMenu>
-            </div>
-          )}
+                <GlideMenu className="flex flex-col gap-px" highlightClassName="inset-x-0 rounded-[8px] bg-hover-2">
+                  {WORKSPACES.map((item) => (
+                    <button
+                      key={item.key}
+                      data-menu-row
+                      type="button"
+                      onClick={() => {
+                        setWorkspace(item);
+                        setWsOpen(false);
+                      }}
+                      className="relative z-10 flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
+                    >
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-[7px] bg-ink text-[11px] font-semibold text-surface">{item.monogram}</span>
+                      <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-ink">{item.name}</span>
+                      <span className={`shrink-0 text-ink ${item.key === workspace.key ? "" : "invisible"}`}>
+                        <IconCheckmark1Small size={18} />
+                      </span>
+                    </button>
+                  ))}
+                  <div className="my-1 h-px bg-line" />
+                  {[
+                    { label: "New workspace", icon: <IconPlusMedium size={16} /> },
+                    { label: "Workspace settings", icon: <IconSettingsGear1 size={16} /> },
+                    { label: "Invite team members", icon: <IconUserAdd size={16} /> },
+                  ].map((row) => (
+                    <button
+                      key={row.label}
+                      data-menu-row
+                      type="button"
+                      onClick={() => setWsOpen(false)}
+                      className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
+                    >
+                      <span className="shrink-0 text-ink-2">{row.icon}</span>
+                      <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{row.label}</span>
+                    </button>
+                  ))}
+                  <div className="my-1 h-px bg-line" />
+                  <button
+                    data-menu-row
+                    type="button"
+                    onClick={() => setWsOpen(false)}
+                    className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
+                  >
+                    <span className="shrink-0 text-ink-2"><IconArrowBoxLeft size={16} /></span>
+                    <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">Sign out</span>
+                  </button>
+                </GlideMenu>
+              </div>
+            )}
           </span>
         <button
           type="button"
@@ -715,10 +720,12 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
           onClick={() => {
             setCollapsed(true);
             setWsOpen(false);
+            setChatSearchOpen(false);
+            setChatSearch("");
           }}
           className="sidebar-collapse-control absolute right-2 top-1 flex size-8 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color] duration-150 hover:bg-hover-2 hover:text-ink"
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /></svg>
+          <IconSidebarLeftArrow size={18} />
         </button>
         <button
           type="button"
@@ -728,21 +735,21 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
           onClick={() => setCollapsed(false)}
           className="sidebar-expand-control absolute left-2 top-0.5 flex size-9 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color] duration-150 hover:bg-hover-2 hover:text-ink"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /></svg>
+          <IconSidebarLeftArrow size={18} className="rotate-180" />
         </button>
       </div>
 
       {/* primary nav — New chat leads, like every chat product */}
       <GlideGroup>
         <RailButton
-          icon={<NavIcon>{ICON_COMPOSE}</NavIcon>}
+          icon={<IconEditBig size={18} />}
           label="New chat"
           onClick={onNewChat}
         />
         {NAV_ITEMS.map((item) => (
           <RailButton
             key={item.key}
-            icon={<NavIcon>{item.icon}</NavIcon>}
+            icon={item.icon}
             label={item.label}
             count={item.count}
             active={nav === item.key}
@@ -753,9 +760,47 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
 
       {/* chats */}
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
-        <SectionLabel>Chats</SectionLabel>
+        <SectionLabel
+          action={(
+            <button
+              type="button"
+              aria-label={chatSearchOpen ? "Close chat search" : "Search chats"}
+              aria-expanded={chatSearchOpen}
+              onClick={() => {
+                setChatSearchOpen((open) => !open);
+                if (chatSearchOpen) setChatSearch("");
+              }}
+              className={`relative flex size-7 items-center justify-center rounded-[7px] transition-[background-color,color,transform] duration-150 after:absolute after:-inset-1.5 after:content-[''] active:scale-[0.96] ${chatSearchOpen ? "bg-hover-2 text-ink" : "text-ink-3 hover:bg-hover-2 hover:text-ink"}`}
+            >
+              <IconMagnifyingGlass size={16} />
+            </button>
+          )}
+        >
+          Chats
+        </SectionLabel>
+        {chatSearchOpen && (
+          <div className="sidebar-copy mx-2 mb-1 px-2" style={{ animation: "fade-in 140ms ease-out both" }}>
+            <div className="flex h-8 items-center gap-1.5 rounded-[8px] bg-field px-2 text-ink-3 shadow-hairline focus-within:text-ink-2">
+              <IconMagnifyingGlass size={14} />
+              <input
+                ref={chatSearchRef}
+                value={chatSearch}
+                onChange={(event) => setChatSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    setChatSearchOpen(false);
+                    setChatSearch("");
+                  }
+                }}
+                placeholder="Search chats"
+                aria-label="Search chat history"
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+              />
+            </div>
+          </div>
+        )}
         <GlideGroup>
-          {RECENTS.map((item) => {
+          {visibleRecents.map((item) => {
             const isActive = item.label === activeTitle;
             return (
               <button
@@ -764,24 +809,22 @@ function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, 
                 type="button"
                 onClick={() => onPick(item.id, item.label, item.prompt)}
                 title={item.label}
-                className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] text-left transition-[width,background-color,color,transform] duration-150 active:scale-[0.98] ${
+                className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left transition-[width,background-color,color,transform] duration-150 active:scale-[0.98] ${
                   isActive ? "bg-hover-2 group-hover/glide:bg-transparent" : ""
                 }`}
               >
-                <span className={`flex size-9 shrink-0 items-center justify-center ${isActive ? "text-ink" : "text-ink-3"}`}>
-                  <NavIcon>
-                    <path d="M20 11.6c0 3.87-3.58 7-8 7-1.02 0-2-.17-2.9-.47L4 19.5l1.2-3.45C4.45 14.85 4 13.28 4 11.6c0-3.87 3.58-7 8-7s8 3.13 8 7Z" />
-                  </NavIcon>
-                </span>
-                <span className={`sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] ${isActive ? "text-ink" : "text-ink-2"}`}>{item.label}</span>
+                <span className={`sidebar-copy min-w-0 flex-1 truncate text-[14px] font-medium ${isActive ? "text-ink" : "text-ink-2"}`}>{item.label}</span>
               </button>
             );
           })}
+          {chatSearch && visibleRecents.length === 0 && (
+            <div className="sidebar-copy mx-2 px-2 py-2 text-[12.5px] text-ink-3">No chats found</div>
+          )}
         </GlideGroup>
       </div>
 
       {/* upgrade — pinned low, like the reference */}
-      <div className="sidebar-copy mx-2 mt-3 w-[248px] border-t border-line pt-3">
+      <div className="sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3">
         <button
           type="button"
           onClick={onNewChat}
@@ -946,9 +989,6 @@ export default function IceCreamHarness() {
   const [offset, setOffset] = useState(0);
   /* spreadsheet: which view/property is open in the right inspector (null = chat) */
   const [propView, setPropView] = useState<string | null>(null);
-  /* ⌘F command search */
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const chatIdRef = useRef(1);
   const msgIdRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1054,29 +1094,6 @@ export default function IceCreamHarness() {
   /* switching threads returns the inspector to the chat */
   useEffect(() => setPropView(null), [activeId]);
 
-  /* ⌘F / ⌘K opens the command search; Esc and outside clicks close it */
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && (event.key === "f" || event.key === "k")) {
-        event.preventDefault();
-        setSearchQuery("");
-        setSearchOpen((current) => !current);
-      }
-      if (event.key === "Escape") setSearchOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  useEffect(() => {
-    if (!searchOpen) return;
-    const close = (event: PointerEvent) => {
-      if (!(event.target as Element).closest("[data-search]")) setSearchOpen(false);
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [searchOpen]);
-
   /* the tab bar rides the top of the main pane in both layouts */
   const tabBar = (
     <div className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b border-line px-2">
@@ -1147,112 +1164,10 @@ export default function IceCreamHarness() {
   );
 
   return (
-    <main className="flex h-[100dvh] gap-2.5 bg-canvas p-2.5 text-ink">
+    <main className="flex h-[100dvh] gap-0 bg-canvas p-2.5 text-ink lg:pl-0">
       <Sidebar onPick={pickRecent} onNewChat={newChat} activeTitle={chat.title} />
 
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
-        {/* top bar — outside the white container, on the canvas */}
-        <div className="relative flex h-9 shrink-0 items-center justify-between gap-3 pl-1">
-          <div className="flex min-w-0 items-center gap-1.5 text-[13px]">
-            <span className="shrink-0 text-ink-3">Chats</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0"><path d="M9 6l6 6-6 6" /></svg>
-            <span className="min-w-0 truncate font-semibold text-ink">{chat.title ?? "New chat"}</span>
-            <button
-              type="button"
-              aria-label="Chat options"
-              className="ml-0.5 flex size-6 shrink-0 items-center justify-center rounded-[6px] text-ink-3 transition-colors duration-100 hover:bg-hover-2 hover:text-ink"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
-            </button>
-          </div>
-
-          <div data-search className="absolute left-1/2 top-1/2 z-50 hidden w-[400px] -translate-x-1/2 -translate-y-1/2 lg:block">
-            <button
-              type="button"
-              aria-expanded={searchOpen}
-              onClick={() => {
-                setSearchQuery("");
-                setSearchOpen((current) => !current);
-              }}
-              className={`flex w-full items-center gap-2 rounded-[14px] bg-surface py-1.5 pr-1.5 pl-3 text-left shadow-hairline transition-[background-color,box-shadow] duration-150 hover:bg-surface hover:shadow-btn ${searchOpen ? "invisible" : ""}`}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-3.6-3.6" /></svg>
-              <span className="min-w-0 flex-1 truncate text-[13px] text-ink-3">Search</span>
-              <kbd className="flex h-5 items-center rounded-[8px] bg-inset px-1.5 text-[11px] text-ink-3 shadow-hairline">⌘F</kbd>
-            </button>
-
-            {searchOpen && (
-              <div
-                className="absolute inset-x-0 top-0 z-50 overflow-hidden rounded-[14px] bg-surface shadow-overlay"
-                style={{ animation: "pop-in 160ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top center" }}
-              >
-                <div className="flex h-10 items-center gap-2 border-b border-line px-3">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round" aria-hidden className="shrink-0"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
-                  <input
-                    autoFocus
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder="Search chats and actions…"
-                    aria-label="Search chats and actions"
-                    className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
-                  />
-                  <kbd className="flex h-5 items-center rounded-[5px] bg-inset px-1.5 text-[10.5px] text-ink-3 shadow-hairline">esc</kbd>
-                </div>
-                <div className="p-1.5">
-                  {(() => {
-                    const q = searchQuery.trim().toLowerCase();
-                    const results = RECENTS.filter((item) => item.label.toLowerCase().includes(q)).slice(0, 6);
-                    if (results.length === 0) {
-                      return (
-                        <div className="px-2.5 py-2.5">
-                          <div className="text-[12.5px] text-ink-3">Nothing matches “{searchQuery}” yet — try a shorter keyword.</div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSearchOpen(false);
-                              newChat();
-                            }}
-                            className="-mx-1 mt-1.5 flex h-7 items-center gap-1.5 rounded-[7px] px-1 text-[12.5px] font-medium text-accent-ink transition-colors duration-100 hover:bg-accent-tint"
-                          >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
-                            Start a new chat
-                          </button>
-                        </div>
-                      );
-                    }
-                    return (
-                      <GlideMenu className="flex flex-col gap-px">
-                        {results.map((item) => (
-                          <button
-                            key={item.label}
-                            data-menu-row
-                            type="button"
-                            onClick={() => {
-                              setSearchOpen(false);
-                              pickRecent(item.id, item.label, item.prompt);
-                            }}
-                            className="relative z-10 flex h-9 w-full items-center gap-2.5 rounded-[8px] px-2 text-left"
-                          >
-                            <span className="shrink-0 text-ink-3">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 11.6c0 3.87-3.58 7-8 7-1.02 0-2-.17-2.9-.47L4 19.5l1.2-3.45C4.45 14.85 4 13.28 4 11.6c0-3.87 3.58-7 8-7s8 3.13 8 7Z" /></svg>
-                            </span>
-                            <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{item.label}</span>
-                            <span className="shrink-0 text-[11.5px] text-ink-3">Chat</span>
-                          </button>
-                        ))}
-                      </GlideMenu>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <Button variant="primary" size="sm" className="shrink-0 px-4 text-[12.5px]">
-            Share
-          </Button>
-        </div>
-
         {/* panels row — main pane + docked side pane */}
         <div className="flex min-h-0 flex-1 gap-2.5">
           {workspaceScenario ? (
