@@ -1,0 +1,6 @@
+.context/
+.agents/
+.claude/
+.next/
+node_modules/
+skills-lock.json
