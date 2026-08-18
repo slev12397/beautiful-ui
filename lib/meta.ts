@@ -92,7 +92,7 @@ export const META: Meta[] = [
   {
     id: "sidebar-nav",
     title: "Sidebar Nav",
-    caption: "Workspace navigation with quick search.",
+    caption: "Collapsible workspace and chat navigation with gliding hover states.",
     file: "SidebarNav.tsx",
   },
   {

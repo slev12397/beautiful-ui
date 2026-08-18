@@ -119,31 +119,9 @@ export default function ChatExperience() {
   return (
     <main className="min-h-screen bg-page p-3 text-ink sm:p-5 lg:p-7">
       <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-[1500px] overflow-hidden rounded-window bg-page shadow-overlay sm:min-h-[calc(100vh-2.5rem)] lg:min-h-[calc(100vh-3.5rem)]">
-        <aside className="hidden w-[268px] shrink-0 border-r border-line bg-canvas/35 p-4 lg:block">
-          <div className="mb-5 flex items-center justify-between px-1">
-            <span className="flex items-center gap-2 text-[13px] font-semibold tracking-[-0.02em] text-ink">
-              <span className="flex size-5 items-center justify-center rounded-[6px] bg-ink text-surface">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="m12 2 2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2Z" /></svg>
-              </span>
-              scoop / workspace
-            </span>
-            <button type="button" aria-label="More workspace actions" className="flex size-7 items-center justify-center rounded-control text-ink-3 transition-colors duration-150 hover:bg-hover hover:text-ink">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
-            </button>
-          </div>
-          <SidebarNav />
-          <div className="mt-5 border-t border-line pt-4">
-            <span className="px-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-3">Recent conversations</span>
-            <div className="mt-2 flex flex-col gap-0.5">
-              {["Pistachio expansion", "Summer cone inventory", "Gelato margin check"].map((item, index) => (
-                <button key={item} type="button" className={`flex items-center gap-2 rounded-control px-2 py-2 text-left text-[12px] transition-colors duration-150 hover:bg-hover ${index === 0 ? "bg-hover text-ink" : "text-ink-2"}`}>
-                  <span className={`size-1.5 rounded-full ${index === 0 ? "bg-accent" : "bg-line-strong"}`} />
-                  <span className="truncate">{item}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </aside>
+        <div className="hidden shrink-0 border-r border-line bg-canvas/35 lg:block">
+          <SidebarNav fill />
+        </div>
 
         <section className="flex min-w-0 flex-1 flex-col bg-page">
           <header className="flex h-[68px] shrink-0 items-center justify-between border-b border-line px-4 sm:px-7">

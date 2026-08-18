@@ -1,192 +1,388 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { IconArrowBoxLeft } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconArrowBoxLeft";
+import { IconCheckmark1Small } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconCheckmark1Small";
+import { IconChevronDownSmall } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconChevronDownSmall";
+import { IconEditBig } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconEditBig";
+import { IconHome } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconHome";
+import { IconLibrary } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconLibrary";
+import { IconMagnifyingGlass } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconMagnifyingGlass";
+import { IconPlusMedium } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconPlusMedium";
+import { IconPopsicle2 } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconPopsicle2";
+import { IconSettingsGear1 } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconSettingsGear1";
+import { IconSidebarLeftArrow } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconSidebarLeftArrow";
+import { IconUserAdd } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconUserAdd";
+import GlideMenu from "@/components/primitives/GlideMenu";
 
 /* ─────────────────────────────────────────────────────────
  * SIDEBAR NAV
- * Workspace navigation with direct selection and search.
+ * The standalone design-system version of the harness rail:
+ * compact workspace switcher, primary navigation, searchable
+ * chat history, and a collapse that preserves icon alignment.
  * ───────────────────────────────────────────────────────── */
 
-const ITEMS = [
-  { key: "activity", label: "Home", section: "Workspace" },
-  { key: "tasks", label: "Agent tasks", section: "Workspace", count: true },
-  { key: "dashboard", label: "Inbox", section: "Workspace" },
-  { key: "spaces", label: "Suppliers", section: "Objects", plus: true },
-  { key: "analytics", label: "Inventory", section: "Objects" },
+const WORKSPACE = { key: "creamery", name: "Creamery Ops", monogram: "C" };
+
+const NAV_ITEMS = [
+  { key: "home", label: "Home", icon: <IconHome size={18} /> },
+  { key: "library", label: "Library", icon: <IconLibrary size={18} /> },
+  { key: "invite", label: "Invite users", icon: <IconUserAdd size={18} />, count: "3/10" },
 ];
 
-/* Attio-style icons: rounded geometry, soft joins, rendered at 16. */
-function Icon({ kind }: { kind: string }) {
-  const p: Record<string, React.ReactNode> = {
-    activity: <g><path d="M4 11.4 12 5l8 6.4" /><path d="M6 10v8.2c0 .72.58 1.3 1.3 1.3h9.4c.72 0 1.3-.58 1.3-1.3V10" /></g>,
-    tasks: <g><rect x="4" y="4" width="16" height="16" rx="4.5" /><path d="m8.6 12 2.4 2.4L15.6 9.5" /></g>,
-    spaces: <g><path d="M12 3.2 4 7v10l8 3.8 8-3.8V7l-8-3.8Z" /><path d="M4 7l8 3.8L20 7M12 20.6V10.8" /></g>,
-    dashboard: <g><path d="M20 5H4a1.5 1.5 0 0 0-1.5 1.5V9h19V6.5A1.5 1.5 0 0 0 20 5Z" /><path d="M21.5 9v8.5A1.5 1.5 0 0 1 20 19H4a1.5 1.5 0 0 1-1.5-1.5V9M8.5 12.5h7" /></g>,
-    analytics: <g><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><path d="M8 15.5v-3M12 15.5v-6M16 15.5v-4" /></g>,
-  };
+const RECENTS = [
+  "Supplier records",
+  "Urgent to-dos this morning",
+  "Flavor page ticket",
+  "Workload summary",
+  "Off-board a supplier",
+  "Batch restock function",
+  "Propose flavor edits",
+  "Subway surfing",
+];
+
+const SIDEBAR_MOTION = {
+  expandedWidth: 224,
+  collapsedWidth: 52,
+  duration: 280,
+  copyDuration: 180,
+  copyOffset: 8,
+  easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+};
+
+function GlideGroup({ children }: { children: ReactNode }) {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      {p[kind]}
-    </svg>
+    <GlideMenu
+      rowSelector="[data-row]"
+      highlightClassName="sidebar-glide-highlight rounded-[7px] bg-hover-2"
+      className="group/glide flex flex-col gap-px"
+    >
+      {children}
+    </GlideMenu>
   );
 }
 
-export default function SidebarNav() {
-  const [active, setActive] = useState("tasks");
-  const [hovered, setHovered] = useState<string | null>(null);
-  const [box, setBox] = useState<{ top: number; height: number } | null>(null);
+function RailButton({
+  icon,
+  label,
+  active = false,
+  count,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  active?: boolean;
+  count?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      data-row
+      type="button"
+      onClick={onClick}
+      className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left
+        transition-[width,background-color,color,transform] duration-150 active:scale-[0.96]
+        ${active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""}`}
+    >
+      <span className={`flex size-5 shrink-0 items-center justify-center ${active ? "text-ink" : "text-ink-2"}`}>
+        {icon}
+      </span>
+      <span className={`sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium ${active ? "text-ink" : "text-ink-2"}`}>
+        {label}
+      </span>
+      {count && (
+        <span className="sidebar-copy mr-2 shrink-0 text-[12px] font-medium tabular-nums text-ink-3">
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function SectionLabel({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="sidebar-copy mx-2 flex h-8 items-center justify-between px-2 text-[12.5px] font-medium text-ink-3">
+      <span className="flex items-center gap-1">
+        <IconChevronDownSmall size={13} />
+        {children}
+      </span>
+      {action}
+    </div>
+  );
+}
+
+function WorkspaceMenu({
+  position,
+  onClose,
+}: {
+  position: { top: number; left: number };
+  onClose: () => void;
+}) {
+  return createPortal(
+    <div
+      data-workspace-menu
+      className="fixed z-50 w-64 rounded-[14px] bg-surface p-1.5 shadow-overlay"
+      style={{
+        top: position.top,
+        left: position.left,
+        animation: "pop-in 180ms cubic-bezier(0.16,1,0.3,1) both",
+        transformOrigin: "top left",
+      }}
+    >
+      <GlideMenu className="flex flex-col gap-px" highlightClassName="inset-x-0 rounded-[8px] bg-hover-2">
+        <button
+          data-menu-row
+          type="button"
+          onClick={onClose}
+          className="relative z-10 flex h-10 w-full items-center gap-2.5 rounded-[8px] px-2 text-left"
+        >
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-[7px] bg-ink text-[11px] font-semibold text-surface">
+            {WORKSPACE.monogram}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-ink">{WORKSPACE.name}</span>
+          <span className="shrink-0 text-ink"><IconCheckmark1Small size={18} /></span>
+        </button>
+        <div className="my-1 h-px bg-line" />
+        {[
+          { label: "New workspace", icon: <IconPlusMedium size={16} /> },
+          { label: "Workspace settings", icon: <IconSettingsGear1 size={16} /> },
+          { label: "Invite team members", icon: <IconUserAdd size={16} /> },
+        ].map((item) => (
+          <button
+            key={item.label}
+            data-menu-row
+            type="button"
+            onClick={onClose}
+            className="relative z-10 flex h-9 w-full items-center gap-2.5 rounded-[8px] px-2 text-left"
+          >
+            <span className="shrink-0 text-ink-2">{item.icon}</span>
+            <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{item.label}</span>
+          </button>
+        ))}
+        <div className="my-1 h-px bg-line" />
+        <button
+          data-menu-row
+          type="button"
+          onClick={onClose}
+          className="relative z-10 flex h-9 w-full items-center gap-2.5 rounded-[8px] px-2 text-left"
+        >
+          <span className="shrink-0 text-ink-2"><IconArrowBoxLeft size={16} /></span>
+          <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">Sign out</span>
+        </button>
+      </GlideMenu>
+    </div>,
+    document.body,
+  );
+}
+
+export default function SidebarNav({ fill = false }: { fill?: boolean; variant?: string }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [activeNav, setActiveNav] = useState("chats");
+  const [activeTitle, setActiveTitle] = useState<string | null>(RECENTS[0]);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [workspacePosition, setWorkspacePosition] = useState({ top: 0, left: 0 });
+  const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [badge, setBadge] = useState(4);
-  const sections = ["Workspace", "Objects"];
-  const navRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const workspaceButtonRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
-  useLayoutEffect(() => {
-    const container = navRef.current;
-    const target = itemRefs.current[hovered ?? active];
-    if (!container || !target) return;
+  const visibleRecents = RECENTS.filter((item) => item.toLowerCase().includes(query.trim().toLowerCase()));
 
-    const containerRect = container.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    setBox({
-      top: targetRect.top - containerRect.top,
-      height: targetRect.height,
-    });
-  }, [hovered, active]);
+  useEffect(() => {
+    if (!workspaceOpen) return;
+    const close = (event: PointerEvent) => {
+      const target = event.target as Element;
+      if (!target.closest("[data-workspace-trigger]") && !target.closest("[data-workspace-menu]")) {
+        setWorkspaceOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [workspaceOpen]);
+
+  useEffect(() => {
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
+
+  const collapse = () => {
+    setCollapsed(true);
+    setWorkspaceOpen(false);
+    setSearchOpen(false);
+    setQuery("");
+  };
 
   return (
-    <div className="w-60 rounded-card bg-surface p-2 shadow-raised">
-      {/* workspace row */}
-      <button
-        type="button"
-        className="mb-2 flex w-full items-center gap-2.5 rounded-control p-1.5 text-left
-          transition-[background-color,transform] duration-100 hover:bg-hover active:scale-[0.96]"
-      >
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]" style={{ background: "linear-gradient(155deg,#5aa2ff,#1f3fb0)" }}>
-          C
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px] font-medium leading-tight text-ink">Creamery Ops</span>
-          <span className="block truncate text-[11px] leading-tight text-ink-3">Production Workspace</span>
-        </span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
+    <aside
+      data-sidebar-collapsed={collapsed}
+      aria-label="Workspace navigation"
+      className={`relative flex shrink-0 overflow-hidden bg-canvas transition-[width] ${fill ? "h-full" : "h-[520px] rounded-[14px] shadow-hairline"}`}
+      style={{
+        width: collapsed ? SIDEBAR_MOTION.collapsedWidth : SIDEBAR_MOTION.expandedWidth,
+        transitionDuration: `${SIDEBAR_MOTION.duration}ms`,
+        transitionTimingFunction: SIDEBAR_MOTION.easing,
+        "--sidebar-copy-duration": `${SIDEBAR_MOTION.copyDuration}ms`,
+        "--sidebar-copy-offset": `${SIDEBAR_MOTION.copyOffset}px`,
+        "--sidebar-easing": SIDEBAR_MOTION.easing,
+      } as CSSProperties}
+    >
+      <div className="flex min-h-0 w-[224px] shrink-0 flex-col pb-2.5">
+        <div className="relative mb-2.5 h-10 shrink-0">
+          <button
+            ref={workspaceButtonRef}
+            data-workspace-trigger
+            type="button"
+            aria-expanded={workspaceOpen}
+            aria-hidden={collapsed}
+            tabIndex={collapsed ? -1 : 0}
+            onClick={() => {
+              if (!workspaceOpen && workspaceButtonRef.current) {
+                const rect = workspaceButtonRef.current.getBoundingClientRect();
+                setWorkspacePosition({ top: rect.bottom + 6, left: rect.left });
+              }
+              setWorkspaceOpen((open) => !open);
+            }}
+            className="sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left transition-[background-color,transform] duration-150 hover:bg-hover-2 active:scale-[0.96]"
+          >
+            <span className="sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink">
+              <IconPopsicle2 size={18} />
+            </span>
+            <span className="sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2">
+              {WORKSPACE.name}
+            </span>
+            <span className="sidebar-copy ml-1 flex shrink-0 text-ink-3">
+              <IconChevronDownSmall size={16} className={`transition-transform duration-150 ${workspaceOpen ? "rotate-180" : ""}`} />
+            </span>
+          </button>
 
-      {/* quick search */}
-      <label className="mb-1 flex h-8 items-center gap-2 rounded-control bg-inset px-2.5 shadow-hairline">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round">
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4.3-4.3" />
-        </svg>
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Quick search"
-          className="min-w-0 flex-1 bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-3"
-        />
-        <kbd className="flex size-4.5 items-center justify-center rounded-[5px] bg-surface text-[10px] text-ink-3 shadow-hairline">
-          /
-        </kbd>
-      </label>
+          {workspaceOpen && <WorkspaceMenu position={workspacePosition} onClose={() => setWorkspaceOpen(false)} />}
 
-      {/* accent action */}
-      <button
-        type="button"
-        onClick={() => {
-          setBadge((current) => current + 1);
-          setActive("tasks");
-        }}
-        className="mb-2 flex w-full items-center gap-2 rounded-control px-2 py-1.5 text-[13px]
-          font-medium text-accent transition-[background-color,transform] duration-100 hover:bg-accent-tint active:scale-[0.96]"
-      >
-        <span className="min-w-0 flex-1 truncate text-left">New task</span>
-        <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-accent text-white">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </span>
-      </button>
+          <button
+            type="button"
+            aria-label="Collapse sidebar"
+            aria-hidden={collapsed}
+            tabIndex={collapsed ? -1 : 0}
+            onClick={collapse}
+            className="sidebar-collapse-control absolute right-2 top-1 flex size-8 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color,transform] duration-150 hover:bg-hover-2 hover:text-ink active:scale-[0.96]"
+          >
+            <IconSidebarLeftArrow size={18} />
+          </button>
+          <button
+            type="button"
+            aria-label="Expand sidebar"
+            aria-hidden={!collapsed}
+            tabIndex={collapsed ? 0 : -1}
+            onClick={() => setCollapsed(false)}
+            className="sidebar-expand-control absolute left-2 top-0.5 flex size-9 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color,transform] duration-150 hover:bg-hover-2 hover:text-ink active:scale-[0.96]"
+          >
+            <IconSidebarLeftArrow size={18} className="rotate-180" />
+          </button>
+        </div>
 
-      {/* items */}
-      <div
-        ref={navRef}
-        onMouseLeave={() => setHovered(null)}
-        className="relative flex flex-col gap-2"
-      >
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 rounded-[7px] bg-hover"
-          style={{
-            top: box?.top ?? 0,
-            height: box?.height ?? 0,
-            opacity: box ? 1 : 0,
-            transition:
-              "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
-          }}
-        />
-        {sections.map((section) => (
-          <div key={section}>
-            <div className="px-2 pb-1 pt-1 text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-3">
-              {section}
+        <GlideGroup>
+          <RailButton
+            icon={<IconEditBig size={18} />}
+            label="New chat"
+            onClick={() => {
+              setActiveNav("chats");
+              setActiveTitle(null);
+            }}
+          />
+          {NAV_ITEMS.map((item) => (
+            <RailButton
+              key={item.key}
+              icon={item.icon}
+              label={item.label}
+              count={item.count}
+              active={activeNav === item.key}
+              onClick={() => {
+                setActiveNav(item.key);
+                setActiveTitle(null);
+              }}
+            />
+          ))}
+        </GlideGroup>
+
+        <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
+          <SectionLabel
+            action={(
+              <button
+                type="button"
+                aria-label={searchOpen ? "Close chat search" : "Search chats"}
+                aria-expanded={searchOpen}
+                onClick={() => {
+                  setSearchOpen((open) => !open);
+                  if (searchOpen) setQuery("");
+                }}
+                className={`relative flex size-7 items-center justify-center rounded-[7px] transition-[background-color,color,transform] duration-150 after:absolute after:-inset-1.5 after:content-[''] active:scale-[0.96] ${searchOpen ? "bg-hover-2 text-ink" : "text-ink-3 hover:bg-hover-2 hover:text-ink"}`}
+              >
+                <IconMagnifyingGlass size={16} />
+              </button>
+            )}
+          >
+            Chats
+          </SectionLabel>
+
+          {searchOpen && (
+            <div className="sidebar-copy mx-2 mb-1 px-2" style={{ animation: "fade-in 140ms ease-out both" }}>
+              <div className="flex h-8 items-center gap-1.5 rounded-[8px] bg-field px-2 text-ink-3 shadow-hairline focus-within:text-ink-2">
+                <IconMagnifyingGlass size={14} />
+                <input
+                  ref={searchRef}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      setSearchOpen(false);
+                      setQuery("");
+                    }
+                  }}
+                  placeholder="Search chats"
+                  aria-label="Search chat history"
+                  className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-px">
-              {ITEMS.filter((item) => item.section === section).map((item) => {
-                const isActive = item.key === active;
-                return (
-                  <button
-                    key={item.key}
-                    ref={(el) => {
-                      itemRefs.current[item.key] = el;
-                    }}
-                    type="button"
-                    onMouseEnter={() => setHovered(item.key)}
-                    onFocus={() => setHovered(item.key)}
-                    onBlur={() => setHovered(null)}
-                    onClick={() => setActive(item.key)}
-                    aria-current={isActive ? "page" : undefined}
-                    className="group relative z-10 flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left
-                      transition-[color,transform] duration-150 active:scale-[0.96]"
-                  >
-                    <span className={isActive ? "text-ink" : "text-ink-3"}>
-                      <Icon kind={item.key} />
-                    </span>
-                    <span
-                      className={`min-w-0 flex-1 truncate text-[13px] transition-colors duration-150
-                        ${isActive ? "font-semibold text-ink" : "font-medium text-ink-2"}`}
-                    >
-                      {item.label}
-                    </span>
-                    {item.count && (
-                      <span
-                        key={badge}
-                        className={`flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[10.5px] font-semibold tabular-nums ${
-                          isActive ? "bg-surface text-ink-2 shadow-hairline" : "bg-accent-tint text-accent-ink"
-                        }`}
-                        style={{ animation: "pop-in 250ms cubic-bezier(0.23,1,0.32,1) both" }}
-                      >
-                        {badge}
-                      </span>
-                    )}
-                    {item.plus && (
-                      <span
-                        className="flex size-4.5 items-center justify-center rounded-[5px] text-ink-3 opacity-0
-                          transition-[background-color,color,opacity] duration-100 group-hover:opacity-100 hover:bg-line/70 hover:text-ink-2"
-                        style={isActive ? { opacity: 1 } : undefined}
-                      >
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                          <path d="M12 5v14M5 12h14" />
-                        </svg>
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+          )}
+
+          <GlideGroup>
+            {visibleRecents.map((item) => {
+              const active = item === activeTitle;
+              return (
+                <button
+                  key={item}
+                  data-row
+                  type="button"
+                  title={item}
+                  onClick={() => {
+                    setActiveNav("chats");
+                    setActiveTitle(item);
+                  }}
+                  className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left transition-[width,background-color,color,transform] duration-150 active:scale-[0.96] ${
+                    active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""
+                  }`}
+                >
+                  <span className={`sidebar-copy min-w-0 flex-1 truncate text-[14px] font-medium ${active ? "text-ink" : "text-ink-2"}`}>
+                    {item}
+                  </span>
+                </button>
+              );
+            })}
+            {query && visibleRecents.length === 0 && (
+              <div className="sidebar-copy mx-2 px-2 py-2 text-[12.5px] text-ink-3">No chats found</div>
+            )}
+          </GlideGroup>
+        </div>
+
+        <div className="sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3">
+          <button
+            type="button"
+            className="flex h-8 w-full items-center justify-center rounded-control bg-hover-2 text-[12.5px] font-medium text-ink transition-[background-color,transform] duration-150 hover:bg-line-strong active:scale-[0.96]"
+          >
+            Upgrade
+          </button>
+        </div>
       </div>
-    </div>
+    </aside>
   );
 }
