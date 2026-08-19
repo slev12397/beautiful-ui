@@ -177,7 +177,10 @@ const TOOL_GLYPHS: Record<string, React.ReactNode> = {
 
 /* per-property configuration shown in the popover */
 type Prompt = { before: string; chip?: string; after?: string };
-const COLUMN_META: Record<string, { type: string; tool: string; toolKind: "model" | "web" | "user"; inputs?: string; prompt?: Prompt }> = {
+type ToolKind = "model" | "web" | "user";
+type ColumnMeta = { type: string; tool: string; toolKind: ToolKind; inputs?: string; prompt?: Prompt };
+
+const COLUMN_META: Record<string, ColumnMeta> = {
   Company: { type: "Text", tool: "User input", toolKind: "user" },
   Categories: { type: "Multi select", tool: "Sprinkles 5", toolKind: "model", inputs: "Company", prompt: { before: "Tag each ", chip: "Company", after: " with its market categories." } },
   "Last interaction": { type: "Date", tool: "User input", toolKind: "user" },
@@ -187,6 +190,8 @@ const COLUMN_META: Record<string, { type: string; tool: string; toolKind: "model
 };
 
 const NEW_PROPERTY_TYPES = ["Text", "File", "Collection", "Single select", "Multi select", "URL", "Reference", "JSON", "File splitter"];
+const MODEL_OPTIONS = ["Sprinkles 5", "Sprinkles 4.2", "Sprinkles Mini"];
+const INPUT_OPTIONS = ["Company", "Categories", "Last interaction", "Connection strength", "Links"];
 
 function Checkbox({ checked, mixed = false, onChange, label }: { checked: boolean; mixed?: boolean; onChange: () => void; label: string }) {
   return (
@@ -211,6 +216,55 @@ function Tag({ name }: { name: string }) {
   );
 }
 
+function TagList({ tags }: { tags: string[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(tags.length);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const measure = measureRef.current;
+    if (!container || !measure) return;
+
+    const update = () => {
+      const available = container.clientWidth;
+      const tagWidths = Array.from(measure.querySelectorAll<HTMLElement>("[data-tag-measure]"), (tag) => tag.offsetWidth);
+      const moreWidth = measure.querySelector<HTMLElement>("[data-more-measure]")?.offsetWidth ?? 0;
+      let used = 0;
+      let count = 0;
+
+      for (let index = 0; index < tagWidths.length; index += 1) {
+        const nextUsed = used + (count > 0 ? 4 : 0) + tagWidths[index];
+        const hiddenAfter = tags.length - (index + 1);
+        const totalWithOverflow = nextUsed + (hiddenAfter > 0 ? 4 + moreWidth : 0);
+        if (totalWithOverflow > available) break;
+        used = nextUsed;
+        count += 1;
+      }
+
+      setVisibleCount(count);
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [tags]);
+
+  const hiddenCount = tags.length - visibleCount;
+
+  return (
+    <div ref={containerRef} className="records-tags" title={tags.join(", ")} aria-label={`Categories: ${tags.join(", ")}`}>
+      <div ref={measureRef} className="records-tags-measure" aria-hidden>
+        {tags.map((tag) => <span key={tag} data-tag-measure><Tag name={tag} /></span>)}
+        <span data-more-measure className="records-more-tag">+{tags.length}</span>
+      </div>
+      {tags.slice(0, visibleCount).map((tag) => <Tag key={tag} name={tag} />)}
+      {hiddenCount > 0 && <span className="records-more-tag">+{hiddenCount}</span>}
+    </div>
+  );
+}
+
 function CalcCell() {
   return (
     <span className="records-calc">
@@ -220,12 +274,13 @@ function CalcCell() {
   );
 }
 
-function MiniSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+function MiniSwitch({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
+      aria-label={label}
       onClick={onToggle}
       className="relative h-4.5 w-7.5 shrink-0 rounded-full transition-colors duration-150"
       style={{ background: on ? "var(--accent)" : "var(--line-strong)" }}
@@ -282,9 +337,93 @@ function HeaderCell({ label, icon, sortKey, sort, onSort, onResizeStart, resizin
 /* config row inside the property popover */
 function ConfigRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex h-8 items-center justify-between">
+    <div className="relative flex h-8 items-center justify-between">
       <span className="text-[13px] text-ink-3">{label}</span>
       {children}
+    </div>
+  );
+}
+
+function ConfigPicker({
+  label,
+  options,
+  selected,
+  onSelect,
+}: {
+  label: string;
+  options: { label: string; icon: React.ReactNode }[];
+  selected: string;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <div
+      role="menu"
+      aria-label={label}
+      className="absolute right-0 top-[30px] z-30 w-[210px] rounded-[12px] bg-surface p-1.5 shadow-overlay"
+      style={{ animation: "pop-in 140ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top right" }}
+    >
+      <div className="px-2 pb-1 pt-0.5 text-[11.5px] font-medium text-ink-3">{label}</div>
+      <GlideMenu className="flex flex-col gap-px">
+        {options.map((option) => (
+          <button
+            key={option.label}
+            data-menu-row
+            type="button"
+            role="menuitemradio"
+            aria-checked={selected === option.label}
+            onClick={() => onSelect(option.label)}
+            className="relative z-10 flex h-8 w-full items-center gap-1.5 rounded-[8px] px-1.5 text-left text-[13px] font-medium text-ink"
+          >
+            <span className="flex size-4 shrink-0 items-center justify-center text-ink-2">{option.icon}</span>
+            <span className="min-w-0 flex-1 truncate">{option.label}</span>
+            <span className={selected === option.label ? "text-ink" : "invisible"}>
+              <Icon size={14} strokeWidth={2.2}><path d="m5 12 4 4L19 6" /></Icon>
+            </span>
+          </button>
+        ))}
+      </GlideMenu>
+    </div>
+  );
+}
+
+function InputPicker({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: string[];
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  return (
+    <div
+      role="menu"
+      aria-label="Calculation inputs"
+      className="absolute right-0 top-[30px] z-30 w-[220px] rounded-[12px] bg-surface p-1.5 shadow-overlay"
+      style={{ animation: "pop-in 140ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top right" }}
+    >
+      <div className="px-2 pb-1 pt-0.5 text-[11.5px] font-medium text-ink-3">Use values from</div>
+      <GlideMenu className="flex flex-col gap-px">
+        {options.map((option) => {
+          const checked = selected.includes(option);
+          return (
+            <button
+              key={option}
+              data-menu-row
+              type="button"
+              role="menuitemcheckbox"
+              aria-checked={checked}
+              onClick={() => onToggle(option)}
+              className="relative z-10 flex h-8 w-full items-center gap-1.5 rounded-[8px] px-1.5 text-left text-[13px] font-medium text-ink"
+            >
+              <span className={`flex size-4 shrink-0 items-center justify-center rounded-[5px] border ${checked ? "border-accent bg-accent text-white" : "border-line-strong text-transparent"}`}>
+                <Icon size={11} strokeWidth={2.4}><path d="m5 12 4 4L19 6" /></Icon>
+              </span>
+              <span className="min-w-0 flex-1 truncate">{option}</span>
+            </button>
+          );
+        })}
+      </GlideMenu>
     </div>
   );
 }
@@ -303,6 +442,13 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
   /* property popover, anchored to the clicked header */
   const [prop, setProp] = useState<{ col: string; x: number; y: number } | null>(null);
   const [grounding, setGrounding] = useState(false);
+  const [groundingHelpOpen, setGroundingHelpOpen] = useState(false);
+  const [configMenu, setConfigMenu] = useState<"type" | "tool" | "inputs" | null>(null);
+  const [columnOverrides, setColumnOverrides] = useState<Record<string, Partial<ColumnMeta>>>({});
+  const [inputSelections, setInputSelections] = useState<Record<string, string[]>>({});
+  const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set());
+  const [moreSettingsOpen, setMoreSettingsOpen] = useState(false);
+  const [advancedSettings, setAdvancedSettings] = useState({ required: false, allowEmpty: true, confidence: false });
   /* + new-property menu */
   const [addOpen, setAddOpen] = useState<{ x: number; y: number } | null>(null);
   const [tableMenuOpen, setTableMenuOpen] = useState<{ x: number; y: number } | null>(null);
@@ -381,6 +527,9 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
     const close = (event: PointerEvent) => {
       if (!(event.target as Element).closest("[data-recpop]")) {
         setProp(null);
+        setConfigMenu(null);
+        setGroundingHelpOpen(false);
+        setMoreSettingsOpen(false);
         setAddOpen(null);
         setTableMenuOpen(null);
       }
@@ -394,6 +543,9 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
     if (!th) return;
     setAddOpen(null);
     setTableMenuOpen(null);
+    setConfigMenu(null);
+    setGroundingHelpOpen(false);
+    setMoreSettingsOpen(false);
     setProp((current) => {
       if (current?.col === col) return null;
       const rect = th.getBoundingClientRect();
@@ -411,6 +563,9 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
     event.preventDefault();
     event.stopPropagation();
     setProp(null);
+    setConfigMenu(null);
+    setGroundingHelpOpen(false);
+    setMoreSettingsOpen(false);
     setAddOpen(null);
     setTableMenuOpen(null);
 
@@ -451,7 +606,10 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
     return next;
   });
 
-  const meta = prop ? COLUMN_META[prop.col] : null;
+  const meta = prop ? { ...COLUMN_META[prop.col], ...columnOverrides[prop.col] } : null;
+  const selectedInputs = prop && meta
+    ? inputSelections[prop.col] ?? (meta.inputs ? [meta.inputs] : [])
+    : [];
   const tableWidth = columnWidths.company + columnWidths.categories + columnWidths.last + columnWidths.strength + columnWidths.links + (aiAdded ? columnWidths.ai : 0) + actionColumnWidth;
 
   return (
@@ -466,6 +624,9 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
             return;
           }
           setProp(null);
+          setConfigMenu(null);
+          setGroundingHelpOpen(false);
+          setMoreSettingsOpen(false);
           setAddOpen(null);
           setTableMenuOpen(null);
         }}
@@ -546,7 +707,7 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
               const strength = STRENGTH[row.strength];
               return <tr key={row.id} className={`records-row ${selectedRow ? "is-selected" : ""}`}>
                 <td className={`records-cell records-sticky-cell records-company-cell ${prop?.col === "Company" ? "is-colsel" : ""}`}><span className="records-rownum">{index + 1}</span><Checkbox checked={selectedRow} onChange={() => toggleRow(row.id)} label={`Select ${row.name}`} /><span className="records-company-mark">{row.name.slice(0, 1).toUpperCase()}</span><a href={row.website ? `https://${row.website}` : "#"} onClick={(event) => !row.website && event.preventDefault()} title={row.name} className={`records-company-name ${row.website ? "has-link" : ""}`}>{row.name}</a></td>
-                <td className={`records-cell ${prop?.col === "Categories" ? "is-colsel" : ""}`}>{isCalc("Categories", index) ? <CalcCell /> : <div className="records-tags">{row.tags.slice(0, 4).map((tag) => <Tag key={tag} name={tag} />)}{row.tags.length > 4 ? <span className="records-more-tag">+{row.tags.length - 4}</span> : null}</div>}</td>
+                <td className={`records-cell ${prop?.col === "Categories" ? "is-colsel" : ""}`}>{isCalc("Categories", index) ? <CalcCell /> : <TagList tags={row.tags} />}</td>
                 <td className={`records-cell ${row.last === "No contact" ? "records-muted" : ""} ${prop?.col === "Last interaction" ? "is-colsel" : ""}`}>{isCalc("Last interaction", index) ? <CalcCell /> : row.last}</td>
                 <td className={`records-cell ${prop?.col === "Connection strength" ? "is-colsel" : ""}`}>{isCalc("Connection strength", index) ? <CalcCell /> : <span className="records-strength"><span className="records-strength-dot" style={{ background: strength.color }} />{strength.label}</span>}</td>
                 <td className={`records-cell ${prop?.col === "Links" ? "is-colsel" : ""}`}>{isCalc("Links", index) ? <CalcCell /> : row.website ? <a className="records-link" href={`https://${row.website}`} title={row.website} target="_blank" rel="noreferrer"><span className="records-link-label">{row.website}</span><Icon size={12}><path d="M14 5h5v5M19 5l-8 8" /></Icon></a> : <span className="records-muted">—</span>}</td>
@@ -560,7 +721,21 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
             })}
           </tbody>
           <tfoot>
-            <tr className="records-calculation-row"><td className="records-cell records-sticky-cell records-calculation-label"><span className="records-calculation-number">{rows.length}</span> count</td><td className="records-cell"><button type="button" className="records-add-calculation"><Icon size={14}><path d="M12 5v14M5 12h14" /></Icon>Add calculation</button></td><td className="records-cell records-muted">—</td><td className="records-cell"><span className="records-average"><span className="records-strength-dot" style={{ background: "var(--orange)" }} />{Math.round(rows.reduce((sum, row) => sum + STRENGTH[row.strength].rank, 0) / rows.length / 3 * 100)}% average</span></td><td className="records-cell"><span className="records-muted">{rows.filter((row) => row.website).length} links</span></td>{aiAdded && <td className="records-cell records-muted">{aiDone ? `${rows.length} filled` : "—"}</td>}<td className="records-cell" /></tr>
+            <tr className="records-calculation-row">
+              <td className="records-cell records-sticky-cell">
+                <span className="records-footer-value records-calculation-label"><span className="records-calculation-number">{rows.length}</span> count</span>
+              </td>
+              <td className="records-cell">
+                <button type="button" className="records-add-calculation"><Icon size={15}><path d="M12 5v14M5 12h14" /></Icon>Add calculation</button>
+              </td>
+              <td className="records-cell records-muted"><span className="records-footer-value">—</span></td>
+              <td className="records-cell">
+                <span className="records-footer-value records-average"><span className="records-strength-dot" style={{ background: "var(--orange)" }} />{Math.round(rows.reduce((sum, row) => sum + STRENGTH[row.strength].rank, 0) / rows.length / 3 * 100)}% average</span>
+              </td>
+              <td className="records-cell"><span className="records-footer-value records-muted">{rows.filter((row) => row.website).length} links</span></td>
+              {aiAdded && <td className="records-cell records-muted"><span className="records-footer-value">{aiDone ? `${rows.length} filled` : "—"}</span></td>}
+              <td className="records-cell" />
+            </tr>
           </tfoot>
         </table>
       </div>
@@ -575,14 +750,37 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
           <div className="pb-2 text-[13.5px] font-medium text-ink">{prop.col}</div>
 
           <ConfigRow label="Type">
-            <button type="button" className="flex items-center gap-1.5 rounded-[6px] px-1.5 py-1 text-[13px] font-medium text-ink transition-colors duration-100 hover:bg-hover">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={configMenu === "type"}
+              onClick={() => setConfigMenu((current) => current === "type" ? null : "type")}
+              className="flex items-center gap-1.5 rounded-[6px] px-1.5 py-1 text-[13px] font-medium text-ink transition-colors duration-100 hover:bg-hover"
+            >
               <span className="text-ink-2"><Icon size={14}>{TYPE_GLYPHS[meta.type] ?? TYPE_GLYPHS.Text}</Icon></span>
               {meta.type}
               <span className="text-ink-3"><Icon size={12} strokeWidth={2.2}><path d="M9 6l6 6-6 6" /></Icon></span>
             </button>
+            {configMenu === "type" && (
+              <ConfigPicker
+                label="Property type"
+                selected={meta.type}
+                options={NEW_PROPERTY_TYPES.map((type) => ({ label: type, icon: <Icon size={15}>{TYPE_GLYPHS[type]}</Icon> }))}
+                onSelect={(type) => {
+                  setColumnOverrides((current) => ({ ...current, [prop.col]: { ...current[prop.col], type } }));
+                  setConfigMenu(null);
+                }}
+              />
+            )}
           </ConfigRow>
           <ConfigRow label="Tool">
-            <button type="button" className="flex items-center gap-1.5 rounded-[6px] px-1.5 py-1 text-[13px] font-medium text-ink transition-colors duration-100 hover:bg-hover">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={configMenu === "tool"}
+              onClick={() => setConfigMenu((current) => current === "tool" ? null : "tool")}
+              className="flex items-center gap-1.5 rounded-[6px] px-1.5 py-1 text-[13px] font-medium text-ink transition-colors duration-100 hover:bg-hover"
+            >
               <span className={meta.toolKind === "model" ? "text-accent" : "text-ink-2"}>
                 {meta.toolKind === "model"
                   ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>{TOOL_GLYPHS.model}</svg>
@@ -591,33 +789,89 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
               {meta.tool}
               <span className="text-ink-3"><Icon size={12} strokeWidth={2.2}><path d="M9 6l6 6-6 6" /></Icon></span>
             </button>
+            {configMenu === "tool" && (
+              <ConfigPicker
+                label="Model"
+                selected={meta.tool}
+                options={MODEL_OPTIONS.map((model) => ({
+                  label: model,
+                  icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>{TOOL_GLYPHS.model}</svg>,
+                }))}
+                onSelect={(tool) => {
+                  setColumnOverrides((current) => ({ ...current, [prop.col]: { ...current[prop.col], tool, toolKind: "model" } }));
+                  setConfigMenu(null);
+                }}
+              />
+            )}
           </ConfigRow>
           <ConfigRow label="Grounding">
             <span className="flex items-center gap-2">
-              <MiniSwitch on={grounding} onToggle={() => setGrounding((current) => !current)} />
-              <span className="text-ink-3"><Icon size={13}><g><circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v4h1" /></g></Icon></span>
+              <MiniSwitch label="Grounding" on={grounding} onToggle={() => setGrounding((current) => !current)} />
+              <button
+                type="button"
+                aria-label="About grounding"
+                aria-expanded={groundingHelpOpen}
+                onClick={() => setGroundingHelpOpen((open) => !open)}
+                className="flex size-6 items-center justify-center rounded-[6px] text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink"
+              >
+                <Icon size={13}><g><circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v4h1" /></g></Icon>
+              </button>
             </span>
+            {groundingHelpOpen && (
+              <div className="absolute right-0 top-[30px] z-30 w-[230px] rounded-[10px] px-3 py-2.5 text-[12px] leading-relaxed shadow-overlay" style={{ color: "var(--tooltip-fg)", background: "var(--tooltip-bg)" }} role="status">
+                Grounding lets the model verify generated values against connected sources.
+              </div>
+            )}
           </ConfigRow>
           <ConfigRow label="Inputs">
-            {meta.inputs ? (
-              <span className="flex items-center gap-1.5">
-                <span className="rounded-[5px] bg-accent-tint px-1.5 py-0.5 text-[12px] font-medium text-accent-ink">{meta.inputs}</span>
-                <span className="text-ink-3"><Icon size={12} strokeWidth={2.2}><path d="M9 6l6 6-6 6" /></Icon></span>
-              </span>
-            ) : (
-              <button type="button" className="flex items-center gap-1 rounded-[6px] px-1.5 py-1 text-[13px] text-ink-2 transition-colors duration-100 hover:bg-hover hover:text-ink">
-                Select inputs
-                <span className="text-ink-3"><Icon size={12} strokeWidth={2.2}><path d="M9 6l6 6-6 6" /></Icon></span>
-              </button>
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={configMenu === "inputs"}
+              onClick={() => setConfigMenu((current) => current === "inputs" ? null : "inputs")}
+              className="flex max-w-[220px] items-center gap-1.5 rounded-[6px] px-1.5 py-1 text-[13px] text-ink-2 transition-colors duration-100 hover:bg-hover hover:text-ink"
+            >
+              {selectedInputs.length ? (
+                <span className="flex min-w-0 items-center gap-1">
+                  {selectedInputs.slice(0, 2).map((input) => (
+                    <span key={input} className="max-w-[92px] truncate rounded-[5px] bg-accent-tint px-1.5 py-0.5 text-[12px] font-medium text-accent-ink">{input}</span>
+                  ))}
+                  {selectedInputs.length > 2 && <span className="text-[11px] font-medium text-ink-3">+{selectedInputs.length - 2}</span>}
+                </span>
+              ) : (
+                <span>Select inputs</span>
+              )}
+              <span className="shrink-0 text-ink-3"><Icon size={12} strokeWidth={2.2}><path d="M9 6l6 6-6 6" /></Icon></span>
+            </button>
+            {configMenu === "inputs" && (
+              <InputPicker
+                selected={selectedInputs}
+                options={INPUT_OPTIONS.filter((input) => input !== prop.col)}
+                onToggle={(input) => {
+                  setInputSelections((current) => {
+                    const existing = current[prop.col] ?? (meta.inputs ? [meta.inputs] : []);
+                    const next = existing.includes(input) ? existing.filter((item) => item !== input) : [...existing, input];
+                    return { ...current, [prop.col]: next };
+                  });
+                }}
+              />
             )}
           </ConfigRow>
 
           {/* prompt — @-mention chips inline */}
-          <div className="mt-2 min-h-[88px] rounded-[10px] bg-inset p-3 text-[13px] leading-relaxed shadow-hairline">
+          <div
+            contentEditable
+            suppressContentEditableWarning
+            role="textbox"
+            aria-label={`${prop.col} calculation prompt`}
+            aria-multiline="true"
+            spellCheck
+            className="mt-2 min-h-[88px] cursor-text rounded-[10px] bg-inset p-3 text-[13px] leading-relaxed shadow-hairline outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_var(--accent)]"
+          >
             {meta.prompt ? (
               <span className="text-ink">
                 {meta.prompt.before}
-                {meta.prompt.chip && <span className="rounded-[5px] bg-accent-tint px-1.5 py-0.5 text-[12px] font-medium text-accent-ink">{meta.prompt.chip}</span>}
+                {meta.prompt.chip && <span contentEditable={false} className="rounded-[5px] bg-accent-tint px-1.5 py-0.5 text-[12px] font-medium text-accent-ink">{meta.prompt.chip}</span>}
                 {meta.prompt.after}
               </span>
             ) : (
@@ -639,15 +893,31 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
           </button>
 
           <GlideMenu className="mt-3 flex flex-col gap-0.5 border-t border-line pt-2" highlightClassName="-inset-x-1.5 rounded-[8px] bg-hover">
-            {[
-              { label: "Pin", icon: <path d="M12 17v5M8 3h8l-1 7 3 3H6l3-3-1-7z" /> },
-              { label: "More settings", icon: <g><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1" /></g> },
-            ].map((row) => (
-              <button key={row.label} data-menu-row type="button" className="relative z-10 -mx-1.5 flex items-center gap-2.5 rounded-[8px] px-1.5 py-1.5 text-left text-[13px] text-ink">
-                <span className="text-ink-2"><Icon size={15}>{row.icon}</Icon></span>
-                {row.label}
-              </button>
-            ))}
+            <button
+              data-menu-row
+              type="button"
+              aria-pressed={pinnedColumns.has(prop.col)}
+              onClick={() => setPinnedColumns((current) => {
+                const next = new Set(current);
+                next.has(prop.col) ? next.delete(prop.col) : next.add(prop.col);
+                return next;
+              })}
+              className="relative z-10 -mx-1.5 flex h-8 items-center gap-2.5 rounded-[8px] px-1.5 text-left text-[13px] leading-none text-ink transition-transform duration-150 active:scale-[0.96]"
+            >
+              <span className={pinnedColumns.has(prop.col) ? "text-accent" : "text-ink-2"}><Icon size={15}><path d="M12 17v5M8 3h8l-1 7 3 3H6l3-3-1-7z" /></Icon></span>
+              {pinnedColumns.has(prop.col) ? "Unpin" : "Pin"}
+            </button>
+            <button
+              data-menu-row
+              type="button"
+              aria-expanded={moreSettingsOpen}
+              onClick={() => setMoreSettingsOpen((open) => !open)}
+              className="relative z-10 -mx-1.5 flex h-8 items-center gap-2.5 rounded-[8px] px-1.5 text-left text-[13px] leading-none text-ink transition-transform duration-150 active:scale-[0.96]"
+            >
+              <span className={moreSettingsOpen ? "text-ink" : "text-ink-2"}><Icon size={15}><g><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1" /></g></Icon></span>
+              <span className="flex-1">More settings</span>
+              <span className={`text-ink-3 transition-transform duration-150 ${moreSettingsOpen ? "rotate-90" : ""}`}><Icon size={12} strokeWidth={2.2}><path d="M9 6l6 6-6 6" /></Icon></span>
+            </button>
             {prop.col === AI_LABEL && (
               <button
                 data-menu-row
@@ -657,13 +927,28 @@ export default function RecordsTable({ fill = false }: { fill?: boolean; variant
                   setAiDone(false);
                   setProp(null);
                 }}
-                className="relative z-10 -mx-1.5 flex items-center gap-2.5 rounded-[8px] px-1.5 py-1.5 text-left text-[13px] text-ink"
+                className="relative z-10 -mx-1.5 flex h-8 items-center gap-2.5 rounded-[8px] px-1.5 text-left text-[13px] leading-none text-ink transition-transform duration-150 active:scale-[0.96]"
               >
                 <span className="text-ink-2"><Icon size={15}><g><path d="M10.6 5.1A9.8 9.8 0 0 1 12 5c7 0 10 7 10 7a16.3 16.3 0 0 1-2.1 3M6.6 6.6A16 16 0 0 0 2 12s3 7 10 7a9.7 9.7 0 0 0 5.4-1.6M3 3l18 18" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></g></Icon></span>
                 Hide from view
               </button>
             )}
           </GlideMenu>
+
+          {moreSettingsOpen && (
+            <div className="mt-2 border-t border-line pt-2" style={{ animation: "fade-up 160ms cubic-bezier(0.23,1,0.32,1) both" }}>
+              <div className="pb-1 text-[11.5px] font-medium text-ink-3">Behavior</div>
+              <ConfigRow label="Required value">
+                <MiniSwitch label="Required value" on={advancedSettings.required} onToggle={() => setAdvancedSettings((current) => ({ ...current, required: !current.required }))} />
+              </ConfigRow>
+              <ConfigRow label="Allow empty results">
+                <MiniSwitch label="Allow empty results" on={advancedSettings.allowEmpty} onToggle={() => setAdvancedSettings((current) => ({ ...current, allowEmpty: !current.allowEmpty }))} />
+              </ConfigRow>
+              <ConfigRow label="Show confidence">
+                <MiniSwitch label="Show confidence" on={advancedSettings.confidence} onToggle={() => setAdvancedSettings((current) => ({ ...current, confidence: !current.confidence }))} />
+              </ConfigRow>
+            </div>
+          )}
         </div>
       )}
 

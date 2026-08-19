@@ -1,30 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { IconArrowBoxLeft } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconArrowBoxLeft";
-import { IconCheckmark1Small } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconCheckmark1Small";
-import { IconChevronDownSmall } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconChevronDownSmall";
-import { IconEditBig } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconEditBig";
-import { IconHome } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconHome";
-import { IconLibrary } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconLibrary";
-import { IconMagnifyingGlass } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconMagnifyingGlass";
-import { IconPlusMedium } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconPlusMedium";
-import { IconPopsicle2 } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconPopsicle2";
-import { IconSettingsGear1 } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconSettingsGear1";
-import { IconSidebarLeftArrow } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconSidebarLeftArrow";
-import { IconUserAdd } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconUserAdd";
 import { useDialKit, type DialConfig } from "dialkit";
 import posthog from "posthog-js";
 import ApprovalCard from "@/components/primitives/ApprovalCard";
 import ContextCards from "@/components/primitives/ContextCards";
 import DiffTable from "@/components/primitives/DiffTable";
-import GlideMenu from "@/components/primitives/GlideMenu";
 import InsightCards from "@/components/primitives/InsightCards";
 import LoadingState from "@/components/primitives/LoadingState";
 import PromptBar from "@/components/primitives/PromptBar";
 import RecommendationCard from "@/components/primitives/RecommendationCard";
 import RecordsTable from "@/components/primitives/RecordsTable";
 import SelectionActions from "@/components/primitives/SelectionActions";
+import SidebarNav from "@/components/primitives/SidebarNav";
 import StreamingText from "@/components/primitives/StreamingText";
 import TaskRows from "@/components/primitives/TaskRows";
 import ThinkingState from "@/components/primitives/ThinkingState";
@@ -497,347 +485,6 @@ function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: Sc
   );
 }
 
-/* ── sidebar ──────────────────────────────────────────────── */
-
-/* rows share the SidebarNav language: one gliding hover highlight
- * per group, 13px labels, icons that darken with state */
-function GlideGroup({ children }: { children: ReactNode }) {
-  return (
-    <GlideMenu
-      rowSelector="[data-row]"
-      highlightClassName="sidebar-glide-highlight rounded-[7px] bg-hover-2"
-      className="group/glide flex flex-col gap-px"
-    >
-      {children}
-    </GlideMenu>
-  );
-}
-
-function SectionLabel({ children, action }: { children: ReactNode; action?: ReactNode }) {
-  return (
-    <div className="sidebar-copy mx-2 flex h-8 items-center justify-between px-2 text-[12.5px] font-medium text-ink-3">
-      <span className="flex items-center gap-1">
-        <IconChevronDownSmall size={13} />
-        {children}
-      </span>
-      {action}
-    </div>
-  );
-}
-
-function RailButton({
-  icon,
-  label,
-  active = false,
-  badge,
-  count,
-  onClick,
-}: {
-  icon: ReactNode;
-  label: string;
-  active?: boolean;
-  badge?: string;
-  count?: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      data-row
-      type="button"
-      onClick={onClick}
-      className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left
-        transition-[width,background-color,color,transform] duration-150 active:scale-[0.98]
-        ${active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""}`}
-    >
-      <span className={`flex size-5 shrink-0 items-center justify-center ${active ? "text-ink" : "text-ink-2"}`}>{icon}</span>
-      <span className={`sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium ${active ? "text-ink" : "text-ink-2"}`}>
-        {label}
-      </span>
-      {count && <span className="sidebar-copy mr-2 shrink-0 text-[12px] font-medium tabular-nums text-ink-3">{count}</span>}
-      {badge && (
-        <span className="sidebar-copy mr-2 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-accent-tint px-1 text-[10.5px] font-medium tabular-nums text-accent-ink">
-          {badge}
-        </span>
-      )}
-    </button>
-  );
-}
-
-const WORKSPACES = [
-  { key: "creamery", name: "Creamery Ops", sub: "Support workspace", monogram: "C" },
-];
-
-const NAV_ITEMS: { key: string; label: string; icon: ReactNode; count?: string }[] = [
-  { key: "home", label: "Home", icon: <IconHome size={18} /> },
-  { key: "library", label: "Library", icon: <IconLibrary size={18} /> },
-  { key: "invite", label: "Invite users", icon: <IconUserAdd size={18} />, count: "3/10" },
-];
-
-/* ─────────────────────────────────────────────────────────
- * SIDEBAR MOTION STORYBOARD
- *
- *    0ms   collapse begins; rail icons remain fixed at x=26
- *    0ms   labels slide 8px inward and fade behind the rail
- *    0ms   transparent logo crossfades to the expand control
- *  280ms   shell reaches 52px; persistent icon rail remains
- * ───────────────────────────────────────────────────────── */
-
-const SIDEBAR_MOTION = {
-  expandedWidth:  224, // px with labels and secondary content
-  collapsedWidth:  52, // px fixed icon rail
-  duration:       280, // ms for the shell to settle
-  copyDuration:   180, // ms for labels to clear the rail
-  copyOffset:       8, // px labels travel inward
-  easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-};
-
-function Sidebar({ onPick, onNewChat, activeTitle }: { onPick: (id: ScenarioId, label: string, prompt?: string) => void; onNewChat: () => void; activeTitle: string | null }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [nav, setNav] = useState("chats");
-  const [workspace, setWorkspace] = useState(WORKSPACES[0]);
-  const [wsOpen, setWsOpen] = useState(false);
-  const wsBtnRef = useRef<HTMLButtonElement>(null);
-  const [wsPos, setWsPos] = useState({ top: 0, left: 0 });
-  const [chatSearchOpen, setChatSearchOpen] = useState(false);
-  const [chatSearch, setChatSearch] = useState("");
-  const chatSearchRef = useRef<HTMLInputElement>(null);
-
-  const visibleRecents = RECENTS.filter((item) => item.label.toLowerCase().includes(chatSearch.trim().toLowerCase()));
-
-  useEffect(() => {
-    if (!wsOpen) return;
-    const close = (event: PointerEvent) => {
-      if (!(event.target as Element).closest("[data-ws]")) setWsOpen(false);
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [wsOpen]);
-
-  useEffect(() => {
-    if (chatSearchOpen) chatSearchRef.current?.focus();
-  }, [chatSearchOpen]);
-
-  return (
-    <aside
-      data-sidebar-collapsed={collapsed}
-      className="hidden shrink-0 overflow-hidden transition-[width] lg:flex"
-      style={{
-        width: collapsed ? SIDEBAR_MOTION.collapsedWidth : SIDEBAR_MOTION.expandedWidth,
-        transitionDuration: `${SIDEBAR_MOTION.duration}ms`,
-        transitionTimingFunction: SIDEBAR_MOTION.easing,
-        "--sidebar-copy-duration": `${SIDEBAR_MOTION.copyDuration}ms`,
-        "--sidebar-copy-offset": `${SIDEBAR_MOTION.copyOffset}px`,
-        "--sidebar-easing": SIDEBAR_MOTION.easing,
-      } as CSSProperties}
-    >
-      <div className="flex min-h-0 w-[224px] shrink-0 flex-col pb-2.5">
-        {/* the logo and rail share one immutable 36px icon column */}
-        <div className="relative mb-2.5 h-10 shrink-0">
-          <span data-ws className="absolute inset-0">
-            <button
-              ref={wsBtnRef}
-              type="button"
-              aria-expanded={wsOpen}
-              aria-hidden={collapsed}
-              tabIndex={collapsed ? -1 : 0}
-              onClick={() => {
-                if (!wsOpen && wsBtnRef.current) {
-                  const rect = wsBtnRef.current.getBoundingClientRect();
-                  setWsPos({ top: rect.bottom + 6, left: rect.left });
-                }
-                setWsOpen((current) => !current);
-              }}
-              className="sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]"
-            >
-              <span className="sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink">
-                <IconPopsicle2 size={18} />
-              </span>
-              <span className="sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2">{workspace.name}</span>
-              <span className="sidebar-copy ml-1 flex shrink-0 text-ink-3">
-                <IconChevronDownSmall size={16} />
-              </span>
-            </button>
-            {wsOpen && (
-              <div
-                className="fixed z-50 w-64 rounded-[14px] bg-surface p-1.5 shadow-overlay"
-                style={{ top: wsPos.top, left: wsPos.left, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top left" }}
-              >
-                <GlideMenu className="flex flex-col gap-px" highlightClassName="inset-x-0 rounded-[8px] bg-hover-2">
-                  {WORKSPACES.map((item) => (
-                    <button
-                      key={item.key}
-                      data-menu-row
-                      type="button"
-                      onClick={() => {
-                        setWorkspace(item);
-                        setWsOpen(false);
-                      }}
-                      className="relative z-10 flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
-                    >
-                      <span className="flex size-6 shrink-0 items-center justify-center rounded-[7px] bg-ink text-[11px] font-semibold text-surface">{item.monogram}</span>
-                      <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-ink">{item.name}</span>
-                      <span className={`shrink-0 text-ink ${item.key === workspace.key ? "" : "invisible"}`}>
-                        <IconCheckmark1Small size={18} />
-                      </span>
-                    </button>
-                  ))}
-                  <div className="my-1 h-px bg-line" />
-                  {[
-                    { label: "New workspace", icon: <IconPlusMedium size={16} /> },
-                    { label: "Workspace settings", icon: <IconSettingsGear1 size={16} /> },
-                    { label: "Invite team members", icon: <IconUserAdd size={16} /> },
-                  ].map((row) => (
-                    <button
-                      key={row.label}
-                      data-menu-row
-                      type="button"
-                      onClick={() => setWsOpen(false)}
-                      className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
-                    >
-                      <span className="shrink-0 text-ink-2">{row.icon}</span>
-                      <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{row.label}</span>
-                    </button>
-                  ))}
-                  <div className="my-1 h-px bg-line" />
-                  <button
-                    data-menu-row
-                    type="button"
-                    onClick={() => setWsOpen(false)}
-                    className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2 text-left"
-                  >
-                    <span className="shrink-0 text-ink-2"><IconArrowBoxLeft size={16} /></span>
-                    <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">Sign out</span>
-                  </button>
-                </GlideMenu>
-              </div>
-            )}
-          </span>
-        <button
-          type="button"
-          aria-label="Collapse sidebar"
-          aria-hidden={collapsed}
-          tabIndex={collapsed ? -1 : 0}
-          onClick={() => {
-            setCollapsed(true);
-            setWsOpen(false);
-            setChatSearchOpen(false);
-            setChatSearch("");
-          }}
-          className="sidebar-collapse-control absolute right-2 top-1 flex size-8 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color] duration-150 hover:bg-hover-2 hover:text-ink"
-        >
-          <IconSidebarLeftArrow size={18} />
-        </button>
-        <button
-          type="button"
-          aria-label="Expand sidebar"
-          aria-hidden={!collapsed}
-          tabIndex={collapsed ? 0 : -1}
-          onClick={() => setCollapsed(false)}
-          className="sidebar-expand-control absolute left-2 top-0.5 flex size-9 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color] duration-150 hover:bg-hover-2 hover:text-ink"
-        >
-          <IconSidebarLeftArrow size={18} className="rotate-180" />
-        </button>
-      </div>
-
-      {/* primary nav — New chat leads, like every chat product */}
-      <GlideGroup>
-        <RailButton
-          icon={<IconEditBig size={18} />}
-          label="New chat"
-          onClick={onNewChat}
-        />
-        {NAV_ITEMS.map((item) => (
-          <RailButton
-            key={item.key}
-            icon={item.icon}
-            label={item.label}
-            count={item.count}
-            active={nav === item.key}
-            onClick={() => setNav(item.key)}
-          />
-        ))}
-      </GlideGroup>
-
-      {/* chats */}
-      <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
-        <SectionLabel
-          action={(
-            <button
-              type="button"
-              aria-label={chatSearchOpen ? "Close chat search" : "Search chats"}
-              aria-expanded={chatSearchOpen}
-              onClick={() => {
-                setChatSearchOpen((open) => !open);
-                if (chatSearchOpen) setChatSearch("");
-              }}
-              className={`relative flex size-7 items-center justify-center rounded-[7px] transition-[background-color,color,transform] duration-150 after:absolute after:-inset-1.5 after:content-[''] active:scale-[0.96] ${chatSearchOpen ? "bg-hover-2 text-ink" : "text-ink-3 hover:bg-hover-2 hover:text-ink"}`}
-            >
-              <IconMagnifyingGlass size={16} />
-            </button>
-          )}
-        >
-          Chats
-        </SectionLabel>
-        {chatSearchOpen && (
-          <div className="sidebar-copy mx-2 mb-1 px-2" style={{ animation: "fade-in 140ms ease-out both" }}>
-            <div className="flex h-8 items-center gap-1.5 rounded-[8px] bg-field px-2 text-ink-3 shadow-hairline focus-within:text-ink-2">
-              <IconMagnifyingGlass size={14} />
-              <input
-                ref={chatSearchRef}
-                value={chatSearch}
-                onChange={(event) => setChatSearch(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    setChatSearchOpen(false);
-                    setChatSearch("");
-                  }
-                }}
-                placeholder="Search chats"
-                aria-label="Search chat history"
-                className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
-              />
-            </div>
-          </div>
-        )}
-        <GlideGroup>
-          {visibleRecents.map((item) => {
-            const isActive = item.label === activeTitle;
-            return (
-              <button
-                key={item.label}
-                data-row
-                type="button"
-                onClick={() => onPick(item.id, item.label, item.prompt)}
-                title={item.label}
-                className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left transition-[width,background-color,color,transform] duration-150 active:scale-[0.98] ${
-                  isActive ? "bg-hover-2 group-hover/glide:bg-transparent" : ""
-                }`}
-              >
-                <span className={`sidebar-copy min-w-0 flex-1 truncate text-[14px] font-medium ${isActive ? "text-ink" : "text-ink-2"}`}>{item.label}</span>
-              </button>
-            );
-          })}
-          {chatSearch && visibleRecents.length === 0 && (
-            <div className="sidebar-copy mx-2 px-2 py-2 text-[12.5px] text-ink-3">No chats found</div>
-          )}
-        </GlideGroup>
-      </div>
-
-      {/* upgrade — pinned low, like the reference */}
-      <div className="sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3">
-        <button
-          type="button"
-          onClick={onNewChat}
-          className="flex h-8 w-full items-center justify-center rounded-control bg-hover-2 text-[12.5px] font-medium text-ink transition-[background-color,transform] duration-150 hover:bg-line-strong active:scale-[0.98]"
-        >
-          Upgrade
-        </button>
-      </div>
-      </div>
-    </aside>
-  );
-}
-
 /* ── main ─────────────────────────────────────────────────── */
 
 type Msg = { id: number; role: "user"; text: string } | { id: number; role: "assistant"; scenarioId: ScenarioId };
@@ -1165,7 +812,14 @@ export default function IceCreamHarness() {
 
   return (
     <main className="flex h-[100dvh] gap-0 bg-canvas p-2.5 text-ink lg:pl-0">
-      <Sidebar onPick={pickRecent} onNewChat={newChat} activeTitle={chat.title} />
+      <SidebarNav
+        fill
+        className="hidden lg:flex"
+        recents={RECENTS}
+        activeTitle={chat.title}
+        onPick={(id, label, prompt) => pickRecent(id as ScenarioId, label, prompt)}
+        onNewChat={newChat}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
         {/* panels row — main pane + docked side pane */}

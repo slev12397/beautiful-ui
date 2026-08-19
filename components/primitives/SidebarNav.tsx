@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { IconArrowBoxLeft } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconArrowBoxLeft";
 import { IconCheckmark1Small } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconCheckmark1Small";
 import { IconChevronDownSmall } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconChevronDownSmall";
+import { IconCrossSmall } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconCrossSmall";
 import { IconEditBig } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconEditBig";
 import { IconHome } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconHome";
 import { IconLibrary } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconLibrary";
@@ -18,7 +19,7 @@ import GlideMenu from "@/components/primitives/GlideMenu";
 
 /* ─────────────────────────────────────────────────────────
  * SIDEBAR NAV
- * The standalone design-system version of the harness rail:
+ * Shared by the design-system preview and the harness shell:
  * compact workspace switcher, primary navigation, searchable
  * chat history, and a collapse that preserves icon alignment.
  * ───────────────────────────────────────────────────────── */
@@ -31,16 +32,32 @@ const NAV_ITEMS = [
   { key: "invite", label: "Invite users", icon: <IconUserAdd size={18} />, count: "3/10" },
 ];
 
-const RECENTS = [
-  "Supplier records",
-  "Urgent to-dos this morning",
-  "Flavor page ticket",
-  "Workload summary",
-  "Off-board a supplier",
-  "Batch restock function",
-  "Propose flavor edits",
-  "Subway surfing",
+export type SidebarRecent = {
+  id: string;
+  label: string;
+  prompt?: string;
+};
+
+const DEFAULT_RECENTS: SidebarRecent[] = [
+  { id: "suppliers", label: "Supplier records" },
+  { id: "todos", label: "Urgent to-dos this morning" },
+  { id: "flavor", label: "Flavor page ticket" },
+  { id: "workload", label: "Workload summary" },
+  { id: "offboarding", label: "Off-board a supplier" },
+  { id: "restock", label: "Batch restock function" },
+  { id: "edits", label: "Propose flavor edits" },
+  { id: "subway", label: "Subway surfing" },
 ];
+
+type SidebarNavProps = {
+  activeTitle?: string | null;
+  className?: string;
+  fill?: boolean;
+  onNewChat?: () => void;
+  onPick?: (id: string, label: string, prompt?: string) => void;
+  recents?: SidebarRecent[];
+  variant?: string;
+};
 
 const SIDEBAR_MOTION = {
   expandedWidth: 224,
@@ -48,6 +65,19 @@ const SIDEBAR_MOTION = {
   duration: 280,
   copyDuration: 180,
   copyOffset: 8,
+  easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+};
+
+/* ─────────────────────────────────────────────────────────
+ * CHAT SEARCH STORYBOARD
+ *
+ *   0ms   search is triggered; Chats label begins fading
+ *   0ms   field grows right → left from the search control
+ * 180ms   field fills the row; cursor is focused and ready
+ * ───────────────────────────────────────────────────────── */
+const CHAT_SEARCH_MOTION = {
+  duration: 180,
+  closedWidth: 28,
   easing: "cubic-bezier(0.16, 1, 0.3, 1)",
 };
 
@@ -82,7 +112,7 @@ function RailButton({
       type="button"
       onClick={onClick}
       className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left
-        transition-[width,background-color,color,transform] duration-150 active:scale-[0.96]
+        transition-[width,background-color,color,transform] duration-150 active:scale-[0.98]
         ${active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""}`}
     >
       <span className={`flex size-5 shrink-0 items-center justify-center ${active ? "text-ink" : "text-ink-2"}`}>
@@ -100,18 +130,6 @@ function RailButton({
   );
 }
 
-function SectionLabel({ children, action }: { children: ReactNode; action?: ReactNode }) {
-  return (
-    <div className="sidebar-copy mx-2 flex h-8 items-center justify-between px-2 text-[12.5px] font-medium text-ink-3">
-      <span className="flex items-center gap-1">
-        <IconChevronDownSmall size={13} />
-        {children}
-      </span>
-      {action}
-    </div>
-  );
-}
-
 function WorkspaceMenu({
   position,
   onClose,
@@ -126,7 +144,7 @@ function WorkspaceMenu({
       style={{
         top: position.top,
         left: position.left,
-        animation: "pop-in 180ms cubic-bezier(0.16,1,0.3,1) both",
+        animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both",
         transformOrigin: "top left",
       }}
     >
@@ -176,10 +194,17 @@ function WorkspaceMenu({
   );
 }
 
-export default function SidebarNav({ fill = false }: { fill?: boolean; variant?: string }) {
+export default function SidebarNav({
+  activeTitle,
+  className = "",
+  fill = false,
+  onNewChat,
+  onPick,
+  recents = DEFAULT_RECENTS,
+}: SidebarNavProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [activeNav, setActiveNav] = useState("chats");
-  const [activeTitle, setActiveTitle] = useState<string | null>(RECENTS[0]);
+  const [demoActiveTitle, setDemoActiveTitle] = useState<string | null>(null);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [workspacePosition, setWorkspacePosition] = useState({ top: 0, left: 0 });
   const [searchOpen, setSearchOpen] = useState(false);
@@ -187,7 +212,8 @@ export default function SidebarNav({ fill = false }: { fill?: boolean; variant?:
   const workspaceButtonRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const visibleRecents = RECENTS.filter((item) => item.toLowerCase().includes(query.trim().toLowerCase()));
+  const selectedTitle = activeTitle === undefined ? demoActiveTitle : activeTitle;
+  const visibleRecents = recents.filter((item) => item.label.toLowerCase().includes(query.trim().toLowerCase()));
 
   useEffect(() => {
     if (!workspaceOpen) return;
@@ -216,7 +242,7 @@ export default function SidebarNav({ fill = false }: { fill?: boolean; variant?:
     <aside
       data-sidebar-collapsed={collapsed}
       aria-label="Workspace navigation"
-      className={`relative flex shrink-0 overflow-hidden bg-canvas transition-[width] ${fill ? "h-full" : "h-[520px] rounded-[14px] shadow-hairline"}`}
+      className={`relative flex shrink-0 overflow-hidden transition-[width] ${fill ? "h-full" : "h-[600px]"} ${className}`}
       style={{
         width: collapsed ? SIDEBAR_MOTION.collapsedWidth : SIDEBAR_MOTION.expandedWidth,
         transitionDuration: `${SIDEBAR_MOTION.duration}ms`,
@@ -226,7 +252,7 @@ export default function SidebarNav({ fill = false }: { fill?: boolean; variant?:
         "--sidebar-easing": SIDEBAR_MOTION.easing,
       } as CSSProperties}
     >
-      <div className="flex min-h-0 w-[224px] shrink-0 flex-col pb-2.5">
+      <div className="flex min-h-0 w-[224px] shrink-0 flex-col pb-2">
         <div className="relative mb-2.5 h-10 shrink-0">
           <button
             ref={workspaceButtonRef}
@@ -242,7 +268,7 @@ export default function SidebarNav({ fill = false }: { fill?: boolean; variant?:
               }
               setWorkspaceOpen((open) => !open);
             }}
-            className="sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left transition-[background-color,transform] duration-150 hover:bg-hover-2 active:scale-[0.96]"
+            className="sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]"
           >
             <span className="sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink">
               <IconPopsicle2 size={18} />
@@ -251,7 +277,7 @@ export default function SidebarNav({ fill = false }: { fill?: boolean; variant?:
               {WORKSPACE.name}
             </span>
             <span className="sidebar-copy ml-1 flex shrink-0 text-ink-3">
-              <IconChevronDownSmall size={16} className={`transition-transform duration-150 ${workspaceOpen ? "rotate-180" : ""}`} />
+              <IconChevronDownSmall size={16} />
             </span>
           </button>
 
@@ -263,7 +289,7 @@ export default function SidebarNav({ fill = false }: { fill?: boolean; variant?:
             aria-hidden={collapsed}
             tabIndex={collapsed ? -1 : 0}
             onClick={collapse}
-            className="sidebar-collapse-control absolute right-2 top-1 flex size-8 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color,transform] duration-150 hover:bg-hover-2 hover:text-ink active:scale-[0.96]"
+            className="sidebar-collapse-control absolute right-2 top-1 flex size-8 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color] duration-150 hover:bg-hover-2 hover:text-ink"
           >
             <IconSidebarLeftArrow size={18} />
           </button>
@@ -273,7 +299,7 @@ export default function SidebarNav({ fill = false }: { fill?: boolean; variant?:
             aria-hidden={!collapsed}
             tabIndex={collapsed ? 0 : -1}
             onClick={() => setCollapsed(false)}
-            className="sidebar-expand-control absolute left-2 top-0.5 flex size-9 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color,transform] duration-150 hover:bg-hover-2 hover:text-ink active:scale-[0.96]"
+            className="sidebar-expand-control absolute left-2 top-0.5 flex size-9 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color] duration-150 hover:bg-hover-2 hover:text-ink"
           >
             <IconSidebarLeftArrow size={18} className="rotate-180" />
           </button>
@@ -284,8 +310,8 @@ export default function SidebarNav({ fill = false }: { fill?: boolean; variant?:
             icon={<IconEditBig size={18} />}
             label="New chat"
             onClick={() => {
-              setActiveNav("chats");
-              setActiveTitle(null);
+              if (activeTitle === undefined) setDemoActiveTitle(null);
+              onNewChat?.();
             }}
           />
           {NAV_ITEMS.map((item) => (
@@ -295,75 +321,92 @@ export default function SidebarNav({ fill = false }: { fill?: boolean; variant?:
               label={item.label}
               count={item.count}
               active={activeNav === item.key}
-              onClick={() => {
-                setActiveNav(item.key);
-                setActiveTitle(null);
-              }}
+              onClick={() => setActiveNav(item.key)}
             />
           ))}
         </GlideGroup>
 
         <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
-          <SectionLabel
-            action={(
+          <div className="sidebar-copy relative mx-2 mb-1 h-8">
+            <div
+              aria-hidden={searchOpen}
+              className={`absolute inset-0 flex items-center gap-1.5 px-2 text-[12.5px] font-medium text-ink-3 transition-[opacity,transform] ${searchOpen ? "pointer-events-none -translate-x-1 opacity-0" : "translate-x-0 opacity-100"}`}
+              style={{ transitionDuration: `${CHAT_SEARCH_MOTION.duration}ms`, transitionTimingFunction: CHAT_SEARCH_MOTION.easing }}
+            >
+              <IconChevronDownSmall size={16} />
+              <span>Chats</span>
+            </div>
+
+            <button
+              type="button"
+              aria-label="Search chats"
+              aria-expanded={searchOpen}
+              onClick={() => setSearchOpen(true)}
+              className={`absolute right-0 top-0 z-10 flex size-8 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color,transform] hover:bg-hover-2 hover:text-ink active:scale-[0.96] ${searchOpen ? "pointer-events-none opacity-0" : "opacity-100"}`}
+              style={{ transitionDuration: `${CHAT_SEARCH_MOTION.duration}ms` }}
+            >
+              <IconMagnifyingGlass size={16} />
+            </button>
+
+            <div
+              className={`absolute right-0 top-0 z-20 flex h-8 items-center overflow-hidden rounded-[8px] bg-field text-ink-3 shadow-hairline transition-[width,opacity] focus-within:text-ink-2 ${searchOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+              style={{
+                width: searchOpen ? "100%" : CHAT_SEARCH_MOTION.closedWidth,
+                transitionDuration: `${CHAT_SEARCH_MOTION.duration}ms`,
+                transitionTimingFunction: CHAT_SEARCH_MOTION.easing,
+              }}
+            >
+              <span className="ml-2 flex shrink-0 items-center justify-center">
+                <IconMagnifyingGlass size={15} />
+              </span>
+              <input
+                ref={searchRef}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    setSearchOpen(false);
+                    setQuery("");
+                  }
+                }}
+                placeholder="Search chats"
+                aria-label="Search chat history"
+                className="ml-1.5 min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-ink-3"
+              />
               <button
                 type="button"
-                aria-label={searchOpen ? "Close chat search" : "Search chats"}
-                aria-expanded={searchOpen}
+                aria-label="Close chat search"
                 onClick={() => {
-                  setSearchOpen((open) => !open);
-                  if (searchOpen) setQuery("");
+                  setSearchOpen(false);
+                  setQuery("");
                 }}
-                className={`relative flex size-7 items-center justify-center rounded-[7px] transition-[background-color,color,transform] duration-150 after:absolute after:-inset-1.5 after:content-[''] active:scale-[0.96] ${searchOpen ? "bg-hover-2 text-ink" : "text-ink-3 hover:bg-hover-2 hover:text-ink"}`}
+                className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-ink-3 transition-[background-color,color,transform] duration-150 hover:bg-hover-2 hover:text-ink active:scale-[0.96]"
               >
-                <IconMagnifyingGlass size={16} />
+                <IconCrossSmall size={16} />
               </button>
-            )}
-          >
-            Chats
-          </SectionLabel>
-
-          {searchOpen && (
-            <div className="sidebar-copy mx-2 mb-1 px-2" style={{ animation: "fade-in 140ms ease-out both" }}>
-              <div className="flex h-8 items-center gap-1.5 rounded-[8px] bg-field px-2 text-ink-3 shadow-hairline focus-within:text-ink-2">
-                <IconMagnifyingGlass size={14} />
-                <input
-                  ref={searchRef}
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") {
-                      setSearchOpen(false);
-                      setQuery("");
-                    }
-                  }}
-                  placeholder="Search chats"
-                  aria-label="Search chat history"
-                  className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
-                />
-              </div>
             </div>
-          )}
+          </div>
 
           <GlideGroup>
             {visibleRecents.map((item) => {
-              const active = item === activeTitle;
+              const active = item.label === selectedTitle;
               return (
                 <button
-                  key={item}
+                  key={item.id}
                   data-row
                   type="button"
-                  title={item}
+                  title={item.label}
                   onClick={() => {
                     setActiveNav("chats");
-                    setActiveTitle(item);
+                    if (activeTitle === undefined) setDemoActiveTitle(item.label);
+                    onPick?.(item.id, item.label, item.prompt);
                   }}
-                  className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left transition-[width,background-color,color,transform] duration-150 active:scale-[0.96] ${
+                  className={`sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left transition-[width,background-color,color,transform] duration-150 active:scale-[0.98] ${
                     active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""
                   }`}
                 >
                   <span className={`sidebar-copy min-w-0 flex-1 truncate text-[14px] font-medium ${active ? "text-ink" : "text-ink-2"}`}>
-                    {item}
+                    {item.label}
                   </span>
                 </button>
               );
@@ -377,7 +420,8 @@ export default function SidebarNav({ fill = false }: { fill?: boolean; variant?:
         <div className="sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3">
           <button
             type="button"
-            className="flex h-8 w-full items-center justify-center rounded-control bg-hover-2 text-[12.5px] font-medium text-ink transition-[background-color,transform] duration-150 hover:bg-line-strong active:scale-[0.96]"
+            onClick={onNewChat}
+            className="flex h-8 w-full items-center justify-center rounded-control bg-hover-2 text-[12.5px] font-medium text-ink transition-[background-color,transform] duration-150 hover:bg-line-strong active:scale-[0.98]"
           >
             Upgrade
           </button>

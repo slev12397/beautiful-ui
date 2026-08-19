@@ -4,6 +4,7 @@ import { DialRoot } from "dialkit";
 import "dialkit/styles.css";
 import "./globals.css";
 import { DevToolbar } from "@/components/site/DevToolbar";
+import { InteractionSounds } from "@/components/site/InteractionSounds";
 import { ThemeSync } from "@/components/site/ThemeSync";
 
 const inter = Inter({
@@ -34,6 +35,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${mono.variable} font-sans`}>
         <ThemeSync />
+        <InteractionSounds />
         {children}
         <DialRoot position="top-right" defaultOpen />
         <DevToolbar />

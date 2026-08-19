@@ -1073,11 +1073,28 @@ th.is-colsel .records-header-icon {
 }
 
 .records-tags {
+  position: relative;
   display: flex;
+  width: 100%;
   min-width: 0;
   align-items: center;
   gap: 4px;
   overflow: hidden;
+}
+
+.records-tags-measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: max-content;
+  gap: 4px;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.records-tags-measure > span {
+  display: inline-flex;
 }
 
 .records-tag {
@@ -1172,7 +1189,9 @@ th.is-colsel .records-header-icon {
   height: 35px;
   background: var(--inset);
   color: var(--ink-2);
-  font-size: 11.5px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
 }
 
 .records-table tfoot .records-sticky-cell {
@@ -1185,6 +1204,13 @@ th.is-colsel .records-header-icon {
   font-weight: 500;
 }
 
+.records-footer-value {
+  display: inline-flex;
+  height: 35px;
+  align-items: center;
+  vertical-align: middle;
+}
+
 .records-calculation-number {
   margin-right: 3px;
   color: var(--ink);
@@ -1192,8 +1218,12 @@ th.is-colsel .records-header-icon {
 }
 
 .records-add-calculation {
+  height: 35px;
   gap: 6px;
   color: var(--ink-3);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
   transition: color 120ms ease-out, transform 140ms var(--ease-out-strong);
 }
 
