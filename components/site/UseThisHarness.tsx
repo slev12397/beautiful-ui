@@ -104,9 +104,8 @@ export function UseThisModal({ open, onClose }: { open: boolean; onClose: () => 
           <div className="min-w-0">
             <h2 className="text-[16px] font-semibold tracking-[-0.01em] text-ink">Fork this harness</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-ink-2 text-pretty">
-              This whole harness is open source: every primitive, the design tokens, and the
-              sounds. The fastest way to drop it into your agent product is to hand these
-              instructions to your coding agent.
+              This whole harness is open source. Hand these instructions to your coding agent
+              to drop it into your product.
             </p>
           </div>
           <button
@@ -159,7 +158,7 @@ export function UseThisModal({ open, onClose }: { open: boolean; onClose: () => 
           </div>
 
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-3.5">
-            <span className="text-[12px] text-ink-3">MIT licensed · works with Claude Code, Cursor, and any coding agent.</span>
+            <span className="text-[12px] text-ink-3">MIT licensed</span>
             <a
               href={REPO_URL}
               target="_blank"

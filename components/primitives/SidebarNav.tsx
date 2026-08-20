@@ -158,7 +158,7 @@ function WorkspaceMenu({
           data-menu-row
           type="button"
           onClick={onClose}
-          className="relative z-10 flex h-10 w-full items-center gap-2.5 rounded-[8px] px-2 text-left"
+          className="relative z-10 flex h-10 w-full items-center gap-1.5 rounded-[8px] px-2 text-left"
         >
           <span className="flex size-6 shrink-0 items-center justify-center rounded-[7px] bg-ink text-[11px] font-semibold text-surface">
             {WORKSPACE.monogram}
@@ -177,9 +177,9 @@ function WorkspaceMenu({
             data-menu-row
             type="button"
             onClick={onClose}
-            className="relative z-10 flex h-9 w-full items-center gap-2.5 rounded-[8px] px-2 text-left"
+            className="relative z-10 flex h-9 w-full items-center gap-1.5 rounded-[8px] px-2 text-left"
           >
-            <span className="shrink-0 text-ink-2">{item.icon}</span>
+            <span className="flex size-5 shrink-0 items-center justify-center text-ink-2">{item.icon}</span>
             <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{item.label}</span>
           </button>
         ))}
@@ -188,9 +188,9 @@ function WorkspaceMenu({
           data-menu-row
           type="button"
           onClick={onClose}
-          className="relative z-10 flex h-9 w-full items-center gap-2.5 rounded-[8px] px-2 text-left"
+          className="relative z-10 flex h-9 w-full items-center gap-1.5 rounded-[8px] px-2 text-left"
         >
-          <span className="shrink-0 text-ink-2"><IconArrowBoxLeft size={16} /></span>
+          <span className="flex size-5 shrink-0 items-center justify-center text-ink-2"><IconArrowBoxLeft size={16} /></span>
           <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">Sign out</span>
         </button>
       </GlideMenu>
