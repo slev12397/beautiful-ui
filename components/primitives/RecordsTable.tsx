@@ -31,19 +31,22 @@ const STRENGTH: Record<Strength, { label: string; color: string; rank: number }>
   none: { label: "No communication", color: "var(--ink-3)", rank: 0 },
 };
 
-type TagColor = { background: string; foreground: string };
+// A single mid-lightness base hue per tag. Background, text, and border are
+// derived from this via color-mix() against the theme tokens in .records-tag,
+// so the chips adapt to light and dark automatically (same pattern as FilterTable).
+type TagColor = { base: string };
 
 const TAG_PALETTE: Record<string, TagColor> = {
-  amber: { background: "oklch(0.966 0.053 94.426)", foreground: "oklch(0.478 0.109 63.047)" },
-  lime: { background: "oklch(0.972 0.062 113.355)", foreground: "oklch(0.472 0.113 120.549)" },
-  yellow: { background: "oklch(0.969 0.065 101.823)", foreground: "oklch(0.467 0.098 101.215)" },
-  purple: { background: "oklch(0.963 0.021 301.149)", foreground: "oklch(0.466 0.187 292.974)" },
-  orange: { background: "oklch(0.959 0.025 59.919)", foreground: "oklch(0.491 0.14 44.908)" },
-  cyan: { background: "oklch(0.96 0.029 218.179)", foreground: "oklch(0.496 0.09 222.317)" },
-  red: { background: "oklch(0.956 0.022 14.063)", foreground: "oklch(0.514 0.185 26.719)" },
-  magenta: { background: "oklch(0.965 0.03 324.137)", foreground: "oklch(0.506 0.221 323.155)" },
-  green: { background: "oklch(0.967 0.034 161.445)", foreground: "oklch(0.521 0.115 161.078)" },
-  pink: { background: "oklch(0.959 0.021 351.895)", foreground: "oklch(0.516 0.192 3.003)" },
+  amber: { base: "oklch(0.76 0.13 70)" },
+  lime: { base: "oklch(0.77 0.16 122)" },
+  yellow: { base: "oklch(0.80 0.15 101)" },
+  purple: { base: "oklch(0.62 0.18 293)" },
+  orange: { base: "oklch(0.71 0.16 48)" },
+  cyan: { base: "oklch(0.72 0.10 221)" },
+  red: { base: "oklch(0.64 0.19 27)" },
+  magenta: { base: "oklch(0.66 0.21 323)" },
+  green: { base: "oklch(0.70 0.13 162)" },
+  pink: { base: "oklch(0.67 0.19 3)" },
 };
 
 const TAG_COLORS: Record<string, TagColor> = {
@@ -205,11 +208,11 @@ function Checkbox({ checked, mixed = false, onChange, label }: { checked: boolea
 }
 
 function Tag({ name }: { name: string }) {
-  const color = TAG_COLORS[name] ?? { background: "var(--inset)", foreground: "var(--ink-2)" };
+  const color = TAG_COLORS[name] ?? { base: "var(--ink-3)" };
   return (
     <span
       className="records-tag"
-      style={{ "--tag-background": color.background, "--tag-foreground": color.foreground } as React.CSSProperties}
+      style={{ "--tag-base": color.base } as React.CSSProperties}
     >
       {name}
     </span>

@@ -30,11 +30,13 @@ function soundFor(element: Element): SoundName {
 
   const label = `${element.getAttribute("aria-label") ?? ""} ${element.textContent ?? ""}`.trim();
   if (DISMISS_WORDS.test(label)) return "droplet";
-  if (element.matches("input[type='checkbox'], input[type='radio'], select, [role='checkbox'], [role='radio'], [role='switch'], [role='tab']")) return "toggle";
+  // toggles, switches, tabs, segmented controls and other state changes — a light, crisp tick
+  if (element.matches("input[type='checkbox'], input[type='radio'], select, [role='checkbox'], [role='radio'], [role='switch'], [role='tab'], [aria-pressed]")) return "tick";
   if (element.matches("a[href]")) return "page";
   if (PRIMARY_WORDS.test(label)) return "pulse";
   if (element.matches("input, textarea")) return "tick";
-  return "release";
+  // most buttons — a muted key-press knock
+  return "press";
 }
 
 /** One quiet, delegated audio layer for interactive clicks across every route. */

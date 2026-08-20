@@ -1105,11 +1105,11 @@ th.is-colsel .records-header-icon {
   flex-shrink: 0;
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid color-mix(in srgb, var(--tag-foreground) 14%, var(--tag-background));
+  border: 1px solid color-mix(in srgb, var(--tag-base) 32%, var(--surface));
   border-radius: 8px;
   padding: 0 7px;
-  color: var(--tag-foreground);
-  background: var(--tag-background);
+  color: color-mix(in srgb, var(--tag-base) 92%, var(--ink));
+  background: color-mix(in srgb, var(--tag-base) 18%, var(--surface));
   font-size: 13px;
   font-weight: 500;
   text-overflow: ellipsis;
@@ -1379,22 +1379,36 @@ th.is-colsel .records-header-icon {
   border-radius: 50%;
 }
 
+/* Status pills share the same base-hue → color-mix derivation as .records-tag,
+ * so both components stay consistent across light and dark. */
 .filter-status-todo {
-  color: color-mix(in srgb, oklch(0.757 0.153 66.401) 92%, var(--ink));
-  background: color-mix(in srgb, oklch(0.757 0.153 66.401) 20%, var(--surface));
-  border-color: color-mix(in srgb, oklch(0.757 0.153 66.401) 34%, var(--surface));
+  --tag-base: oklch(0.757 0.153 66.401);
 }
-
 .filter-status-progress {
-  color: color-mix(in srgb, oklch(0.671 0.118 219.351) 92%, var(--ink));
-  background: color-mix(in srgb, oklch(0.671 0.118 219.351) 20%, var(--surface));
-  border-color: color-mix(in srgb, oklch(0.671 0.118 219.351) 34%, var(--surface));
+  --tag-base: oklch(0.671 0.118 219.351);
+}
+.filter-status-done {
+  --tag-base: oklch(0.652 0.131 162.865);
 }
 
+.filter-status-todo,
+.filter-status-progress,
 .filter-status-done {
-  color: color-mix(in srgb, oklch(0.652 0.131 162.865) 92%, var(--ink));
-  background: color-mix(in srgb, oklch(0.652 0.131 162.865) 20%, var(--surface));
-  border-color: color-mix(in srgb, oklch(0.652 0.131 162.865) 34%, var(--surface));
+  color: color-mix(in srgb, var(--tag-base) 92%, var(--ink));
+  background: color-mix(in srgb, var(--tag-base) 20%, var(--surface));
+  border-color: color-mix(in srgb, var(--tag-base) 34%, var(--surface));
+}
+
+/* Dark mode — match Attio's tag treatment: a richer, saturated same-hue fill
+ * with bright same-hue text and no visible border (light mode keeps the soft
+ * tinted pastels above). Applies to both the records grid and status pills. */
+.dark .records-tag,
+.dark .filter-status-todo,
+.dark .filter-status-progress,
+.dark .filter-status-done {
+  color: color-mix(in srgb, var(--tag-base) 86%, white);
+  background: color-mix(in srgb, var(--tag-base) 34%, var(--surface));
+  border-color: color-mix(in srgb, var(--tag-base) 34%, var(--surface));
 }
 
 @keyframes fade-in {

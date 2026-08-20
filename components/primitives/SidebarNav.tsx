@@ -8,7 +8,6 @@ import { IconChevronDownSmall } from "@central-icons-react/round-outlined-radius
 import { IconCrossSmall } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconCrossSmall";
 import { IconEditBig } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconEditBig";
 import { IconHome } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconHome";
-import { IconLibrary } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconLibrary";
 import { IconMagnifyingGlass } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconMagnifyingGlass";
 import { IconPlusMedium } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconPlusMedium";
 import { IconPopsicle2 } from "@central-icons-react/round-outlined-radius-2-stroke-2/IconPopsicle2";
@@ -28,7 +27,6 @@ const WORKSPACE = { key: "creamery", name: "Creamery Ops", monogram: "C" };
 
 const NAV_ITEMS = [
   { key: "home", label: "Home", icon: <IconHome size={18} /> },
-  { key: "library", label: "Library", icon: <IconLibrary size={18} /> },
   { key: "invite", label: "Invite users", icon: <IconUserAdd size={18} />, count: "3/10" },
 ];
 
@@ -55,6 +53,9 @@ type SidebarNavProps = {
   fill?: boolean;
   onNewChat?: () => void;
   onPick?: (id: string, label: string, prompt?: string) => void;
+  /** controlled primary-nav selection (e.g. "home" | "invite") */
+  activeNav?: string;
+  onNavigate?: (key: string) => void;
   recents?: SidebarRecent[];
   variant?: string;
 };
@@ -200,10 +201,17 @@ export default function SidebarNav({
   fill = false,
   onNewChat,
   onPick,
+  activeNav,
+  onNavigate,
   recents = DEFAULT_RECENTS,
 }: SidebarNavProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [activeNav, setActiveNav] = useState("chats");
+  const [internalNav, setInternalNav] = useState("chats");
+  const currentNav = activeNav ?? internalNav;
+  const selectNav = (key: string) => {
+    setInternalNav(key);
+    onNavigate?.(key);
+  };
   const [demoActiveTitle, setDemoActiveTitle] = useState<string | null>(null);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [workspacePosition, setWorkspacePosition] = useState({ top: 0, left: 0 });
@@ -311,6 +319,7 @@ export default function SidebarNav({
             label="New chat"
             onClick={() => {
               if (activeTitle === undefined) setDemoActiveTitle(null);
+              selectNav("chats");
               onNewChat?.();
             }}
           />
@@ -320,8 +329,8 @@ export default function SidebarNav({
               icon={item.icon}
               label={item.label}
               count={item.count}
-              active={activeNav === item.key}
-              onClick={() => setActiveNav(item.key)}
+              active={currentNav === item.key}
+              onClick={() => selectNav(item.key)}
             />
           ))}
         </GlideGroup>
@@ -397,7 +406,7 @@ export default function SidebarNav({
                   type="button"
                   title={item.label}
                   onClick={() => {
-                    setActiveNav("chats");
+                    selectNav("chats");
                     if (activeTitle === undefined) setDemoActiveTitle(item.label);
                     onPick?.(item.id, item.label, item.prompt);
                   }}
