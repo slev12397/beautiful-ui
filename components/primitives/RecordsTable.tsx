@@ -362,8 +362,8 @@ function ConfigPicker({
     <div
       role="menu"
       aria-label={label}
-      className="absolute right-0 top-[30px] z-30 w-[210px] rounded-[12px] bg-surface p-1.5 shadow-overlay"
-      style={{ animation: "pop-in 140ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top right" }}
+      className="absolute left-full top-0 z-30 ml-5 w-[210px] rounded-[12px] bg-surface p-1.5 shadow-overlay"
+      style={{ animation: "pop-in 140ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top left" }}
     >
       <div className="px-2 pb-1 pt-0.5 text-[11.5px] font-medium text-ink-3">{label}</div>
       <GlideMenu className="flex flex-col gap-px">
@@ -402,8 +402,8 @@ function InputPicker({
     <div
       role="menu"
       aria-label="Calculation inputs"
-      className="absolute right-0 top-[30px] z-30 w-[220px] rounded-[12px] bg-surface p-1.5 shadow-overlay"
-      style={{ animation: "pop-in 140ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top right" }}
+      className="absolute left-full top-0 z-30 ml-5 w-[220px] rounded-[12px] bg-surface p-1.5 shadow-overlay"
+      style={{ animation: "pop-in 140ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "top left" }}
     >
       <div className="px-2 pb-1 pt-0.5 text-[11.5px] font-medium text-ink-3">Use values from</div>
       <GlideMenu className="flex flex-col gap-px">
