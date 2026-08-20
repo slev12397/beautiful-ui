@@ -746,7 +746,7 @@ export default function IceCreamHarness() {
 
   /* the tab bar rides the top of the main pane in both layouts */
   const tabBar = (
-    <div className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b border-line px-2">
+    <div className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b border-line px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {chats.map((c) => (
         <div
           key={c.id}
@@ -823,11 +823,6 @@ export default function IceCreamHarness() {
         onPick={(id, label, prompt) => pickRecent(id as ScenarioId, label, prompt)}
         onNewChat={newChat}
         footerLabel="Fork this"
-        footerIcon={
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-            <path d="M12 3l1.7 5.1a2 2 0 0 0 1.2 1.2L20 11l-5.1 1.7a2 2 0 0 0-1.2 1.2L12 19l-1.7-5.1a2 2 0 0 0-1.2-1.2L4 11l5.1-1.7a2 2 0 0 0 1.2-1.2z" />
-          </svg>
-        }
         onFooterClick={() => setUseOpen(true)}
       />
 
