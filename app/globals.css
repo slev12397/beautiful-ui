@@ -8,13 +8,13 @@
 
 /* ──────────────────────────────────────────────────────────
  * Beautiful UI — design tokens
- * Extracted from Refs/: warm near-white canvas, white cards,
- * hairline borders, layered single-digit-opacity shadows,
- * neutral ink ramp, semantic color as condiment.
+ * Cool near-white canvas, white cards, hairline borders, layered
+ * single-digit-opacity shadows, a neutral ink ramp, and semantic
+ * color used sparingly as a condiment.
  * ────────────────────────────────────────────────────────── */
 
 :root {
-  /* surfaces — cool, blue-tinted neutrals (Attio-style) */
+  /* surfaces — cool, blue-tinted neutrals */
   --page: oklch(0.985 0.001 286.376);
   --canvas: oklch(0.961 0.002 247.84);
   --surface: oklch(1 0 0);
@@ -960,7 +960,7 @@ a:focus-visible .animated-underline::after {
 
 /* ── spreadsheet gutter ──────────────────────────────────
  * Row numbers at rest; the checkbox takes their place on
- * hover or once the row is selected (Airtable pattern). */
+ * hover or once the row is selected. */
 .records-rownum {
   display: inline-flex;
   width: 24px;
@@ -1399,7 +1399,7 @@ th.is-colsel .records-header-icon {
   border-color: color-mix(in srgb, var(--tag-base) 34%, var(--surface));
 }
 
-/* Dark mode — match Attio's tag treatment: a richer, saturated same-hue fill
+/* Dark mode — a richer, saturated same-hue fill
  * with bright same-hue text and no visible border (light mode keeps the soft
  * tinted pastels above). Applies to both the records grid and status pills. */
 .dark .records-tag,
@@ -1430,7 +1430,7 @@ th.is-colsel .records-header-icon {
   }
 }
 
-/* ChatGPT-style word streaming — words resolve out of a soft blur */
+/* word-by-word streaming — words resolve out of a soft blur */
 @keyframes stream-in {
   from {
     opacity: 0;

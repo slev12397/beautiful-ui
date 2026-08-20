@@ -17,6 +17,7 @@ import StreamingText from "@/components/primitives/StreamingText";
 import TaskRows from "@/components/primitives/TaskRows";
 import ThinkingState from "@/components/primitives/ThinkingState";
 import ToolChips from "@/components/primitives/ToolChips";
+import { UseThisModal } from "@/components/site/UseThisHarness";
 
 /* ─────────────────────────────────────────────────────────
  * ICE CREAM HARNESS
@@ -636,6 +637,8 @@ export default function IceCreamHarness() {
   const [offset, setOffset] = useState(0);
   /* spreadsheet: which view/property is open in the right inspector (null = chat) */
   const [propView, setPropView] = useState<string | null>(null);
+  /* "use this harness" open-source modal */
+  const [useOpen, setUseOpen] = useState(false);
   const chatIdRef = useRef(1);
   const msgIdRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -819,6 +822,13 @@ export default function IceCreamHarness() {
         activeTitle={chat.title}
         onPick={(id, label, prompt) => pickRecent(id as ScenarioId, label, prompt)}
         onNewChat={newChat}
+        footerLabel="Fork this"
+        footerIcon={
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M12 3l1.7 5.1a2 2 0 0 0 1.2 1.2L20 11l-5.1 1.7a2 2 0 0 0-1.2 1.2L12 19l-1.7-5.1a2 2 0 0 0-1.2-1.2L4 11l5.1-1.7a2 2 0 0 0 1.2-1.2z" />
+          </svg>
+        }
+        onFooterClick={() => setUseOpen(true)}
       />
 
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
@@ -927,6 +937,8 @@ export default function IceCreamHarness() {
           )}
         </div>
       </div>
+
+      <UseThisModal open={useOpen} onClose={() => setUseOpen(false)} />
     </main>
   );
 }

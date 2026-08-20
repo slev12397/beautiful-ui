@@ -56,6 +56,10 @@ type SidebarNavProps = {
   /** controlled primary-nav selection (e.g. "home" | "invite") */
   activeNav?: string;
   onNavigate?: (key: string) => void;
+  /** footer call-to-action — defaults to the demo "Upgrade" button */
+  footerLabel?: string;
+  footerIcon?: ReactNode;
+  onFooterClick?: () => void;
   recents?: SidebarRecent[];
   variant?: string;
 };
@@ -203,6 +207,9 @@ export default function SidebarNav({
   onPick,
   activeNav,
   onNavigate,
+  footerLabel = "Upgrade",
+  footerIcon,
+  onFooterClick,
   recents = DEFAULT_RECENTS,
 }: SidebarNavProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -429,10 +436,11 @@ export default function SidebarNav({
         <div className="sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3">
           <button
             type="button"
-            onClick={onNewChat}
-            className="flex h-8 w-full items-center justify-center rounded-control bg-hover-2 text-[12.5px] font-medium text-ink transition-[background-color,transform] duration-150 hover:bg-line-strong active:scale-[0.98]"
+            onClick={onFooterClick ?? onNewChat}
+            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-control bg-hover-2 text-[12.5px] font-medium text-ink transition-[background-color,transform] duration-150 hover:bg-line-strong active:scale-[0.98]"
           >
-            Upgrade
+            {footerIcon}
+            {footerLabel}
           </button>
         </div>
       </div>

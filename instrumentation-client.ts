@@ -4,13 +4,15 @@ const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
 const host = process.env.NEXT_PUBLIC_POSTHOG_HOST;
 
 if (!projectToken || !host) {
+  // Analytics is optional — the app runs fine without it. Warn in development
+  // so it's easy to spot, but never crash (a fresh clone has no PostHog set up).
   if (process.env.NODE_ENV === "development") {
     const missingVariable = !projectToken
       ? "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN"
       : "NEXT_PUBLIC_POSTHOG_HOST";
 
-    throw new Error(
-      `${missingVariable} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once ${missingVariable} is configured`,
+    console.warn(
+      `[analytics] ${missingVariable} is not set — PostHog is disabled. Set it to enable analytics.`,
     );
   }
 } else {

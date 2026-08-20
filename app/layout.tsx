@@ -37,7 +37,10 @@ export default function RootLayout({
         <ThemeSync />
         <InteractionSounds />
         {children}
-        <DialRoot position="top-right" defaultOpen />
+        {/* DialKit is a dev-only tuning panel — never render it in production. */}
+        {process.env.NODE_ENV === "development" && (
+          <DialRoot position="top-right" defaultOpen />
+        )}
         <DevToolbar />
       </body>
     </html>

@@ -154,7 +154,7 @@ export default function FineTuneCard() {
       {/* layout section */}
       <div className="primitive-card-pad flex flex-col gap-2 border-b border-line">
         <p className="text-[12.5px] font-medium text-ink">Layout</p>
-        {/* Layo segmented: gray track, raised white thumb */}
+        {/* segmented control: gray track, raised white thumb */}
         <div className="relative grid grid-cols-3 rounded-control bg-field p-0.5">
           <span
             aria-hidden
