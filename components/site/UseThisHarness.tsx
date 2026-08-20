@@ -120,12 +120,12 @@ export function UseThisModal({ open, onClose }: { open: boolean; onClose: () => 
 
         {/* body */}
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">
-          <div className="mb-2 text-[11.5px] font-medium tracking-wide text-ink-3 uppercase">
+          <div className="mb-2 text-[12.5px] font-medium text-ink-2">
             Give this to your agent
           </div>
 
           <div className="overflow-hidden rounded-card bg-inset shadow-hairline">
-            <pre className="max-h-52 overflow-y-auto px-3.5 py-3 font-mono text-[12px] leading-relaxed whitespace-pre-wrap text-ink-2">
+            <pre className="max-h-52 overflow-y-auto px-3.5 py-3 font-sans text-[12.5px] leading-relaxed whitespace-pre-wrap text-ink-2">
               {AGENT_PROMPT}
             </pre>
           </div>
@@ -140,7 +140,7 @@ export function UseThisModal({ open, onClose }: { open: boolean; onClose: () => 
           </button>
 
           {/* secondary — clone it yourself */}
-          <div className="mt-5 mb-2 text-[11.5px] font-medium tracking-wide text-ink-3 uppercase">
+          <div className="mt-5 mb-2 text-[12.5px] font-medium text-ink-2">
             Or clone it yourself
           </div>
 
