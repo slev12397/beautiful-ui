@@ -267,7 +267,7 @@ export default function SidebarNav({
         "--sidebar-easing": SIDEBAR_MOTION.easing,
       } as CSSProperties}
     >
-      <div className="flex min-h-0 w-[224px] shrink-0 flex-col pb-2">
+      <div className="flex min-h-0 w-[224px] shrink-0 flex-col">
         <div className="relative mb-2.5 h-10 shrink-0">
           <button
             ref={workspaceButtonRef}
