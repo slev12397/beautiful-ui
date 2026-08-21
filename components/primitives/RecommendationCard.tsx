@@ -1,29 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useDialKit, type DialConfig } from "dialkit";
 import { Button, type ButtonVariant } from "@/components/atoms/Button";
-
-/* ── DialKit tuning (dev-only panel) ──────────────────────────
- * Live controls for the tag geometry — the panel appears top-right
- * in `npm run dev`. Tune, then tell me the values and I'll bake them
- * in and remove DialKit. In production these resolve to the defaults. */
-const LOGO_CHIP_DIALS = {
-  logoSize: [16, 12, 24, 0.5],
-  gap: [4, 0, 16, 0.5],
-  padLeft: [3, 0, 16, 0.5],
-  padRight: [6, 0, 20, 0.5],
-  padY: [1, 0, 10, 0.5],
-  radius: [24, 0, 24, 1],
-  nameFont: [12, 10, 16, 0.5],
-} satisfies DialConfig;
-
-const VALUE_PILL_DIALS = {
-  padX: [6, 0, 20, 0.5],
-  padY: [0, 0, 10, 0.5],
-  radius: [24, 0, 24, 1],
-  font: [12, 10, 16, 0.5],
-} satisfies DialConfig;
 
 /* ─────────────────────────────────────────────────────────
  * RECOMMENDATION CARD
@@ -45,45 +23,24 @@ type Option = {
 
 /* a supplier as a little logo chip — circular mark + name, no external arrow */
 function VendorChip({ name, logoSrc }: { name: string; logoSrc: string }) {
-  const d = useDialKit("Recc · logo chip", LOGO_CHIP_DIALS, { id: "recc-logo-chip", persist: true });
   return (
-    <span
-      className="mx-0.5 inline-flex items-center bg-field align-middle shadow-hairline"
-      style={{
-        gap: d.gap,
-        paddingLeft: d.padLeft,
-        paddingRight: d.padRight,
-        paddingTop: d.padY,
-        paddingBottom: d.padY,
-        borderRadius: d.radius,
-      }}
-    >
-      <span
-        className="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white outline outline-1 -outline-offset-1 outline-black/10"
-        style={{ width: d.logoSize, height: d.logoSize }}
-      >
+    <span className="mx-0.5 inline-flex items-center gap-1 rounded-full bg-field py-px pl-[3px] pr-1.5 align-middle shadow-hairline">
+      <span className="flex size-4 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white outline outline-1 -outline-offset-1 outline-black/10">
         <img src={logoSrc} alt="" className="size-full object-contain" />
       </span>
-      <span className="font-medium text-ink" style={{ fontSize: d.nameFont }}>{name}</span>
+      <span className="text-[12px] font-medium text-ink">{name}</span>
     </span>
   );
 }
 
 /* a plain value as a soft rounded badge — not a mono token */
 function Pill({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "green" }) {
-  const d = useDialKit("Recc · value pill", VALUE_PILL_DIALS, { id: "recc-value-pill", persist: true });
   return (
     <span
-      className={`mx-0.5 inline-flex items-center align-middle font-medium ${
+      className={`mx-0.5 inline-flex items-center rounded-full px-1.5 py-0 align-middle text-[12px] font-medium ${
         tone === "green" ? "bg-green-tint text-green" : "bg-field text-ink-2"
       }`}
       style={{
-        paddingLeft: d.padX,
-        paddingRight: d.padX,
-        paddingTop: d.padY,
-        paddingBottom: d.padY,
-        borderRadius: d.radius,
-        fontSize: d.font,
         boxShadow: tone === "green"
           ? "0 0 0 1px color-mix(in oklch, var(--green) 28%, transparent)"
           : "var(--shadow-hairline)",
