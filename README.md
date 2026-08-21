@@ -48,8 +48,9 @@ lib/
 ```
 
 The primitives are the product. Each file under `components/primitives/` is
-designed to be pasted into another project with no dependency beyond the token
-layer in `app/globals.css`. Start there.
+designed to be pasted into another project with no dependency beyond the
+foundation stylesheet `app/globals.css` — copy that once first (see
+[One-time setup](#one-time-setup)), then paste any component on top.
 
 ## The design system
 
@@ -62,8 +63,23 @@ light and dark from the same source:
 - **Restrained, layered shadows** — hairline · btn · card · raised · overlay.
 - **Type** — Inter (tight tracking, tabular numerals) + JetBrains Mono.
 
-Copy the `:root`, `.dark`, and `@theme` blocks and the primitives inherit the
-whole look.
+### One-time setup
+
+A single component is **not** self-contained on its own — it renders on this
+shared foundation stylesheet. Before pasting any primitive, drop
+[`app/globals.css`](https://github.com/slev12397/beautiful-ui/blob/main/app/globals.css)
+into your project **in full, once**. It contains everything the components rely on:
+
+- `@import "tailwindcss"` and `@import "shadow-plugin/unprefixed"` (the smooth
+  `--shadow-xs … --shadow-lg` scale that `shadow-card` / `shadow-overlay` build on)
+- the `:root` / `.dark` variables **and** the `@theme inline` block that maps them
+  to the utilities (`bg-ink`, `text-ink-3`, `shadow-overlay`, `rounded-window`, …)
+- every `@keyframes` (`pop-in`, `fade-up`, `shimmer-text`, `pixel-on`, `stream-in`, …)
+  and the `prefers-reduced-motion` fallbacks
+
+The `:root`/`.dark` variables **alone won't work** — the `@theme inline` block is
+what makes those utility classes exist. It's framework-agnostic: the same file
+works in Vue, Svelte, or plain HTML on Tailwind v4.
 
 ## Wiring the harness to a real agent
 

@@ -220,6 +220,26 @@ function Overlay({
         <pre className="flex-1 overflow-auto bg-inset p-4 font-mono text-[12px] leading-relaxed text-ink-2">
           <code>{code}</code>
         </pre>
+        <div className="flex items-center gap-2 border-t border-line px-4 py-2.5 text-[12px] text-ink-3">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8h.01M11 12h1v4h1" />
+          </svg>
+          <span className="min-w-0 flex-1 text-pretty">
+            Foundation required — paste{" "}
+            <code className="rounded bg-surface px-1 py-0.5 font-mono text-[11.5px] text-ink-2 shadow-hairline">app/globals.css</code>{" "}
+            once (tokens, <code className="font-mono text-ink-2">@theme</code> mappings, keyframes, reduced-motion).
+          </span>
+          <a
+            href="https://github.com/slev12397/beautiful-ui/blob/main/app/globals.css"
+            target="_blank"
+            rel="noreferrer"
+            className="flex shrink-0 items-center gap-1 font-medium text-ink transition-colors duration-150 hover:text-accent"
+          >
+            globals.css
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M14 5h5v5M19 5l-8 8" /></svg>
+          </a>
+        </div>
       </div>
     </div>
   );
