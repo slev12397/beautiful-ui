@@ -21,18 +21,41 @@ type Option = {
   ctaVariant: ButtonVariant;
 };
 
+/* a supplier as a little logo chip — circular mark + name, no external arrow */
+function VendorChip({ name, monogram, color }: { name: string; monogram: string; color: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-field py-0.5 pl-0.5 pr-2 align-middle shadow-hairline">
+      <span
+        className="flex size-4 items-center justify-center rounded-full text-[8.5px] font-bold text-white"
+        style={{ background: color }}
+      >
+        {monogram}
+      </span>
+      <span className="text-[12.5px] font-medium text-ink">{name}</span>
+    </span>
+  );
+}
+
+/* a plain value as a soft rounded badge — not a mono token */
+function Pill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full bg-field px-2 py-0.5 align-middle text-[12px] font-medium text-ink-2 shadow-hairline">
+      {children}
+    </span>
+  );
+}
+
 const OPTIONS: Option[] = [
   {
     key: "high",
     body: (
       <>
         Reorder waffle cones from{" "}
-        <code className="rounded-md bg-accent-tint px-1.5 py-0.5 font-mono text-[12px] text-accent-ink">cone_king</code>{" "}
-        with lead time{" "}
-        <code className="rounded-md bg-accent-tint px-1.5 py-0.5 font-mono text-[12px] text-accent-ink">7_days</code>.
+        <VendorChip name="Cone King" monogram="C" color="#e08a3c" />{" "}
+        with lead time <Pill>7 days</Pill>.
       </>
     ),
-    short: "Reorder from cone_king · 7-day lead",
+    short: "Reorder from Cone King · 7-day lead",
     signal: 3,
     tone: "var(--green)",
     label: "High confidence",
@@ -43,12 +66,10 @@ const OPTIONS: Option[] = [
     key: "review",
     body: (
       <>
-        Switch vanilla to{" "}
-        <code className="rounded-md bg-orange-tint px-1.5 py-0.5 font-mono text-[12px] text-orange">vanilla_madagascar</code>{" "}
-        for peak season.
+        Switch vanilla to <Pill>Vanilla Madagascar</Pill> for peak season.
       </>
     ),
-    short: "Switch to vanilla_madagascar",
+    short: "Switch to Vanilla Madagascar",
     signal: 2,
     tone: "var(--orange)",
     label: "Needs review",
@@ -96,7 +117,7 @@ export default function RecommendationCard() {
   return (
     <div className="w-full max-w-95 overflow-hidden rounded-card bg-surface shadow-card">
       <div className="primitive-card-pad">
-        <span className="text-[13px] font-semibold text-ink">
+        <span className="text-[14px] font-medium text-ink">
           Want me to place this restock order?
         </span>
         <p
@@ -118,7 +139,7 @@ export default function RecommendationCard() {
         }}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-line bg-inset px-2 py-2">
+          <div className="border-t border-line bg-surface px-2 py-2">
             <p className="px-1.5 pb-1 text-[11px] font-medium text-ink-3">
               Other options
             </p>
@@ -142,7 +163,7 @@ export default function RecommendationCard() {
         </div>
       </div>
 
-      <div className="primitive-card-footer flex items-center justify-between gap-3 border-t border-line bg-inset">
+      <div className="primitive-card-footer flex items-center justify-between gap-3 border-t border-line bg-surface">
         <span className="flex items-center gap-2">
           <Meter signal={active.signal} tone={active.tone} />
           <span className="text-[12.5px] font-medium text-ink-2">{active.label}</span>
