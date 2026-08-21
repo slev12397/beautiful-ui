@@ -14,14 +14,14 @@ const LOGO_CHIP_DIALS = {
   padLeft: [3, 0, 16, 0.5],
   padRight: [6, 0, 20, 0.5],
   padY: [1, 0, 10, 0.5],
-  radius: [20, 0, 24, 1],
+  radius: [24, 0, 24, 1],
   nameFont: [12, 10, 16, 0.5],
 } satisfies DialConfig;
 
 const VALUE_PILL_DIALS = {
-  padX: [10, 0, 20, 0.5],
-  padY: [1, 0, 10, 0.5],
-  radius: [20, 0, 24, 1],
+  padX: [6, 0, 20, 0.5],
+  padY: [0, 0, 10, 0.5],
+  radius: [24, 0, 24, 1],
   font: [12, 10, 16, 0.5],
 } satisfies DialConfig;
 
