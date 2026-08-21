@@ -84,7 +84,7 @@ function Card({
   return (
     <section
       id={entry.id}
-      className="primitive-showcase group flex w-full scroll-mt-8 flex-col border-b border-dashed border-line px-8 py-10"
+      className="primitive-showcase group flex w-full scroll-mt-8 flex-col border-b border-dashed border-line px-5 py-8 sm:px-8 sm:py-10"
       style={{
         animation: `fade-up 600ms cubic-bezier(0.23,1,0.32,1) ${Math.min(index, 4) * 60}ms both`,
       }}

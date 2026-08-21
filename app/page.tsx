@@ -26,7 +26,7 @@ export default function Home() {
     <main className="relative mx-auto max-w-[960px] bg-page shadow-[0_0_0_1px_var(--line)]">
       <div className="lg:grid lg:grid-cols-[288px_minmax(0,1fr)]">
         {/* left rail — the system, then the component nav */}
-        <aside className="flex flex-col border-b border-dashed border-line px-7 pt-16 pb-7 lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden lg:border-r lg:border-b-0 lg:pt-[clamp(2.5rem,8vh,5rem)]">
+        <aside className="flex flex-col border-b border-dashed border-line px-5 pt-12 pb-6 sm:px-7 sm:pt-16 sm:pb-7 lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden lg:border-r lg:border-b-0 lg:pt-[clamp(2.5rem,8vh,5rem)]">
           <div className="shrink-0">
             <div className="flex items-center justify-between">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -43,7 +43,7 @@ export default function Home() {
             </h1>
           </div>
 
-          <div className="relative mt-7 border-t border-dashed border-line pt-6 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pt-0">
+          <div className="relative mt-7 hidden border-t border-dashed border-line pt-6 lg:block lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pt-0">
             <div className="component-nav-scroll lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-6 lg:pb-16">
               <Nav />
             </div>
@@ -102,7 +102,7 @@ export default function Home() {
           <EmailCapture />
 
           {/* footer — lives in the scroll column so the sticky rail is untouched */}
-          <footer className="flex items-center justify-between gap-4 border-t border-dashed border-line px-8 py-6">
+          <footer className="flex items-center justify-between gap-4 border-t border-dashed border-line px-5 py-6 sm:px-8">
             <span className="text-[12px] text-ink-3">© 2026 Beautiful UI</span>
             <span className="flex items-center gap-4">
               <Link
