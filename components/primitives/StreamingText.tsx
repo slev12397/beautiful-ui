@@ -108,11 +108,7 @@ export default function StreamingText({
           token.cite ? (
             <SourceChip key={i} />
           ) : (
-            <span
-              key={i}
-              className="inline [will-change:filter,opacity]"
-              style={{ animation: "stream-in 420ms cubic-bezier(0.22,0.61,0.25,1) both" }}
-            >
+            <span key={i} className="inline">
               {token.text}{" "}
             </span>
           ),

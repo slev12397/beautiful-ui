@@ -29,7 +29,8 @@ function soundFor(element: Element): SoundName {
   if (override && (sounds as readonly string[]).includes(override)) return override as SoundName;
 
   const label = `${element.getAttribute("aria-label") ?? ""} ${element.textContent ?? ""}`.trim();
-  if (DISMISS_WORDS.test(label)) return "droplet";
+  // close / delete / cancel — a light clack, not the tonal droplet swoop
+  if (DISMISS_WORDS.test(label)) return "release";
   // toggles, switches, tabs, segmented controls and other state changes — a light, crisp tick
   if (element.matches("input[type='checkbox'], input[type='radio'], select, [role='checkbox'], [role='radio'], [role='switch'], [role='tab'], [aria-pressed]")) return "tick";
   if (element.matches("a[href]")) return "page";

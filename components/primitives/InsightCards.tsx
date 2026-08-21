@@ -24,6 +24,42 @@ function makePoints(values: number[], gap = 6): LivelinePoint[] {
   }));
 }
 
+/* Catmull-Rom resample — turn a sparse series into a dense, smoothly curved
+ * one so both the line and the hover cursor glide instead of stepping between
+ * a handful of points. */
+function smooth(values: number[], perSegment = 9): number[] {
+  if (values.length < 3) return values.slice();
+  const out: number[] = [];
+  const n = values.length;
+  for (let i = 0; i < n - 1; i += 1) {
+    const p0 = values[Math.max(0, i - 1)];
+    const p1 = values[i];
+    const p2 = values[i + 1];
+    const p3 = values[Math.min(n - 1, i + 2)];
+    for (let s = 0; s < perSegment; s += 1) {
+      const t = s / perSegment;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      out.push(
+        0.5 *
+          (2 * p1 +
+            (-p0 + p2) * t +
+            (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
+            (-p0 + 3 * p1 - 3 * p2 + p3) * t3),
+      );
+    }
+  }
+  out.push(values[n - 1]);
+  return out;
+}
+
+/* dense, smoothed points spanning exactly `spanSecs` — keeps the chart window
+ * unchanged while multiplying the resolution. */
+function smoothPoints(values: number[], spanSecs: number): LivelinePoint[] {
+  const dense = smooth(values);
+  return makePoints(dense, spanSecs / (dense.length - 1));
+}
+
 function useDarkMode() {
   const [dark, setDark] = useState(false);
 
@@ -66,12 +102,11 @@ function chartIndexFromPointer(event: React.PointerEvent<HTMLDivElement>, pointC
 function ChartTooltip({ rows }: { rows: { label: string; value: string; color: string }[] }) {
   return (
     <div className="insight-chart-tooltip">
-      <span className="insight-chart-tooltip-time">Today, 12:00</span>
       {rows.map((row) => (
-        <div key={row.label} className="insight-chart-tooltip-row">
-          <span className="insight-chart-tooltip-label"><span className="insight-chart-tooltip-dot" style={{ background: row.color }} />{row.label}</span>
-          <strong>{row.value}</strong>
-        </div>
+        <span key={row.label} className="insight-chart-tooltip-item">
+          <span className="insight-chart-tooltip-dot" style={{ background: row.color }} />
+          {row.value}
+        </span>
       ))}
     </div>
   );
@@ -83,8 +118,8 @@ function CompareCard() {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const data = useMemo(
     () => ({
-      mint: makePoints([-2.9, -3.4, -3.05, -3.86, -3.52, -4.1, -3.82, -4.41]),
-      pistachio: makePoints([0.22, 0.58, 0.42, 0.91, 0.76, 1.08, 0.96, 1.15]),
+      mint: smoothPoints([-2.9, -3.4, -3.05, -3.86, -3.52, -4.1, -3.82, -4.41], 42),
+      pistachio: smoothPoints([0.22, 0.58, 0.42, 0.91, 0.76, 1.08, 0.96, 1.15], 42),
     }),
     [],
   );
@@ -171,7 +206,7 @@ function CompareCard() {
             scrub={false}
             cursor="default"
             lineWidth={2.25}
-            padding={{ top: 24, right: 0, bottom: 22, left: 0 }}
+            padding={{ top: 40, right: 0, bottom: 22, left: 0 }}
             formatValue={formatPercent}
           />
           {hoverIndex !== null && <>
@@ -263,7 +298,7 @@ function AnomalyCard() {
             window={49}
             lineWidth={2.25}
             cursor="crosshair"
-            padding={{ top: 18, right: 0, bottom: 22, left: 0 }}
+            padding={{ top: 34, right: 0, bottom: 22, left: 0 }}
             formatValue={(v) => (metric === "spend" ? formatMoney(v) : `${Math.round(v)} kWh`)}
           />
           {hoverIndex !== null && <>

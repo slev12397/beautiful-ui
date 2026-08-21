@@ -1334,42 +1334,24 @@ th.is-colsel .records-header-icon {
 }
 
 .insight-chart-tooltip {
-  min-width: 154px;
-  padding: 9px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 9px;
   border: 1px solid var(--line-strong);
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--tooltip-fg);
   background: var(--tooltip-bg);
   box-shadow: var(--shadow-overlay);
-  font-size: 12px;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.insight-chart-tooltip-time {
-  display: block;
-  margin-bottom: 7px;
-  color: var(--tooltip-muted);
-  font-size: 11px;
-}
-
-.insight-chart-tooltip-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  line-height: 1.65;
-}
-
-.insight-chart-tooltip-label {
+.insight-chart-tooltip-item {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  color: var(--tooltip-fg);
-}
-
-.insight-chart-tooltip-row strong {
-  color: var(--tooltip-muted);
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
+  gap: 6px;
 }
 
 .insight-chart-tooltip-dot {
@@ -1427,18 +1409,6 @@ th.is-colsel .records-header-icon {
   }
   50% {
     transform: scaleY(1);
-  }
-}
-
-/* word-by-word streaming — words resolve out of a soft blur */
-@keyframes stream-in {
-  from {
-    opacity: 0;
-    filter: blur(4px);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
   }
 }
 

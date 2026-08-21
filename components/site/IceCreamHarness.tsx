@@ -74,11 +74,7 @@ function StreamLine({
   return (
     <p className={`max-w-[620px] text-[13.5px] leading-[1.65] ${tone === "ink" ? "text-ink" : "text-ink-2"}`}>
       {words.slice(0, n).map((word, i) => (
-        <span
-          key={i}
-          className="inline [will-change:filter,opacity]"
-          style={{ animation: "stream-in 380ms cubic-bezier(0.22,0.61,0.25,1) both" }}
-        >
+        <span key={i} className="inline">
           {word}{" "}
         </span>
       ))}
@@ -750,12 +746,14 @@ export default function IceCreamHarness() {
       {chats.map((c) => (
         <div
           key={c.id}
-          className={`group/tab flex h-7 shrink-0 items-center gap-0.5 rounded-[7px] pl-2.5 pr-1 text-[12.5px] font-medium transition-colors duration-100 ${
+          /* fixed width so every close button sits in the same spot — you can
+           * close a run of tabs without chasing the next × across the bar */
+          className={`group/tab flex h-7 w-36 shrink-0 items-center gap-0.5 rounded-[7px] pl-2.5 pr-1 text-[12.5px] font-medium transition-colors duration-100 ${
             c.id === activeId ? "bg-hover-2 text-ink" : "text-ink-2 hover:bg-hover hover:text-ink"
           }`}
         >
-          <button type="button" aria-pressed={c.id === activeId} onClick={() => setActiveId(c.id)} title={c.title ?? "New chat"} className="min-w-0">
-            <span className="block max-w-40 truncate">{c.title ?? "New chat"}</span>
+          <button type="button" aria-pressed={c.id === activeId} onClick={() => setActiveId(c.id)} title={c.title ?? "New chat"} className="min-w-0 flex-1 text-left">
+            <span className="block truncate">{c.title ?? "New chat"}</span>
           </button>
           <button
             type="button"
