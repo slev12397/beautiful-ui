@@ -24,9 +24,9 @@ type Option = {
 /* a supplier as a little logo chip — circular mark + name, no external arrow */
 function VendorChip({ name, monogram, color }: { name: string; monogram: string; color: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-field py-0.5 pl-0.5 pr-2 align-middle shadow-hairline">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-field py-0.5 pl-1 pr-2.5 align-middle shadow-hairline">
       <span
-        className="flex size-4 items-center justify-center rounded-full text-[8.5px] font-bold text-white"
+        className="flex size-4 shrink-0 items-center justify-center rounded-full text-[8.5px] font-bold leading-none text-white"
         style={{ background: color }}
       >
         {monogram}
@@ -52,7 +52,7 @@ const OPTIONS: Option[] = [
       <>
         Reorder waffle cones from{" "}
         <VendorChip name="Cone King" monogram="C" color="#e08a3c" />{" "}
-        with lead time <Pill>7 days</Pill>.
+        with lead time <Pill>7 days</Pill>
       </>
     ),
     short: "Reorder from Cone King · 7-day lead",
@@ -163,7 +163,7 @@ export default function RecommendationCard() {
         </div>
       </div>
 
-      <div className="primitive-card-footer flex items-center justify-between gap-3 border-t border-line bg-surface">
+      <div className="primitive-card-footer flex items-center justify-between gap-3 bg-surface">
         <span className="flex items-center gap-2">
           <Meter signal={active.signal} tone={active.tone} />
           <span className="text-[12.5px] font-medium text-ink-2">{active.label}</span>
