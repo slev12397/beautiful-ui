@@ -26,7 +26,8 @@ export const buttonVariants = cva(
       size: {
         /* compact toolbar pill — fixed height, lighter weight */
         xs: "h-7 rounded-full px-2.5 text-[12px] font-normal leading-none gap-1",
-        sm: "px-3 py-[7px] text-[13px] leading-none rounded-full gap-1.5",
+        /* canonical action pill — skinny, roomy sides (matches Approval Card) */
+        sm: "h-6 px-3 text-[13px] leading-none rounded-full gap-1.5",
         md: "px-4 py-[9px] text-sm leading-none rounded-full gap-2",
       },
     },
