@@ -306,7 +306,7 @@ function ConditionBody() {
 
 function StepBody({ node }: { node: StepNode }) {
   return (
-    <div className="flex items-center gap-2.5 px-3 py-2.5">
+    <div className="flex items-center gap-2.5 p-2.5">
       <span
         className="flex size-9 shrink-0 items-center justify-center rounded-[8px]"
         style={{

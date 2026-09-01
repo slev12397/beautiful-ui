@@ -74,8 +74,9 @@ function useElapsed() {
 export default function LoadingState({
   label,
   variant = "Drive",
-  /** the meme feed for the Surfer variant; drop the file in /public to light it up */
-  videoSrc = "/subway-surfers.mp4",
+  /** the meme feed for the Surfer variant; hosted on Vercel Blob so it plays in
+   *  production (the local /public/subway-surfers.mp4 stays gitignored) */
+  videoSrc = "https://95dnc2a95qgwt9ff.public.blob.vercel-storage.com/subway-surfers.mp4",
 }: {
   label?: string;
   variant?: string;
