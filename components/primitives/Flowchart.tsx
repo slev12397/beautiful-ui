@@ -318,7 +318,7 @@ function StepBody({ node }: { node: StepNode }) {
         <ConeIcon />
       </span>
       <span className="min-w-0 text-left">
-        <span className="block truncate text-[13px] font-semibold text-ink">{node.title}</span>
+        <span className="block truncate text-[13px] font-semibold leading-tight text-ink">{node.title}</span>
         <span className="mt-0.5 block text-[12px] leading-snug text-ink-2">{node.caption}</span>
       </span>
     </div>
