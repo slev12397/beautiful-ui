@@ -159,4 +159,12 @@ export const META: Meta[] = [
     deps: ["button", "shimmer", "stream-text"],
     npm: ["iconoir-react"],
   },
+  {
+    id: "agent-screen",
+    title: "Agent Screen",
+    caption: "Watch an agent's screen — open, teach a task, record.",
+    file: "AgentScreen.tsx",
+    deps: ["button"],
+    variants: ["Working", "Loading"],
+  },
 ];

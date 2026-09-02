@@ -22,6 +22,7 @@ import CodeBlock from "@/components/primitives/CodeBlock";
 import ToolChips from "@/components/primitives/ToolChips";
 import SearchList from "@/components/primitives/SearchList";
 import SelectionActions from "@/components/primitives/SelectionActions";
+import AgentScreen from "@/components/primitives/AgentScreen";
 
 export type Entry = Meta & { Demo: ComponentType<{ variant?: string }> };
 
@@ -46,6 +47,7 @@ const DEMOS: Record<string, ComponentType<{ variant?: string }>> = {
   "tool-chips": ToolChips,
   "search": SearchList,
   "selection-actions": SelectionActions,
+  "agent-screen": AgentScreen,
 };
 
 export const REGISTRY: Entry[] = META.map((m) => ({ ...m, Demo: DEMOS[m.id] }));
