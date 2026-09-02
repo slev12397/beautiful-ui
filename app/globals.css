@@ -1065,6 +1065,13 @@ th.is-colsel .records-header-icon {
   }
 }
 
+/* agent-screen — a static decorative cursor sitting on the capture (for show) */
+.agent-cursor {
+  position: absolute;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
+}
+
 .records-company-mark {
   display: inline-flex;
   width: 20px;
