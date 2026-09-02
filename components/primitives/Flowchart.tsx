@@ -508,7 +508,7 @@ export default function Flowchart({ steps = NODES }: { steps?: StepNode[]; varia
               </span>
             )}
             {node.condition ? (
-              <div className="w-full rounded-card bg-surface shadow-card transition-shadow duration-150 hover:shadow-raised">
+              <div className="w-full rounded-[18px] bg-surface shadow-card transition-shadow duration-150 hover:shadow-raised">
                 <ConditionBody />
               </div>
             ) : (
@@ -519,7 +519,7 @@ export default function Flowchart({ steps = NODES }: { steps?: StepNode[]; varia
                   setSelected(active ? null : node.id);
                 }}
                 aria-pressed={active}
-                className={`w-full cursor-pointer rounded-card bg-surface text-left outline-none
+                className={`w-full cursor-pointer rounded-[18px] bg-surface text-left outline-none
                   transition-shadow duration-150 focus-visible:shadow-[0_0_0_1.5px_var(--accent)]
                   ${
                     active
