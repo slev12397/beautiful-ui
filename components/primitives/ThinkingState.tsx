@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 /* ─────────────────────────────────────────────────────────
  * THINKING — expandable agent trace, four variants
@@ -90,11 +90,33 @@ function Dot({ tone }: { tone: string }) {
 
 const TONES = ["bg-accent", "bg-orange", "bg-green"];
 
-export default function ThinkingState({ variant = "Steps", onSettled }: { variant?: string; onSettled?: () => void }) {
+export default function ThinkingState({
+  variant = "Steps",
+  onSettled,
+  rows,
+  active,
+  done,
+  icon,
+}: {
+  variant?: string;
+  onSettled?: () => void;
+  /** override the built-in trace content (keeps the primitive reusable) */
+  rows?: Row[];
+  active?: string;
+  done?: string;
+  /** override the header glyph (defaults to the sparkle) */
+  icon?: ReactNode;
+}) {
   const stage = useSequence(STAGES);
   const [manualExpanded, setManualExpanded] = useState<boolean | null>(null);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
-  const v = VARIANTS[variant] ?? VARIANTS.Steps;
+  const base = VARIANTS[variant] ?? VARIANTS.Steps;
+  const v = {
+    ...base,
+    rows: rows ?? base.rows,
+    active: active ?? base.active,
+    done: done ?? base.done,
+  };
   const autoExpanded = stage >= 1 && stage < 4;
   const expanded = manualExpanded ?? autoExpanded;
   const working = stage < 3;
@@ -130,9 +152,15 @@ export default function ThinkingState({ variant = "Steps", onSettled }: { varian
         className="-mx-1.5 flex w-fit items-center gap-2 rounded-control px-1.5 py-1
           transition-colors duration-100 hover:bg-hover-2"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill={working ? "var(--ink-2)" : "var(--ink-3)"}>
-          <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-        </svg>
+        {icon ? (
+          <span className="flex shrink-0 transition-colors duration-200" style={{ color: working ? "var(--ink-2)" : "var(--ink-3)" }}>
+            {icon}
+          </span>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={working ? "var(--ink-2)" : "var(--ink-3)"}>
+            <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+          </svg>
+        )}
         <span role="status" className="contents">
           {working ? (
             <span
