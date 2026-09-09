@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useDialKit, type DialConfig } from "dialkit";
 import posthog from "posthog-js";
+import AgentScreen from "@/components/primitives/AgentScreen";
 import ApprovalCard from "@/components/primitives/ApprovalCard";
 import ContextCards from "@/components/primitives/ContextCards";
 import DiffTable from "@/components/primitives/DiffTable";
@@ -144,6 +145,70 @@ function FindTicketAnswer() {
   );
 }
 
+/* the side-panel agent viewer: connects, then goes live once the browser opens */
+function BrowserPane() {
+  const [variant, setVariant] = useState<"Loading" | "Working">("Loading");
+  useEffect(() => {
+    const t = setTimeout(() => setVariant("Working"), 2400);
+    return () => clearTimeout(t);
+  }, []);
+  return <AgentScreen agentName="Browser agent" variant={variant} />;
+}
+
+/* the browser flow: spin up a browser, show the plan as a thinking trace, then
+ * stream a confirmation once the (fake) appeal is filed */
+function ParkingAppealAnswer() {
+  const [stage, setStage] = useState<"boot" | "think" | "working" | "done">("boot");
+
+  useEffect(() => {
+    if (stage !== "working") return;
+    const t = setTimeout(() => setStage("done"), 1800);
+    return () => clearTimeout(t);
+  }, [stage]);
+
+  return (
+    <>
+      <StreamLine
+        tone="ink-2"
+        text="Spinning up a browser — you can watch it work in the panel on the right, or click in to take a look."
+        onDone={() => setStage((s) => (s === "boot" ? "think" : s))}
+      />
+      {stage !== "boot" && (
+        <div className="mt-4" style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}>
+          <ThinkingState
+            variant="Steps"
+            active="Working the appeal"
+            done="Filed the appeal"
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
+              </svg>
+            }
+            rows={[
+              { primary: "Opening the city parking portal" },
+              { primary: "Locating citation #A4471902" },
+              { primary: "Filling out the appeal form" },
+              { primary: "Attaching evidence", secondary: "2 photos · permit" },
+            ]}
+            onSettled={() => setStage((s) => (s === "think" ? "working" : s))}
+          />
+        </div>
+      )}
+      {stage === "working" && (
+        <div className="mt-4 flex min-h-6 items-center" style={{ animation: "fade-in 200ms ease-out both" }}>
+          <LoadingState label="Submitting the appeal" variant="Dots" />
+        </div>
+      )}
+      {stage === "done" && (
+        <div className="mt-4" style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}>
+          <StreamLine text="Done — the appeal for citation #A4471902 is submitted. The city portal returned confirmation PA-6621 and it's now under review; you'll hear back within 14 days. I attached the two curb-sign photos and your resident permit as evidence." />
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ── scenarios ────────────────────────────────────────────────
  * Each maps a user prompt to an agent reply built from primitives.
  * `beat` is how long the agent "thinks" before the answer resolves
@@ -167,6 +232,13 @@ type Scenario = {
 };
 
 const SCENARIOS: Record<string, Scenario> = {
+  appeal: {
+    prompt: "Appeal my parking ticket — citation #A4471902.",
+    beat: 500,
+    paneTitle: "Agent",
+    Pane: () => <BrowserPane />,
+    Answer: () => <ParkingAppealAnswer />,
+  },
   todos: {
     prompt: "What urgent to-dos need my attention this morning?",
     beat: 1100,
@@ -249,6 +321,7 @@ const SCENARIOS: Record<string, Scenario> = {
 type ScenarioId = keyof typeof SCENARIOS;
 
 const KEYWORDS: [ScenarioId, string[]][] = [
+  ["appeal", ["appeal", "parking", "citation", "contest", "dispute", "fine", "browser"]],
   ["todos", ["todo", "to-do", "urgent", "morning", "attention", "task"]],
   ["workload", ["summary", "summarize", "workload", "overview", "recap", "digest"]],
   ["offboarding", ["approve", "approval", "off-board", "offboard", "confirm", "sign off"]],
@@ -278,6 +351,7 @@ function SuggestionIcon({ kind }: { kind: string }) {
     restock: <path d="M8 6l-5 6 5 6M16 6l5 6-5 6" />,
     rewrite: <g><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></g>,
     tune: <g><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h14M20 18h0" /><circle cx="16" cy="6" r="2" /><circle cx="8" cy="12" r="2" /><circle cx="18" cy="18" r="2" /></g>,
+    appeal: <g><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" /></g>,
   };
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -287,6 +361,7 @@ function SuggestionIcon({ kind }: { kind: string }) {
 }
 
 const SUGGESTION_POOL: { id: ScenarioId; label: string }[] = [
+  { id: "appeal", label: "Appeal my parking ticket" },
   { id: "suppliers", label: "Show me our supplier records" },
   { id: "todos", label: "What urgent to-dos need my attention this morning?" },
   { id: "workload", label: "Prep a summary of my workload" },
@@ -296,6 +371,7 @@ const SUGGESTION_POOL: { id: ScenarioId; label: string }[] = [
 ];
 
 const RECENTS: { id: ScenarioId; label: string; prompt?: string }[] = [
+  { id: "appeal", label: "Parking ticket appeal", prompt: SCENARIOS.appeal.prompt },
   { id: "suppliers", label: "Supplier records" },
   { id: "todos", label: "Urgent to-dos this morning" },
   { id: "find-ticket", label: "Flavor page ticket" },
