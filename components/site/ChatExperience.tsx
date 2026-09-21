@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import posthog from "posthog-js";
 import ApprovalCard from "@/components/primitives/ApprovalCard";
 import ChatComposer from "@/components/primitives/ChatComposer";
 import CodeBlock from "@/components/primitives/CodeBlock";
@@ -250,7 +249,7 @@ export default function ChatExperience() {
 
                 <AssistantMessage eyebrow="Scoop · ready when you are" className="mt-12">
                   <p className="mb-4 max-w-[600px] text-[13px] leading-relaxed text-ink-2">Everything is staged as a reviewable draft. Ask for a change, or send a new instruction below to keep going.</p>
-                  <ChatComposer onSend={() => posthog.capture("chat_composer_prompt_sent")} />
+                  <ChatComposer />
                 </AssistantMessage>
               </div>
             </div>

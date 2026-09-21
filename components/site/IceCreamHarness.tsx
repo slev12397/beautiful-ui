@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { useDialKit, type DialConfig } from "dialkit";
-import posthog from "posthog-js";
 import AgentScreen from "@/components/primitives/AgentScreen";
 import ApprovalCard from "@/components/primitives/ApprovalCard";
 import ContextCards from "@/components/primitives/ContextCards";
@@ -445,20 +443,21 @@ const HOME_REVEAL = {
   easing:   "cubic-bezier(0.16, 1, 0.3, 1)",
 };
 
-const HOME_REVEAL_DIALS = {
+/* Static entrance params. These were previously tunable via DialKit; DialKit
+ * (a dev-only tuning overlay) has been removed, so we use the tuned defaults. */
+const revealParams = {
   reveal: {
-    blur:    [HOME_REVEAL.blur, 0, 40, 1],
-    offsetY: [HOME_REVEAL.offsetY, 0, 60, 1],
-    duration: [HOME_REVEAL.duration, 200, 800, 10],
+    blur: HOME_REVEAL.blur,
+    offsetY: HOME_REVEAL.offsetY,
+    duration: HOME_REVEAL.duration,
   },
   sequence: {
-    helloAt:          [HOME_REVEAL_TIMING.hello, 0, 300, 10],
-    questionAt:       [HOME_REVEAL_TIMING.question, 0, 500, 10],
-    promptAt:         [HOME_REVEAL_TIMING.prompt, 0, 700, 10],
-    recommendationsAt: [HOME_REVEAL_TIMING.recommendations, 0, 900, 10],
+    helloAt: HOME_REVEAL_TIMING.hello,
+    questionAt: HOME_REVEAL_TIMING.question,
+    promptAt: HOME_REVEAL_TIMING.prompt,
+    recommendationsAt: HOME_REVEAL_TIMING.recommendations,
   },
-  replay: { type: "action", label: "Replay entrance" },
-} satisfies DialConfig;
+};
 
 function homeRevealStyle(
   visible: boolean,
@@ -477,14 +476,6 @@ function homeRevealStyle(
 function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: ScenarioId) => void; shuffle: () => void; offset: number }) {
   const shown = [0, 1, 2].map((i) => SUGGESTION_POOL[(offset + i) % SUGGESTION_POOL.length]);
   const [stage, setStage] = useState(0);
-  const [replayTrigger, setReplayTrigger] = useState(0);
-  const revealParams = useDialKit("Home entrance", HOME_REVEAL_DIALS, {
-    id: "harness-home-entrance-v2",
-    persist: true,
-    onAction: (action) => {
-      if (action === "replay") setReplayTrigger((current) => current + 1);
-    },
-  });
   useEffect(() => {
     setStage(0);
     const timers = [
@@ -495,13 +486,7 @@ function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: Sc
     ];
 
     return () => timers.forEach(clearTimeout);
-  }, [
-    replayTrigger,
-    revealParams.sequence.helloAt,
-    revealParams.sequence.questionAt,
-    revealParams.sequence.promptAt,
-    revealParams.sequence.recommendationsAt,
-  ]);
+  }, []);
 
   return (
     <div className="mx-auto flex min-h-full max-w-[720px] flex-col justify-center px-4 py-10 sm:px-8">
@@ -527,7 +512,6 @@ function EmptyState({ onSend, shuffle, offset }: { onSend: (text: string, id: Sc
             key={item.id}
             type="button"
             onClick={() => {
-              posthog.capture("harness_suggestion_selected");
               onSend(item.label, item.id);
             }}
             className="-mx-2 flex items-center gap-3 rounded-control px-2 py-2.5 text-left text-[14px] text-ink transition-colors duration-150 hover:bg-hover"
@@ -751,7 +735,6 @@ export default function IceCreamHarness() {
   });
 
   const send = (text: string, scenarioId: ScenarioId) => {
-    posthog.capture("harness_prompt_sent");
     setChats((current) => current.map((c) => (c.id === chat.id ? appendExchange(c, text, scenarioId) : c)));
   };
 
@@ -759,7 +742,6 @@ export default function IceCreamHarness() {
    * fresh chat unless the current one is empty */
   const [replay, setReplay] = useState<Record<number, number>>({});
   const pickRecent = (scenarioId: ScenarioId, label: string, prompt = label) => {
-    posthog.capture("harness_recent_chat_opened");
     const existing = chats.find((c) => c.title === label);
     if (existing) {
       if (prompt !== label) {

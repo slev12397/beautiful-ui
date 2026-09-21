@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { DialRoot } from "dialkit";
-import "dialkit/styles.css";
 import "./globals.css";
 import { DevToolbar } from "@/components/site/DevToolbar";
 import { EmailNudge } from "@/components/site/EmailNudge";
@@ -39,10 +37,6 @@ export default function RootLayout({
         <InteractionSounds />
         <EmailNudge />
         {children}
-        {/* DialKit is a dev-only tuning panel — never render it in production. */}
-        {process.env.NODE_ENV === "development" && (
-          <DialRoot position="top-right" defaultOpen />
-        )}
         <DevToolbar />
       </body>
     </html>
