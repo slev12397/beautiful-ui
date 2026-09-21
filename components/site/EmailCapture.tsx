@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import posthog from "posthog-js";
 
 /* ─────────────────────────────────────────────────────────
  * EMAIL CAPTURE — signup for updates + new components. Posts
@@ -38,7 +37,6 @@ function EmailForm() {
         body: JSON.stringify({ email: email.trim() }),
       });
       if (!res.ok) throw new Error("bad status");
-      posthog.capture("newsletter_signup_completed");
       markDone();
       setStatus("done");
     } catch {

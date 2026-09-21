@@ -26,9 +26,8 @@ Source (MIT, Next.js + Tailwind v4): ${REPO_URL}
 
 2. Install the deps it uses: tailwindcss v4, plus @central-icons-react for the
    sidebar icons (a commercial set, so set CENTRAL_LICENSE_KEY from
-   centralicons.com, or swap those icons for your own). The sounds (cuelume)
-   and dev dial tuning (dialkit) are optional; drop them if you don't want
-   them, and remove the posthog analytics calls.
+   centralicons.com, or swap those icons for your own). The interaction sounds
+   are optional; drop them if you don't want them.
 
 3. Wire the harness to MY agent: replace the demo SCENARIOS in
    IceCreamHarness.tsx with calls to my backend. Keep the primitives as the
