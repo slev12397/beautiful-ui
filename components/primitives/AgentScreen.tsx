@@ -17,7 +17,10 @@ import { Button } from "@/components/atoms/Button";
  * (image or video URL) to pipe in a real stream.
  * ───────────────────────────────────────────────────────── */
 
-const PLACEHOLDER = "https://95dnc2a95qgwt9ff.public.blob.vercel-storage.com/agent-desktop-v3.png";
+/* Served as a static asset from /public (not Vercel Blob) so it doesn't incur
+ * Blob data-transfer charges, and pre-optimized to a ~120 KB WebP (from a
+ * 2.5 MB PNG) since it loads on every gallery/harness view. */
+const PLACEHOLDER = "/agent-desktop.webp";
 
 /* aspect ratio of the placeholder capture (2964×1856) — used so the collapsed
  * card shows the whole desktop with no crop */
